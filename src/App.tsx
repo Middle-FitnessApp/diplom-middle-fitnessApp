@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { Layout } from 'antd';
+import { AppRouter } from './router/AppRouter';
+import { Header } from './components/Header';
+
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <div className="text-red-300">
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-      </div>
-    </div>
+    <Layout className="min-h-screen">
+      <Header />
+        <AppRouter />
+    </Layout>
   );
 }
 

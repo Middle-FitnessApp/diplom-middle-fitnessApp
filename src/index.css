@@ -1,12 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --bg-dark: oklch(0.92 0.03 273);
+  --bg: oklch(0.96 0.03 273);
+  --bg-light: oklch(1 0.03 273);
+  --text: oklch(0.15 0.06 273);
+  --text-muted: oklch(0.4 0.06 273);
+  --highlight: oklch(1 0.06 273);
+  --border: oklch(0.6 0.06 273);
+  --border-muted: oklch(0.7 0.06 273);
+  --primary: oklch(0.4 0.1 273);
+  --secondary: oklch(0.4 0.1 93);
+  --danger: oklch(0.5 0.06 30);
+  --warning: oklch(0.5 0.06 100);
+  --success: oklch(0.5 0.06 160);
+  --info: oklch(0.5 0.06 260);
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
 }
-
