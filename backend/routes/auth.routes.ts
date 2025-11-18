@@ -2,9 +2,10 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../prisma.js'
 import { hash } from 'bcryptjs'
 
-export default async function authRoutes(fastify: FastifyInstance) {
+import registerSchema from '../schemas/auth/register.schema'
 
-	fastify.post('/signup', async (req, reply) => {
+export default async function authRoutes(fastify: FastifyInstance) {
+	fastify.post('/signup', { schema: registerSchema }, async (req, reply) => {
 		try {
 			const data = req.body as {
 				name: string
@@ -27,10 +28,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
 				photoBack?: string
 			}
 
-			if (!data?.email) {
-				return reply.status(400).send({ error: 'Email обязателен' })
-			}
-
 			const exists = await prisma.user.findUnique({
 				where: { email: data.email },
 			})
@@ -46,11 +43,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
 					...data,
 					password: passwordHash,
 				},
+				select: {
+					id: true,
+					name: true,
+					email: true,
+				},
 			})
 
-			const { password, ...publicUser } = user
+			return reply.status(201).send(user)
 			
-			return reply.send(publicUser)
 		} catch (err: any) {
 			return reply.status(500).send({ error: err.message })
 		}
