@@ -25,6 +25,11 @@ export interface RegisterDTO {
   password: string
 }
 
+export interface LoginDTO {
+	emailOrPhone: string
+	password: string
+}
+
 export interface PublicUser {
   id: string
   name: string

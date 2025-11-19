@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify'
 
 import registerSchema from '../schemas/auth/register.schema.js'
+import loginSchema from '../schemas/auth/login.schema.js'
 
-import { RegisterDTO, PublicUser } from '../types/auth.js'
-import { registerUser } from 'controllers/user.js'
+import { RegisterDTO, PublicUser, LoginDTO } from '../types/auth.js'
+import { loginUser, registerUser } from 'controllers/user.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
 	fastify.post<{ Body: RegisterDTO; Reply: PublicUser }>(
@@ -13,6 +14,16 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			const user = await registerUser(req.body)
 
 			return reply.status(201).send(user)
+		},
+	)
+
+	fastify.post<{ Body: LoginDTO; Reply: PublicUser }>(
+		'/login',
+		{ schema: loginSchema },
+		async (req, reply) => {
+			const user = await loginUser(req.body)
+			
+			return reply.status(200).send(user)
 		},
 	)
 }
