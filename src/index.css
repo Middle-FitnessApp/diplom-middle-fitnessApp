@@ -1,55 +1,112 @@
 @import 'tailwindcss';
 
 :root {
-  --bg-dark: oklch(0.92 0.03 273);
-  --bg: oklch(0.96 0.03 273);
-  --bg-light: oklch(1 0.03 273);
-  --text: oklch(0.15 0.06 273);
-  --text-muted: oklch(0.4 0.06 273);
-  --highlight: oklch(1 0.06 273);
-  --border: oklch(0.6 0.06 273);
-  --border-muted: oklch(0.7 0.06 273);
-  --primary: oklch(0.4 0.1 273);
-  --secondary: oklch(0.4 0.1 93);
-  --danger: oklch(0.5 0.06 30);
-  --warning: oklch(0.5 0.06 100);
-  --success: oklch(0.5 0.06 160);
-  --info: oklch(0.5 0.06 260);
+	--bg-dark: oklch(95% 0.03 200);
+	--bg: oklch(97% 0.003 260);
+	--bg-light: oklch(99% 0.001 260);
+	--text: oklch(20% 0 0);
+	--text-muted: oklch(45% 0 0);
+	--highlight: oklch(100% 0 0);
+	--border: oklch(85% 0.01 260);
+	--border-muted: oklch(90% 0.005 260);
+	--primary: oklch(70.789% 0.12038 198.996);
+	--secondary: oklch(60% 0.15 190);
+	--accent: oklch(65% 0.12 270);
+	--info: oklch(68.491% 0.12255 178.217);
+	--success: oklch(65% 0.18 145);
+	--warning: oklch(75% 0.2 85);
+	--danger: oklch(65% 0.2 25);
 }
 
 body {
-  margin: 0;
-  background-color: var(--bg);
+	margin: 0;
+	background-color: var(--bg);
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+	color: inherit;
+	text-decoration: none;
 }
 
 a:hover {
-  color: inherit;
+	color: inherit;
 }
 
 .text-custom {
-  color: var(--text);
+	color: var(--text) !important;
 }
 
 .text-muted {
-  color: var(--text-muted);
+	color: var(--text-muted);
 }
 
 .background-light {
-  background-color: var(--bg-light);
+	background-color: var(--bg-light);
 }
 
 .hover-info-custom {
-  &:hover {
-    color: var(--info);
-    transition: color 0.5s;
-  }
+	&:hover {
+		color: var(--info);
+		transition: color 0.5s;
+	}
 }
 
 .border-muted {
-  border-color: var(--border-muted);
+	border-color: var(--border-muted);
+}
+
+.ant-layout-header {
+	background-color: var(--bg-light) !important;
+}
+
+.ant-card-head {
+	background-color: var(--bg-light) !important;
+}
+
+.ant-modal-header {
+	background-color: var(--bg-light) !important;
+}
+
+.ant-drawer-header {
+	background-color: var(--bg-light) !important;
+}
+
+.ant-form-item-label > label {
+	color: var(--text) !important;
+}
+
+.ant-btn {
+	background: var(--bg-light);
+	color: var(--text);
+	border-color: var(--border);
+}
+
+.ant-btn:hover,
+.ant-btn:focus {
+	color: var(--info);
+	border-color: var(--info);
+}
+
+.ant-btn-primary {
+	background: var(--primary);
+	color: var(--highlight);
+	border-color: var(--primary);
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+	background: var(--info);
+	color: var(--highlight);
+	border-color: var(--info);
+}
+
+.ant-form-item-explain-error {
+	color: var(--danger) !important;
+}
+
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-number,
+.ant-form-item-has-error .ant-picker,
+.ant-form-item-has-error .ant-select .ant-select-selector {
+	border-color: var(--danger) !important;
 }
