@@ -2,6 +2,7 @@ import { prisma } from '../prisma.js'
 import { hash } from 'bcryptjs'
 import { ApiError } from '../utils/ApiError.js'
 import { LoginDTO, RegisterDTO } from '../types/auth.js'
+import { generateAccessToken, generateRefreshToken } from 'services/token.service.js'
 
 // register
 export async function registerUser(data: RegisterDTO) {
@@ -35,20 +36,27 @@ export async function loginUser(data: LoginDTO) {
 	const isEmail = emailOrPhone.includes('@')
 
 	const user = await prisma.user.findFirst({
-		where: isEmail
-			? { email: emailOrPhone }
-			: { phone: emailOrPhone },
+		where: isEmail ? { email: emailOrPhone } : { phone: emailOrPhone },
 	})
 
 	if (!user) {
 		throw ApiError.unauthorized('Неверный Email/телефон или пароль')
 	}
 
+	const accessToken = generateAccessToken(user.id)
+	const refreshToken = await generateRefreshToken(user.id)
+
 	return {
-		id: user.id,
-		name: user.name,
-		age: user.age,
-		email: user.email,
-		phone: user.phone,
+		user: {
+			id: user.id,
+			name: user.name,
+			age: user.age,
+			email: user.email,
+			phone: user.phone,
+		},
+		token: {
+			accessToken,
+			refreshToken,
+		},
 	}
 }
