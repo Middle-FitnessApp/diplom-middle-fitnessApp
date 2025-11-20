@@ -1,49 +1,58 @@
-import { Card, Form, Input, Button, Typography } from 'antd';
-import { Link } from 'react-router-dom';
-
-const { Title } = Typography;
+import { Button, Form, Input, Typography } from "antd";
+import { Link } from "react-router";
 
 export const Login = () => {
-  const onFinish = (values: any) => {
-    console.log('Login values:', values);
+  const { Title } = Typography;
+
+  type FieldType = {
+    login?: string;
+    password?: string;
+  };
+
+  const onFinish = (values: FieldType) => {
+    console.log("Success:", values);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md shadow-lg">
-        <Title level={2} className="text-center">Вход</Title>
-        <Form
+    <div className="border border-gray-300 rounded-lg p-6 max-w-md mx-auto">
+      <Title level={3}>Вход</Title>
+
+      <Form onFinish={onFinish} autoComplete="off">
+        <Form.Item
           name="login"
-          onFinish={onFinish}
-          layout="vertical"
+          rules={[
+            {
+              required: true,
+              message: "Пожалуйста, введите email или телефон",
+            },
+          ]}
         >
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ required: true, message: 'Введите email' }]}
-          >
-            <Input />
-          </Form.Item>
+          <Input placeholder="Введите email или телефон" />
+        </Form.Item>
 
-          <Form.Item
-            label="Пароль"
-            name="password"
-            rules={[{ required: true, message: 'Введите пароль' }]}
-          >
-            <Input.Password />
-          </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[
+            {
+              required: true,
+              message: "Пожалуйста, введите пароль",
+            },
+          ]}
+        >
+          <Input.Password placeholder="Введите пароль" />
+        </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="w-full">
-              Войти
-            </Button>
-          </Form.Item>
-        </Form>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block>
+            Вход
+          </Button>
+        </Form.Item>
+      </Form>
 
-        <div className="text-center">
-          <Link to="/signup">Зарегистрироваться</Link>
-        </div>
-      </Card>
+      <p className="mt-4">
+        Нет аккаунта? <Link to="/signUp"> Зарегистрируйтесь </Link>
+      </p>
+      <Link to="/#"> Восстановить пароль </Link>
     </div>
   );
 };
