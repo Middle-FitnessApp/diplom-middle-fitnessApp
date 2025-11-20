@@ -1,12 +1,12 @@
 import { MeasurementFields } from '../../components/forms'
-import { Form, Layout, Typography, DatePicker } from 'antd'
+import { Form, Layout, Typography, DatePicker, Button } from 'antd'
 
 export const AddProgress = () => {
 	const { Title } = Typography
 	const [form] = Form.useForm()
 
 	const onFinish = (values: any) => {
-		console.log('тут будет запрос')
+		console.log('тут будет запрос', values)
 	}
 
 	const onFinishFailed = () => {
@@ -45,6 +45,12 @@ export const AddProgress = () => {
 					</Form.Item>
 
 					<MeasurementFields />
+
+					<Form.Item>
+						<Button type='primary' htmlType='submit' style={{ width: '100%' }}>
+							Добавить замеры
+						</Button>
+					</Form.Item>
 				</Form>
 			</Layout.Content>
 		</Layout>
