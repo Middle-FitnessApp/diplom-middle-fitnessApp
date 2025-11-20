@@ -1,11 +1,11 @@
 const registerSchema = {
-  body: {
-    type: 'object',
-    required: ['name', 'email', 'password'],
-    properties: {
-      name: { type: 'string' },
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 6 },
+	body: {
+		type: 'object',
+		required: ['emailOrPhone', 'password'],
+		properties: {
+			name: { type: 'string' },
+			emailOrPhone: { type: 'string' },
+			password: { type: 'string', minLength: 6 },
 			age: { type: 'number' },
 			weight: { type: 'number' },
 			height: { type: 'number' },
@@ -21,19 +21,32 @@ const registerSchema = {
 			photoFront: { type: 'string' },
 			photoSide: { type: 'string' },
 			photoBack: { type: 'string' },
-    },
-  },
+		},
+	},
 
-  response: {
-    201: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        email: { type: 'string' },
-      },
-    },
-  },
+	response: {
+		201: {
+			type: 'object',
+			properties: {
+				token: {
+					type: 'object',
+					properties: {
+						accessToken: { type: 'string' },
+						refreshToken: { type: 'string' },
+					},
+				},
+				user: {
+					type: 'object',
+					properties: {
+						id: { type: 'string' },
+						name: { type: 'string' },
+						email: { type: ['string', 'null'] },
+						phone: { type: ['string', 'null'] },
+					},
+				},
+			},
+		},
+	},
 }
 
 export default registerSchema

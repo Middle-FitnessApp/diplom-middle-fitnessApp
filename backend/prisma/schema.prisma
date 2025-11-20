@@ -10,7 +10,8 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String?  @unique
+  phone        String?  @unique
   age          Int?
   weight       Float?
   height       Float?
@@ -28,4 +29,15 @@ model User {
   photoBack    String?
   password     String
   createdAt    DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
