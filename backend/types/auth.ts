@@ -39,3 +39,7 @@ export interface UserWithToken {
 	user: PublicUser
 	token: Token
 }
+
+export interface RefreshBody {
+	refreshToken: string
+}

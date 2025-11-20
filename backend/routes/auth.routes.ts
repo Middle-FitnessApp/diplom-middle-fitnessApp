@@ -3,8 +3,9 @@ import { FastifyInstance } from 'fastify'
 import registerSchema from '../schemas/auth/register.schema.js'
 import loginSchema from '../schemas/auth/login.schema.js'
 
-import { RegisterDTO, UserWithToken, LoginDTO } from '../types/auth.js'
+import { RegisterDTO, UserWithToken, LoginDTO, RefreshBody } from '../types/auth.js'
 import { loginUser, registerUser } from 'controllers/user.js'
+import { refreshTokenService } from 'services/refreshToken.service.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
 	fastify.post<{ Body: RegisterDTO; Reply: UserWithToken }>(
@@ -24,6 +25,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			const user = await loginUser(req.body)
 
 			return reply.status(200).send(user)
+		},
+	)
+
+	fastify.post<{ Body: RefreshBody; Reply: UserWithToken }>(
+		'/refresh-token',
+		async (req, reply) => {
+			const { refreshToken } = req.body
+
+			const result = await refreshTokenService({ refreshToken })
+
+			return reply.status(200).send(result)
 		},
 	)
 }
