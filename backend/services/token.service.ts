@@ -20,6 +20,10 @@ export async function generateRefreshToken(userId: string) {
 	return token
 }
 
+export function verifyAccessToken(token: string) {
+	return jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as { userId: string }
+}
+
 export async function deleteRefreshToken(token: string) {
 	await prisma.refreshToken.deleteMany({
 		where: { token },
