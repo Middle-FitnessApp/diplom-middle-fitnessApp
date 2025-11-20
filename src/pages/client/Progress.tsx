@@ -9,7 +9,6 @@ import {
 	XAxis,
 	YAxis,
 	CartesianGrid,
-	Tooltip,
 	Legend,
 	ResponsiveContainer,
 } from 'recharts'
@@ -34,6 +33,8 @@ export const Progress = () => {
 	const handlePeriodChange = (e: RadioChangeEvent) => {
 		setPeriod(e.target.value)
 	}
+
+	//для примера данные пока
 	const data = [
 		{ date: '2024-01-15', waist: 77, hips: 93, chest: 98, arms: 31 },
 		{ date: '2024-01-22', waist: 76, hips: 92, chest: 97, arms: 30.5 },

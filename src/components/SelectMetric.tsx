@@ -1,12 +1,12 @@
 import { Card, Checkbox, Col } from 'antd'
 import { PROGRESS_METRICS } from '../constants/progressMetrics'
 
-interface IProps {
+interface Props {
 	selectedMetrics: string[]
 	setSelectedMetrics: (metrics: string[]) => void
 }
 
-export const SelectMetric = ({ selectedMetrics, setSelectedMetrics }: IProps) => {
+export const SelectMetric = ({ selectedMetrics, setSelectedMetrics }: Props) => {
 	const checkboxOptions = Object.entries(PROGRESS_METRICS).map(([value, config]) => ({
 		label: config.label,
 		value,

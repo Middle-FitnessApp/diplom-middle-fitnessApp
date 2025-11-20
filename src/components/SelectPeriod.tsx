@@ -1,11 +1,11 @@
 import { Row, Col, Radio, Space, type RadioChangeEvent } from 'antd'
 
-interface IProps {
+interface Props {
 	period: 'month' | 'year' | 'all'
 	handlePeriodChange: (e: RadioChangeEvent) => void
 }
 
-export const SelectPeriod = ({ period, handlePeriodChange }: IProps) => {
+export const SelectPeriod = ({ period, handlePeriodChange }: Props) => {
 	return (
 		<Row gutter={[16, 16]} className='mb-6'>
 			<Col span={24}>
