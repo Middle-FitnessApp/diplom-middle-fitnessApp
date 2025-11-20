@@ -87,6 +87,47 @@ a:hover {
 	border-color: var(--info);
 }
 
+.ant-form {
+	background-color: var(--bg-light);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 32px;
+	max-width: 600px;
+	width: 100%;
+	margin: 0 auto;
+}
+
+.form-container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	min-height: 100vh;
+	padding: 24px;
+}
+
+.ant-input,
+.ant-input-number .ant-input-number-input,
+.ant-picker,
+.ant-select .ant-select-selector {
+	border-radius: 8px !important;
+}
+
+.ant-btn {
+	border-radius: 8px !important;
+}
+
+.ant-form-item-control-input {
+	max-width: 100%;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-picker,
+.ant-select {
+	width: 100% !important;
+	max-width: 100%;
+}
+
 .ant-btn-primary {
 	background: var(--primary);
 	color: var(--highlight);
