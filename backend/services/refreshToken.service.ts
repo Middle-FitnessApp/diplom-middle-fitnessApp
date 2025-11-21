@@ -31,10 +31,7 @@ export async function refreshTokenService({ refreshToken }: RefreshBody) {
 			refreshToken: newRefreshToken,
 		},
 		user: {
-			id: user.id,
-			name: user.name,
-			email: user.email,
-			phone: user.phone,
+			role: user.role,
 		},
 	}
 }
