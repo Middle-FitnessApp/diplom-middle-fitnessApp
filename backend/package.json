@@ -12,6 +12,7 @@
 		"prisma:migrate:dev": "npx prisma migrate dev"
 	},
 	"dependencies": {
+		"@fastify/cookie": "^11.0.2",
 		"@fastify/swagger": "^9.6.1",
 		"@fastify/swagger-ui": "^5.2.3",
 		"@prisma/client": "^6.19.0",
