@@ -10,8 +10,9 @@ import 'fastify'
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: {
-      userId: string
+    user: {
+      id: string
+      role: 'CLIENT' | 'TRAINER'
     }
   }
 }
