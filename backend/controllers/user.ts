@@ -25,9 +25,7 @@ export async function registerUser(data: RegisterDTO) {
 		},
 		select: {
 			id: true,
-			name: true,
-			email: true,
-			phone: true,
+			role: true,
 		},
 	})
 
@@ -36,10 +34,7 @@ export async function registerUser(data: RegisterDTO) {
 
 	return {
 		user: {
-			id: createdUser.id,
-			name: createdUser.name,
-			email: createdUser.email,
-			phone: createdUser.phone,
+			role: createdUser.role,
 		},
 		token: {
 			accessToken,
@@ -69,10 +64,7 @@ export async function loginUser(data: LoginDTO) {
 
 	return {
 		user: {
-			id: user.id,
-			name: user.name,
-			email: user.email,
-			phone: user.phone,
+			role: user.role,
 		},
 		token: {
 			accessToken,

@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify'
 import registerSchema from '../schemas/auth/register.schema.js'
 import loginSchema from '../schemas/auth/login.schema.js'
 
-import { RegisterDTO, UserWithToken, LoginDTO, QuerystringRole } from '../types/auth.js'
+import { RegisterDTO, RoleWithToken, LoginDTO, QuerystringRole } from '../types/auth.js'
 import { loginUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'
 import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
@@ -15,7 +15,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 	fastify.post<{
 		Body: RegisterDTO
 		Querystring: QuerystringRole
-		Reply: UserWithToken
+		Reply: RoleWithToken
 	}>('/signup', { schema: registerSchema }, async (req, reply) => {
 		const role = req.query.role ?? CLIENT
 
@@ -31,7 +31,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		})
 	})
 
-	fastify.post<{ Body: LoginDTO; Reply: UserWithToken }>(
+	fastify.post<{ Body: LoginDTO; Reply: RoleWithToken }>(
 		'/login',
 		{ schema: loginSchema },
 		async (req, reply) => {
@@ -48,7 +48,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		},
 	)
 
-	fastify.post<{ Reply: UserWithToken }>('/refresh-token', async (req, reply) => {
+	fastify.post<{ Reply: RoleWithToken }>('/refresh-token', async (req, reply) => {
 		const refreshToken = req.cookies.refreshToken
 
 		if (!refreshToken) {

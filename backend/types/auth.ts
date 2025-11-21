@@ -53,15 +53,12 @@ interface Token {
 	accessToken: string
 }
 
-export interface PublicUser {
-	id: string
-	name: string
-	email: string | null
-	phone: string | null
+export interface UserRole {
+	role: QuerystringRole['role']
 }
 
-export interface UserWithToken {
-	user: PublicUser
+export interface RoleWithToken {
+	user: UserRole
 	token: Token
 }
 
