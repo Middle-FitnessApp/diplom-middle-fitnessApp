@@ -16,7 +16,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		Body: RegisterDTO
 		Querystring: QuerystringRole
 		Reply: RoleWithToken
-	}>('/auth/signup', { schema: registerSchema }, async (req, reply) => {
+	}>('/signup', { schema: registerSchema }, async (req, reply) => {
 		const role = req.query.role ?? CLIENT
 
 		const user = await registerUser({ ...req.body, role })
@@ -32,7 +32,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 	})
 
 	fastify.post<{ Body: LoginDTO; Reply: RoleWithToken }>(
-		'/auth/login',
+		'/login',
 		{ schema: loginSchema },
 		async (req, reply) => {
 			const user = await loginUser(req.body)
@@ -48,7 +48,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		},
 	)
 
-	fastify.post<{ Reply: RoleWithToken }>('/auth/refresh', async (req, reply) => {
+	fastify.post<{ Reply: RoleWithToken }>('/refresh', async (req, reply) => {
 		const refreshToken = req.cookies.refreshToken
 
 		if (!refreshToken) {
