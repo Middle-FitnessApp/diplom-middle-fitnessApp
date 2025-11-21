@@ -1,7 +1,7 @@
-const CLIENT = 'client'
-const TRAINER = 'trainer'
+const CLIENT = 'CLIENT'
+const TRAINER = 'TRAINER'
 
-module.exports = {
+export {
 	CLIENT,
 	TRAINER,
 }

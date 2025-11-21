@@ -3,30 +3,33 @@ import { FastifyInstance } from 'fastify'
 import registerSchema from '../schemas/auth/register.schema.js'
 import loginSchema from '../schemas/auth/login.schema.js'
 
-import { RegisterDTO, UserWithToken, LoginDTO, RefreshBody } from '../types/auth.js'
+import { RegisterDTO, UserWithToken, LoginDTO, QuerystringRole } from '../types/auth.js'
 import { loginUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'
 import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
 import { ApiError } from 'utils/ApiError.js'
 import { setRefreshCookie } from 'utils/setRefreshCookie.js'
+import { CLIENT } from 'consts/role.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
-	fastify.post<{ Body: RegisterDTO; Reply: UserWithToken }>(
-		'/signup',
-		{ schema: registerSchema },
-		async (req, reply) => {
-			const user = await registerUser(req.body)
+	fastify.post<{
+		Body: RegisterDTO
+		Querystring: QuerystringRole
+		Reply: UserWithToken
+	}>('/signup', { schema: registerSchema }, async (req, reply) => {
+		const role = req.query.role ?? CLIENT
 
-			setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+		const user = await registerUser({ ...req.body, role })
 
-			return reply.status(201).send({
-				user: user.user,
-				token: {
-					accessToken: user.token.accessToken,
-				},
-			})
-		},
-	)
+		setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+
+		return reply.status(201).send({
+			user: user.user,
+			token: {
+				accessToken: user.token.accessToken,
+			},
+		})
+	})
 
 	fastify.post<{ Body: LoginDTO; Reply: UserWithToken }>(
 		'/login',
@@ -45,25 +48,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		},
 	)
 
-	fastify.post<{ Body: RefreshBody; Reply: UserWithToken }>(
-		'/refresh-token',
-		async (req, reply) => {
-			const refreshToken = req.cookies.refreshToken
+	fastify.post<{ Reply: UserWithToken }>('/refresh-token', async (req, reply) => {
+		const refreshToken = req.cookies.refreshToken
 
-			if (!refreshToken) {
-				throw ApiError.unauthorized('Refresh token отсутствует')
-			}
+		if (!refreshToken) {
+			throw ApiError.unauthorized('Refresh token отсутствует')
+		}
 
-			const result = await refreshTokenService({ refreshToken })
+		const result = await refreshTokenService({ refreshToken })
 
-			setRefreshCookie(reply, result.token.refreshToken, MAX_AGE_30_DAYS)
+		setRefreshCookie(reply, result.token.refreshToken, MAX_AGE_30_DAYS)
 
-			return reply.status(200).send({
-				user: result.user,
-				token: {
-					accessToken: result.token.accessToken,
-				},
-			})
-		},
-	)
+		return reply.status(200).send({
+			user: result.user,
+			token: {
+				accessToken: result.token.accessToken,
+			},
+		})
+	})
 }
