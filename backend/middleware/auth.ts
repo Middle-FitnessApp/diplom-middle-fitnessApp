@@ -13,7 +13,7 @@ export async function authGuard(req: FastifyRequest) {
 
 	try {
 		const payload = verifyAccessToken(token)
-		req.user = payload
+		req.user.id = payload.user.id
 	} catch (err: unknown) {
 		if (err instanceof Error && err.name === 'TokenExpiredError') {
 			throw ApiError.unauthorized('Токен истёк')
