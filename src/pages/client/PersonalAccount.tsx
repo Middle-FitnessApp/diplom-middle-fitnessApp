@@ -1,15 +1,9 @@
 import { useState } from 'react'
-import { Form, Input, Button, Avatar, Upload, message, Card, Typography } from 'antd'
-import {
-	UserOutlined,
-	UploadOutlined,
-	EditOutlined,
-	LogoutOutlined,
-	SaveOutlined,
-} from '@ant-design/icons'
+import { Form, Input, Button, message, Card, Typography } from 'antd'
+import { EditOutlined, LogoutOutlined, SaveOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import type { UploadProps } from 'antd'
 import { ACCOUNT_FIELDS } from '../../constants/accountFields'
+import { AvatarUploader } from '../../components/AvatarUploader'
 
 const { Title, Text } = Typography
 
@@ -44,33 +38,10 @@ export const PersonalAccount = () => {
 			return
 		}
 
-		setUser({ ...user, ...values })
+		setUser({ ...user, ...values, avatar: avatarUrl })
 		setIsEditing(false)
 		setErrors({})
 		message.success('Данные сохранены')
-	}
-
-	const uploadProps: UploadProps = {
-		showUploadList: false,
-		beforeUpload: (file) => {
-			const isImage = ['image/jpeg', 'image/png'].includes(file.type)
-			if (!isImage) {
-				message.error('Можно загружать только JPG/PNG!')
-				return Upload.LIST_IGNORE
-			}
-
-			if (file.size / 1024 / 1024 >= 2) {
-				message.error('Изображение должно быть меньше 2MB!')
-				return Upload.LIST_IGNORE
-			}
-
-			const reader = new FileReader()
-			reader.onload = () => setAvatarUrl(reader.result as string)
-			reader.readAsDataURL(file)
-
-			message.success('Аватар обновлен')
-			return false
-		},
 	}
 
 	return (
@@ -90,19 +61,7 @@ export const PersonalAccount = () => {
 				]}
 			>
 				<div className='flex flex-col items-center mb-8'>
-					<Upload {...uploadProps}>
-						<div className='cursor-pointer relative group mb-6'>
-							<Avatar
-								size={120}
-								src={avatarUrl}
-								icon={<UserOutlined />}
-								className='bg-blue-500'
-							/>
-							<div className='absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
-								<UploadOutlined className='text-white text-xl' />
-							</div>
-						</div>
-					</Upload>
+					<AvatarUploader size={120} initialUrl={avatarUrl} onChange={setAvatarUrl} />
 
 					<Title level={4} className='mt-4 mb-0'>
 						{user.name} {user.surname}

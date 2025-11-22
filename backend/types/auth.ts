@@ -26,7 +26,6 @@ export interface LoginDTO {
 
 interface Token {
 	accessToken: string
-	refreshToken: string
 }
 
 export interface PublicUser {
@@ -38,4 +37,8 @@ export interface PublicUser {
 export interface UserWithToken {
 	user: PublicUser
 	token: Token
+}
+
+export interface RefreshBody {
+	refreshToken: string
 }
