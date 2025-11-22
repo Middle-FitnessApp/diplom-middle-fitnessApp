@@ -8,4 +8,5 @@ export type ReportType = {
 	leg: number
 	arm: number
 	photoUrl?: string
+	notes?: string
 }

@@ -1,1 +1,9 @@
-export { type UserRole, Header } from './Header.tsx';
+export { type UserRole, Header } from './Header.tsx'
+export { ClientInfo } from './ClientInfo.tsx'
+export { SelectPeriod } from './SelectPeriod.tsx'
+export { SelectMetric } from './SelectMetric.tsx'
+export { LatestReport } from './LatestReport.tsx'
+export { ProgressChart } from './ProgressChart.tsx'
+export { CommentsSection } from './CommentsSection.tsx'
+export { AddCommentForm } from './AddCommentForm.tsx'
+export { CommentsList } from './CommentsList.tsx'

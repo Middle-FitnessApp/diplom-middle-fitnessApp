@@ -1,0 +1,131 @@
+export const mockClientData = {
+	id: '1',
+	name: 'Иван Иванов',
+	phone: '+7 (999) 123-45-67',
+	birthDate: '1990-05-15',
+	experience: 'gym_more_year',
+	goal: 'weight_loss',
+	medicalInfo: 'Нет противопоказаний',
+	diet: 'Смешанная диета',
+	age: 34,
+}
+
+export const mockReports = [
+	{
+		id: '1',
+		date: '2025-11-26',
+		weight: 81.2,
+		waist: 71,
+		hips: 87,
+		chest: 92,
+		arm: 28,
+		leg: 55.5,
+		photoUrl: '/src/assets/sample_photo.jpg',
+		notes: 'Отличный прогресс! Вес уменьшился на 3 кг за месяц.',
+	},
+]
+
+export const mockProgressData = [
+	{
+		date: '2024-01-22',
+		weight: 84.7,
+		waist: 76,
+		hips: 92,
+		chest: 97,
+		arm: 30.5,
+		leg: 58,
+	},
+	{
+		date: '2024-01-15',
+		weight: 85.2,
+		waist: 77,
+		hips: 93,
+		chest: 98,
+		arm: 31,
+		leg: 58.5,
+	},
+	{
+		date: '2025-08-29',
+		weight: 83.9,
+		waist: 75,
+		hips: 91,
+		chest: 96,
+		arm: 30,
+		leg: 57.5,
+	},
+	{
+		date: '2025-09-05',
+		weight: 83.1,
+		waist: 74,
+		hips: 90,
+		chest: 95,
+		arm: 29.5,
+		leg: 57,
+	},
+	{
+		date: '2025-10-12',
+		weight: 82.4,
+		waist: 73,
+		hips: 89,
+		chest: 94,
+		arm: 29,
+		leg: 56.5,
+	},
+	{
+		date: '2025-11-02',
+		weight: 81.8,
+		waist: 72,
+		hips: 88,
+		chest: 93,
+		arm: 28.5,
+		leg: 56,
+	},
+	{
+		date: '2025-11-26',
+		weight: 81.2,
+		waist: 71,
+		hips: 87,
+		chest: 92,
+		arm: 28,
+		leg: 55.5,
+	},
+]
+
+export const mockComments = [
+	{
+		id: '1',
+		author: 'Вы',
+		content: 'Отличный прогресс! Продолжайте в том же духе.',
+		date: '2025-11-26',
+	},
+	{
+		id: '2',
+		author: 'Вы',
+		content: 'Нужно увеличить кардио нагрузку.',
+		date: '2025-11-20',
+	},
+	{
+		id: '3',
+		author: 'Вы',
+		content: 'Следите за питанием по плану.',
+		date: '2025-11-15',
+	},
+	{
+		id: '4',
+		author: 'Вы',
+		content: 'Отлично результаты.',
+		date: '2025-11-10',
+	},
+	{
+		id: '5',
+		author: 'Вы',
+		content: 'Начали видны первые результаты!',
+		date: '2025-11-05',
+	},
+	{
+		id: '6',
+		author: 'Вы',
+		content: 'Первая неделя тренировок завершена.',
+		date: '2025-10-31',
+	},
+]
