@@ -10,7 +10,7 @@ export async function registerUser(data: RegisterDTO) {
 	const { user, type } = await findUserByEmailOrPhone(data.emailOrPhone)
 
 	if (user) {
-		throw ApiError.badRequest('Неверный Email/телефон или пароль')
+		throw ApiError.unauthorized('Неверный Email/телефон или пароль')
 	}
 
 	const passwordHash = await hash(data.password, 10)

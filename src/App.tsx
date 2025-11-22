@@ -12,9 +12,11 @@ const mockData = {
 function App() {
 	return (
 		<ConfigProvider theme={customTheme}>
-			<Layout className='min-h-screen'>
+			<Layout className='min-h-screen flex flex-col'>
 				<Header role={mockData.role} hasUnreadMessages={mockData.hasUnreadMessages} />
-				<AppRouter />
+				<Layout className='pageLayout'>
+					<AppRouter />
+				</Layout>
 			</Layout>
 		</ConfigProvider>
 	)

@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
+import fastifyCookie from '@fastify/cookie'
 
 import { ApiError } from './utils/ApiError.js'
 import type { ApiErrorResponse } from './types/error.js'
@@ -8,6 +9,15 @@ import type { ApiErrorResponse } from './types/error.js'
 import authRoutes from './routes/auth.routes.js'
 
 const app = Fastify()
+
+app.register(fastifyCookie, {
+	secret: process.env.COOKIE_SECRET,
+	parseOptions: {
+		// secure: process.env.NODE_ENV === 'production',
+		httpOnly: true,
+		sameSite: 'lax',
+	},
+})
 
 app.register(fastifySwagger, {
 	openapi: {
