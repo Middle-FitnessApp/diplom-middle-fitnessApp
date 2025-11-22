@@ -53,6 +53,6 @@ app.setErrorHandler((error, request, reply) => {
 	return reply.status(500).send(resp)
 })
 
-app.register(authRoutes)
+app.register(authRoutes, { prefix: '/auth' })
 
 export default app

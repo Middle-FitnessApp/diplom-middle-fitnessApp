@@ -72,3 +72,10 @@ export async function loginUser(data: LoginDTO) {
 		},
 	}
 }
+
+// logout
+export async function logoutUser(userId: string) {
+	await prisma.refreshToken.deleteMany({
+		where: { userId },
+	})
+}
