@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Form } from 'antd'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import { ImagePreviewModal, InputPanel, MessageList } from './components'
-import type { MessageType, ChatUploadFile } from '../../../types'
+import type { MessageType, ChatUploadFile } from '../../types'
 
 const initialMessages: MessageType[] = [
 	{ id: 1, text: 'Сообщение клиента', createdAt: '19:30', sender: 'client' },
@@ -11,7 +11,11 @@ const initialMessages: MessageType[] = [
 	{ id: 4, text: 'Сообщение тренера', createdAt: '19:40', sender: 'trainer' },
 ]
 
-export const Trainer: React.FC = () => {
+type ChatProps = {
+	role: 'client' | 'trainer'
+}
+
+export const Chat: React.FC<ChatProps> = ({ role }) => {
 	const [messages, setMessages] = useState<MessageType[]>(initialMessages)
 	const [form] = Form.useForm()
 	const [showEmoji, setShowEmoji] = useState(false)
@@ -75,7 +79,7 @@ export const Trainer: React.FC = () => {
 				id: messages.length + 1,
 				text,
 				createdAt: new Date().toLocaleTimeString().slice(0, 5),
-				sender: 'client',
+				sender: role,
 				imageUrl,
 			},
 		])
@@ -104,7 +108,7 @@ export const Trainer: React.FC = () => {
 				1.04.2024
 			</div>
 
-			<MessageList messages={messages} onPreview={handlePreview} />
+			<MessageList messages={messages} onPreview={handlePreview} role={role} />
 
 			<InputPanel
 				form={form}

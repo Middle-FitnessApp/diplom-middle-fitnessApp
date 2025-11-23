@@ -13,12 +13,12 @@ import {
 import {
 	AddNutritionTrainer,
 	Admin,
-	Chat,
 	ClientProfile,
 	CreateNutritionTrainer,
 	NutritionPlanTrainer,
 	NutritionTrainer,
 } from '../pages/trainer'
+import { ChatWithClient } from '../pages/trainer/'
 
 export const AppRouter = () => {
 	return (
@@ -39,7 +39,7 @@ export const AppRouter = () => {
 
 			{/* Trainer routes */}
 			<Route path='/admin' element={<Admin />} />
-			<Route path='/admin/chat/:id' element={<Chat />} />
+			<Route path='/admin/chat/:id' element={<ChatWithClient />} />
 			<Route path='/admin/client/:id' element={<ClientProfile />} />
 			<Route path='/admin/nutrition' element={<NutritionTrainer />} />
 			<Route
