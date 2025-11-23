@@ -1,6 +1,5 @@
 import { Regex } from 'consts/regex.js'
 import { z } from 'zod'
-import { registerSchemaSwagger } from '../../../swagger/auth/register.schema.js'
 
 // Базовые обязательные поля для обеих ролей
 const baseSchema = z.object({
@@ -48,16 +47,16 @@ const trainerFields = z.object({
 const clientBodySchema = baseSchema.merge(clientFields)
 const trainerBodySchema = baseSchema.merge(trainerFields)
 
-// Zod схемы для валидации (используются в коде)
+// Querystring схема для роли
+export const registerQuerySchema = z.object({
+	role: z.enum(['CLIENT', 'TRAINER']).optional().default('CLIENT'),
+})
+
+// Zod схема для Fastify с type provider
 export const registerSchemaZod = {
-	querystring: z.object({
-		role: z.enum(['CLIENT', 'TRAINER']),
-	}),
+	querystring: registerQuerySchema,
 	body: baseSchema.merge(clientFields).merge(trainerFields),
 }
-
-// Схема для Swagger документации (красивые описания)
-export const registerSchema = registerSchemaSwagger
 
 // Функция для получения правильной схемы в зависимости от роли
 export function getRegisterBodySchema(role: 'CLIENT' | 'TRAINER') {
@@ -65,6 +64,6 @@ export function getRegisterBodySchema(role: 'CLIENT' | 'TRAINER') {
 }
 
 export type RegisterDTO = z.infer<typeof registerSchemaZod.body>
-export type RegisterQuery = z.infer<typeof registerSchemaZod.querystring>
+export type RegisterQuery = z.infer<typeof registerQuerySchema>
 export type ClientRegisterDTO = z.infer<typeof clientBodySchema>
 export type TrainerRegisterDTO = z.infer<typeof trainerBodySchema>
