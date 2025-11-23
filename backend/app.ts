@@ -2,23 +2,22 @@ import Fastify from 'fastify'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
 import fastifyCookie from '@fastify/cookie'
-import {
-	jsonSchemaTransform,
-	serializerCompiler,
-	validatorCompiler,
-	ZodTypeProvider,
-} from 'fastify-type-provider-zod'
 
 import { errorHandler } from 'middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
 
-const app = Fastify()
-
-app.setValidatorCompiler(validatorCompiler)
-app.setSerializerCompiler(serializerCompiler)
-
-app.withTypeProvider<ZodTypeProvider>()
+const app = Fastify({
+	ajv: {
+		customOptions: {
+			removeAdditional: false,
+			useDefaults: true,
+			coerceTypes: true,
+			// Игнорируем неизвестные keywords (OpenAPI расширения)
+			strict: false,
+		},
+	},
+})
 
 errorHandler(app)
 
@@ -32,14 +31,21 @@ app.register(fastifyCookie, {
 })
 
 app.register(fastifySwagger, {
+	mode: 'dynamic',
 	openapi: {
 		info: {
 			title: 'Онлайн фитнес-тренер API',
 			description: 'API для платформы онлайн фитнес-тренера',
 			version: '1.0.0',
 		},
+		servers: [
+			{
+				url: 'http://localhost:3000',
+				description: 'Development server',
+			},
+		],
+		tags: [{ name: 'Auth', description: 'Endpoints для аутентификации и авторизации' }],
 	},
-	transform: jsonSchemaTransform,
 })
 
 // Документация будет доступна по /docs

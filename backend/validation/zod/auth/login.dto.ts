@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import { Regex } from 'consts/regex.js'
+import { loginSchemaSwagger } from '../../../swagger/auth/login.schema.js'
 
-export const loginSchema = {
+// Zod схема для валидации
+export const loginSchemaZod = {
 	body: z.object({
 		emailOrPhone: z
 			.string()
@@ -17,4 +19,7 @@ export const loginSchema = {
 	}),
 }
 
-export type LoginDTO = z.infer<typeof loginSchema.body>
+// Swagger схема для документации
+export const loginSchema = loginSchemaSwagger
+
+export type LoginDTO = z.infer<typeof loginSchemaZod.body>

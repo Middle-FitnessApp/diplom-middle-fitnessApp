@@ -8,7 +8,7 @@ import { RegisterDTO } from 'validation/zod/auth/register.dto.js'
 import { LoginDTO } from 'validation/zod/auth/login.dto.js'
 
 // register
-export async function registerUser(data: RegisterDTO, role: 'CLIENT' | 'TRAINER') {
+export async function registerUser(data: RegisterDTO, role: 'CLIENT' | 'TRAINER', filesMap: Record<string, string>) {
 	const { user, type } = await findUserByEmailOrPhone(data.emailOrPhone)
 
 	if (user) {
@@ -25,6 +25,7 @@ export async function registerUser(data: RegisterDTO, role: 'CLIENT' | 'TRAINER'
 			[type]: emailOrPhone,
 			password: passwordHash,
 			role,
+			...filesMap
 		},
 		select: {
 			id: true,

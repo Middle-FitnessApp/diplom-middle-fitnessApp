@@ -1,6 +1,4 @@
-import {
-	hasZodFastifySchemaValidationErrors,
-} from 'fastify-type-provider-zod'
+import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { ApiError } from '../utils/ApiError.js'
 import type { FastifyInstance } from 'fastify'
 import type { ApiErrorResponse } from '../types/error.js'
