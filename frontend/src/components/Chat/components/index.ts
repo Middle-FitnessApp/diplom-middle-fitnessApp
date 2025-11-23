@@ -1,4 +1,4 @@
-export * from './EmojiPicker'
+export * from './EmojiPickerComponent'
 export * from './ImagePreviewModal'
 export * from './InputPanel'
 export * from './Message'
