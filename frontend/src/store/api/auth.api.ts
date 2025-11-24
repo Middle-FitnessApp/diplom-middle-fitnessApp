@@ -1,100 +1,40 @@
-// store/api/auth.api.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '../types/auth.types';
-
-// Моковые данные пользователей
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: '1',
-    email: 'client@example.com',
-    password: 'password123',
-    name: 'Иван Клиентов',
-    role: 'client',
-    phone: '+79991234567',
-    avatar: '/avatars/client.jpg',
-  },
-  {
-    id: '2', 
-    email: 'trainer@example.com',
-    password: 'password123',
-    name: 'Петр Тренеров',
-    role: 'trainer',
-    phone: '+79991234568',
-    telegram: '@trainer_petr',
-    whatsapp: '+79991234568',
-    avatar: '/avatars/trainer.jpg',
-  },
-  {
-    id: '3',
-    email: 'admin@example.com',
-    password: 'password123',
-    name: 'Админ Админов',
-    role: 'admin',
-    phone: '+79991234569',
-    avatar: '/avatars/admin.jpg',
-  },
-];
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import type { LoginRequest, RegisterRequest, AuthResponse, ApiError } from '../../types/auth.types'
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/auth',
-    fetchFn: async (...args) => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return fetch(...args);
+    baseUrl: 'http://localhost:3000',
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`)
+      }
+      headers.set('Content-Type', 'application/json')
+      return headers
     },
   }),
   tagTypes: ['Auth'],
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
-      query: (credentials) => {
-        const user = mockUsers.find(u => 
-          u.email === credentials.email && u.password === credentials.password
-        );
-        
-        if (!user) {
-          throw new Error('Неверный email или пароль');
-        }
-        
-        const { password, ...userWithoutPassword } = user;
-        return {
-          url: '/login',
-          method: 'POST',
-          body: {
-            user: userWithoutPassword,
-            token: `mock-jwt-token-${user.id}`,
-          },
-        };
-      },
+      query: (credentials) => ({
+        url: '/login',
+        method: 'POST',
+        body: credentials,
+      }),
       invalidatesTags: ['Auth'],
     }),
     
-    register: builder.mutation<AuthResponse, RegisterRequest>({
-      query: (userData) => {
-        const existingUser = mockUsers.find(u => u.email === userData.email);
-        if (existingUser) {
-          throw new Error('Пользователь с таким email уже существует');
-        }
-        
-        const newUser = {
-          id: (mockUsers.length + 1).toString(),
-          ...userData,
-          avatar: '/avatars/default.jpg',
-        };
-        
-        return {
-          url: '/register',
-          method: 'POST',
-          body: {
-            user: newUser,
-            token: `mock-jwt-token-${newUser.id}`,
-          },
-        };
-      },
+    register: builder.mutation<AuthResponse, { data: RegisterRequest; role: 'CLIENT' | 'TRAINER' }>({
+      query: ({ data, role }) => ({
+        url: `/signup?role=${role}`,
+        method: 'POST',
+        body: data,
+      }),
       invalidatesTags: ['Auth'],
     }),
     
-    logout: builder.mutation<void, void>({
+    logout: builder.mutation<{ message: string }, void>({
       query: () => ({
         url: '/logout',
         method: 'POST',
@@ -102,17 +42,18 @@ export const authApi = createApi({
       invalidatesTags: ['Auth'],
     }),
     
-    // Для страницы /me (личный кабинет)
-    getCurrentUser: builder.query<User, void>({
-      query: () => '/me',
-      providesTags: ['Auth'],
+    refresh: builder.mutation<AuthResponse, void>({
+      query: () => ({
+        url: '/refresh',
+        method: 'POST',
+      }),
     }),
   }),
-});
+})
 
-export const { 
-  useLoginMutation, 
-  useRegisterMutation, 
+export const {
+  useLoginMutation,
+  useRegisterMutation,
   useLogoutMutation,
-  useGetCurrentUserQuery 
-} = authApi;
+  useRefreshMutation,
+} = authApi

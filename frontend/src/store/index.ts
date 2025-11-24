@@ -1,13 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/auth.slice';
-import uiReducer from './slices/ui.slice';
-import userReducer from './slices/user.slice';
-import { authApi } from './api/auth.api';
-import { userApi } from './api/user.api';
-import { nutritionApi } from './api/nutrition.api';
-import { progressApi } from './api/progress.api';
-import { trainerApi } from './api/trainer.api';
-import { chatApi } from './api/chat.api';
+import { configureStore } from '@reduxjs/toolkit'
+import authReducer from './slices/auth.slice'
+import uiReducer from './slices/ui.slice'
+import userReducer from './slices/user.slice'
+import { authApi } from './api/auth.api'
+import { userApi } from './api/user.api'
+import { nutritionApi } from './api/nutrition.api'
+import { progressApi } from './api/progress.api'
+import { trainerApi } from './api/trainer.api'
+import { chatApi } from './api/chat.api'
 
 export const store = configureStore({
   reducer: {
@@ -34,7 +34,7 @@ export const store = configureStore({
         trainerApi.middleware,
         chatApi.middleware
       ),
-});
+})
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
