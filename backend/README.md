@@ -17,8 +17,18 @@ DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE_NAME
 #
 # DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/fitnessApp
 
+# Порт для запуска сервера
 PORT=3000
-JWT_ACCESS_SECRET="обратитесь к администратору для получения секрета"
+
+# Секретные ключи для JWT токенов и cookies
+JWT_ACCESS_SECRET="ваш-секретный-ключ-для-jwt"
+COOKIE_SECRET="ваш-секретный-ключ-для-cookies"
+
+# Режим работы сервера
+NODE_ENV="development"
+
+# URL frontend для CORS
+FRONTEND_URL="http://localhost:5173"
 ```
 
 ## Настройка базы данных
