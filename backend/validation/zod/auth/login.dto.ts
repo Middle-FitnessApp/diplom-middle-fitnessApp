@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { Regex } from 'consts/regex.js'
-import { loginSchemaSwagger } from '../../../swagger/auth/login.schema.js'
 
 // Zod схема для валидации
 export const loginSchemaZod = {
@@ -18,8 +17,5 @@ export const loginSchemaZod = {
 			.max(10, 'Максимальная длина пароля — 10 символов'),
 	}),
 }
-
-// Swagger схема для документации
-export const loginSchema = loginSchemaSwagger
 
 export type LoginDTO = z.infer<typeof loginSchemaZod.body>

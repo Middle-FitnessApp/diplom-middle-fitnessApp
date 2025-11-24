@@ -1,4 +1,6 @@
 export interface ApiErrorResponse {
-  error: string
-  statusCode: number
+	error: {
+		message: string
+		statusCode: number
+	}
 }

@@ -1,9 +1,9 @@
 import { prisma } from '../prisma.js'
 import { ApiError } from '../utils/ApiError.js'
-import { RefreshBody } from 'types/auth.js'
+
 import { generateAccessToken, generateRefreshToken } from './token.service.js'
 
-export async function refreshTokenService({ refreshToken }: RefreshBody) {
+export async function refreshTokenService({ refreshToken }: { refreshToken: string }) {
 	const tokenRecord = await prisma.refreshToken.findUnique({
 		where: { token: refreshToken },
 		include: { user: true },
@@ -15,15 +15,14 @@ export async function refreshTokenService({ refreshToken }: RefreshBody) {
 
 	const user = tokenRecord.user
 
+	// удаляем старый refresh token
+	await prisma.refreshToken.delete({
+		where: { token: refreshToken },
+	})
+
 	// генерируем новые токены
 	const accessToken = generateAccessToken(user.id)
 	const newRefreshToken = await generateRefreshToken(user.id)
-
-	// обновляем токен в базе
-	await prisma.refreshToken.update({
-		where: { token: refreshToken },
-		data: { token: newRefreshToken },
-	})
 
 	return {
 		token: {

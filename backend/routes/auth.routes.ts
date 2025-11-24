@@ -1,44 +1,57 @@
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
+import { ZodError } from 'zod'
 
 import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'
 
 import { getRegisterBodySchema } from '../validation/zod/auth/register.dto.js'
 import { loginSchemaZod } from '../validation/zod/auth/login.dto.js'
-import { registerSchemaSwagger } from '../swagger/auth/register.schema.js'
-import { loginSchemaSwagger } from '../swagger/auth/login.schema.js'
 
 import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
 import { CLIENT } from 'consts/role.js'
 import { ApiError } from 'utils/ApiError.js'
 import { removeRefreshCookie, setRefreshCookie } from 'utils/refreshCookie.js'
 import { uploadPhotos } from '../utils/uploadPhotos.js'
-import { authGuard } from 'middleware/auth.js'
+import { authGuard } from 'middleware/authGuard.js'
 
 export default async function authRoutes(app: FastifyInstance) {
 	app.register(multipart)
 
-	app.post('/signup', { schema: registerSchemaSwagger }, async (req, reply) => {
-		try {
-			const { body, files } = await uploadPhotos(req, [
+	app.post('/signup', async (req, reply) => {
+		const query = req.query as { role?: 'CLIENT' | 'TRAINER' }
+		const role = query.role ?? CLIENT
+
+		let body: Record<string, string>
+		let files: Record<string, string> = {}
+
+		// Для клиентов обрабатываем фото, для тренеров - только тело запроса
+		if (role === CLIENT) {
+			const uploadResult = await uploadPhotos(req, [
 				'photoFront',
 				'photoSide',
 				'photoBack',
 			])
-
-			const query = req.query as { role?: 'CLIENT' | 'TRAINER' }
-			const role = query.role ?? CLIENT
-
-			// Валидация тела запроса в зависимости от роли
-			const bodySchema = getRegisterBodySchema(role)
-			const parsed = bodySchema.safeParse(body)
-
-			if (!parsed.success) {
-				return reply.status(400).send({ error: parsed.error.flatten() })
+			body = uploadResult.body
+			files = uploadResult.files
+		} else {
+			// Для тренера получаем body (JSON или multipart без файлов)
+			if (req.isMultipart()) {
+				const uploadResult = await uploadPhotos(req, [])
+				body = uploadResult.body
+			} else {
+				body = req.body as Record<string, string>
 			}
+		}
 
-			const user = await registerUser(parsed.data, role, files)
+		// Валидация тела запроса в зависимости от роли
+		const bodySchema = getRegisterBodySchema(role)
+
+		console.log('body перед валидацией:', body)
+
+		try {
+			const validatedData = bodySchema.parse(body)
+			const user = await registerUser(validatedData, role, files)
 
 			setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
 
@@ -49,14 +62,16 @@ export default async function authRoutes(app: FastifyInstance) {
 				},
 			})
 		} catch (error) {
-			if (error instanceof Error) {
-				return reply.status(400).send({ error: error.message })
+			if (error instanceof ZodError) {
+				// Берём первую ошибку Zod
+				const firstError = error.issues[0]
+				throw ApiError.badRequest(firstError?.message || 'Ошибка валидации')
 			}
 			throw error
 		}
 	})
 
-	app.post('/login', { schema: loginSchemaSwagger }, async (req, reply) => {
+	app.post('/login', async (req, reply) => {
 		const body = req.body
 
 		// Валидация через Zod
