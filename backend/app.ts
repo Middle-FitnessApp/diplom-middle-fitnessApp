@@ -5,7 +5,19 @@ import { errorHandler } from 'middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
 
-const app = Fastify()
+const app = Fastify({
+	ajv: {
+		customOptions: {
+			removeAdditional: false,
+			useDefaults: true,
+			coerceTypes: true,
+			// Игнорируем неизвестные keywords (OpenAPI расширения)
+			strict: false,
+		},
+	},
+})
+
+errorHandler(app)
 
 errorHandler(app)
 
