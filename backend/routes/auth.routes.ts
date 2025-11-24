@@ -1,30 +1,75 @@
 import { FastifyInstance } from 'fastify'
+import multipart from '@fastify/multipart'
 
-import registerSchema from '../schemas/auth/register.schema.js'
-import loginSchema from '../schemas/auth/login.schema.js'
-
-import { RegisterDTO, RoleWithToken, LoginDTO, QuerystringRole } from '../types/auth.js'
 import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'
+
+import { getRegisterBodySchema } from '../validation/zod/auth/register.dto.js'
+import { loginSchemaZod } from '../validation/zod/auth/login.dto.js'
+import { registerSchemaSwagger } from '../swagger/auth/register.schema.js'
+import { loginSchemaSwagger } from '../swagger/auth/login.schema.js'
+
 import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
-import { ApiError } from 'utils/ApiError.js'
-import removeRefreshCookie, { setRefreshCookie } from 'utils/refreshCookie.js'
 import { CLIENT } from 'consts/role.js'
+import { ApiError } from 'utils/ApiError.js'
+import { removeRefreshCookie, setRefreshCookie } from 'utils/refreshCookie.js'
+import { uploadPhotos } from '../utils/uploadPhotos.js'
 import { authGuard } from 'middleware/auth.js'
 
-export default async function authRoutes(fastify: FastifyInstance) {
-	fastify.post<{
-		Body: RegisterDTO
-		Querystring: QuerystringRole
-		Reply: RoleWithToken
-	}>('/signup', { schema: registerSchema }, async (req, reply) => {
-		const role = req.query.role ?? CLIENT
+export default async function authRoutes(app: FastifyInstance) {
+	app.register(multipart)
 
-		const user = await registerUser({ ...req.body, role })
+	app.post('/signup', { schema: registerSchemaSwagger }, async (req, reply) => {
+		try {
+			const { body, files } = await uploadPhotos(req, [
+				'photoFront',
+				'photoSide',
+				'photoBack',
+			])
+
+			const query = req.query as { role?: 'CLIENT' | 'TRAINER' }
+			const role = query.role ?? CLIENT
+
+			// Валидация тела запроса в зависимости от роли
+			const bodySchema = getRegisterBodySchema(role)
+			const parsed = bodySchema.safeParse(body)
+
+			if (!parsed.success) {
+				return reply.status(400).send({ error: parsed.error.flatten() })
+			}
+
+			const user = await registerUser(parsed.data, role, files)
+
+			setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+
+			return reply.status(201).send({
+				user: user.user,
+				token: {
+					accessToken: user.token.accessToken,
+				},
+			})
+		} catch (error) {
+			if (error instanceof Error) {
+				return reply.status(400).send({ error: error.message })
+			}
+			throw error
+		}
+	})
+
+	app.post('/login', { schema: loginSchemaSwagger }, async (req, reply) => {
+		const body = req.body
+
+		// Валидация через Zod
+		const parsed = loginSchemaZod.body.safeParse(body)
+		if (!parsed.success) {
+			return reply.status(400).send({ error: parsed.error.flatten() })
+		}
+
+		const user = await loginUser(parsed.data)
 
 		setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
 
-		return reply.status(201).send({
+		return reply.status(200).send({
 			user: user.user,
 			token: {
 				accessToken: user.token.accessToken,
@@ -32,24 +77,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		})
 	})
 
-	fastify.post<{ Body: LoginDTO; Reply: RoleWithToken }>(
-		'/login',
-		{ schema: loginSchema },
-		async (req, reply) => {
-			const user = await loginUser(req.body)
-
-			setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
-
-			return reply.status(200).send({
-				user: user.user,
-				token: {
-					accessToken: user.token.accessToken,
-				},
-			})
-		},
-	)
-
-	fastify.post<{ Reply: RoleWithToken }>('/refresh', async (req, reply) => {
+	app.post('/refresh', async (req, reply) => {
 		const refreshToken = req.cookies.refreshToken
 
 		if (!refreshToken) {
@@ -68,7 +96,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		})
 	})
 
-	fastify.post('/logout', { preHandler: authGuard }, async (req, reply) => {
+	app.post('/logout', { preHandler: authGuard }, async (req, reply) => {
 		await logoutUser(req.user.id)
 
 		removeRefreshCookie(reply)

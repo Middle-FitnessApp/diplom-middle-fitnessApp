@@ -1,12 +1,14 @@
 import { prisma } from '../prisma.js'
 import { hash, compare } from 'bcryptjs'
 import { ApiError } from '../utils/ApiError.js'
-import { LoginDTO, RegisterDTO } from '../types/auth.js'
+
 import { generateAccessToken, generateRefreshToken } from 'services/token.service.js'
 import { findUserByEmailOrPhone } from 'utils/findUserByContact.js'
+import { RegisterDTO } from 'validation/zod/auth/register.dto.js'
+import { LoginDTO } from 'validation/zod/auth/login.dto.js'
 
 // register
-export async function registerUser(data: RegisterDTO) {
+export async function registerUser(data: RegisterDTO, role: 'CLIENT' | 'TRAINER', filesMap: Record<string, string>) {
 	const { user, type } = await findUserByEmailOrPhone(data.emailOrPhone)
 
 	if (user) {
@@ -22,6 +24,8 @@ export async function registerUser(data: RegisterDTO) {
 			...rest,
 			[type]: emailOrPhone,
 			password: passwordHash,
+			role,
+			...filesMap
 		},
 		select: {
 			id: true,

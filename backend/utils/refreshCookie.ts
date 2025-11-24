@@ -10,7 +10,7 @@ export function setRefreshCookie(reply: FastifyReply, token: string, maxAge: num
 	})
 }
 
-export default function removeRefreshCookie(reply: FastifyReply) {
+export function removeRefreshCookie(reply: FastifyReply) {
 	reply.clearCookie('refreshToken', {
 		path: '/',
 		httpOnly: true,
