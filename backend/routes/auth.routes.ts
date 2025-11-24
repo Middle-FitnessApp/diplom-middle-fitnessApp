@@ -46,6 +46,8 @@ export default async function authRoutes(app: FastifyInstance) {
 			body = req.body as Record<string, string>
 		}
 
+		console.log('body :>> ', body)
+
 		// Валидация тела запроса в зависимости от роли
 		const bodySchema = getRegisterBodySchema(role)
 

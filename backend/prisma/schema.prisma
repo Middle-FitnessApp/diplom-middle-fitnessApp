@@ -26,20 +26,20 @@ model User {
   role      UserRole @default(CLIENT)
 
   // поля client
-  weight       Float?
-  height       Float?
-  waist        Float?
-  chest        Float?
-  hips         Float?
-  arm          Float?
-  leg          Float?
-  goal         String?
-  restrictions String?
-  experience   String?
-  diet         String?
-  photoFront   String?
-  photoSide    String?
-  photoBack    String?
+  weight       Float
+  height       Float
+  waist        Float
+  chest        Float
+  hips         Float
+  arm          Float
+  leg          Float
+  goal         String
+  restrictions String
+  experience   String
+  diet         String
+  photoFront   String
+  photoSide    String
+  photoBack    String
 
   // поля trainer
   telegram  String?
