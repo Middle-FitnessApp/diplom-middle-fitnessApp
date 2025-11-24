@@ -19,8 +19,6 @@ const app = Fastify({
 
 errorHandler(app)
 
-errorHandler(app)
-
 app.register(fastifyCookie, {
 	secret: process.env.COOKIE_SECRET,
 	parseOptions: {

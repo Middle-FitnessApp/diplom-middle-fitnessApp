@@ -1,8 +1,22 @@
 import { ApiError } from '../utils/ApiError.js'
 import type { FastifyInstance, FastifyError } from 'fastify'
+import { ZodError } from 'zod'
 
 export const errorHandler = (app: FastifyInstance) => {
 	app.setErrorHandler((error: FastifyError, request, reply) => {
+		// Обработка ошибок валидации Zod
+		if (error.name === 'ZodError' && 'issues' in error) {
+			const zodError = error as unknown as ZodError
+			const firstError = zodError.issues[0]
+
+			return reply.status(400).send({
+				error: {
+					message: firstError.message,
+					statusCode: 400,
+				},
+			})
+		}
+
 		// Обработка ошибок парсинга JSON
 		if (error.code === 'FST_ERR_CTP_INVALID_JSON_BODY') {
 			return reply.status(400).send({

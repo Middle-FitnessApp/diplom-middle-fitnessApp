@@ -52,8 +52,15 @@ export default async function authRoutes(app: FastifyInstance) {
 		const validatedData = bodySchema.parse(body)
 		const user = await registerUser(validatedData, role, files)
 
-		// Валидация тела запроса в зависимости от роли
-		const bodySchema = getRegisterBodySchema(role)
+		setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+
+		return reply.status(201).send({
+			user: user.user,
+			token: {
+				accessToken: user.token.accessToken,
+			},
+		})
+	})
 
 	app.post('/login', async (req, reply) => {
 		const validatedData = loginSchemaZod.body.parse(req.body)
