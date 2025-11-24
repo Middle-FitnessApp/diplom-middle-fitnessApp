@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
-import { ZodError } from 'zod'
 
 import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'
@@ -45,8 +44,6 @@ export default async function authRoutes(app: FastifyInstance) {
 			// Для тренера всегда JSON
 			body = req.body as Record<string, string>
 		}
-
-		console.log('body :>> ', body)
 
 		// Валидация тела запроса в зависимости от роли
 		const bodySchema = getRegisterBodySchema(role)
