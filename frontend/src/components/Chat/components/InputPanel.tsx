@@ -2,8 +2,8 @@ import React from 'react'
 import { Form, Input, Button, Tooltip, Upload } from 'antd'
 import { SmileOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
-import { EmojiPicker } from './EmojiPicker'
-import type { ChatUploadFile } from '../../../../types'
+import { EmojiPickerComponent } from './EmojiPickerComponent'
+import type { ChatUploadFile } from '../../../types'
 
 type InputPanelProps = {
 	form: ReturnType<typeof Form.useForm>[0]
@@ -72,7 +72,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 					/>
 				</Upload>
 			</Tooltip>
-			<Tooltip title='Смайлик'>
+			<Tooltip>
 				<Button
 					icon={<SmileOutlined />}
 					type='text'
@@ -90,7 +90,21 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 				/>
 			</Tooltip>
 
-			{showEmoji && <EmojiPicker onSelect={onEmojiSelect} onClose={onShowEmojiToggle} />}
+			{showEmoji && (
+				<div
+					style={{
+						position: 'absolute',
+						bottom: '82px',
+						left: '0',
+						zIndex: 1000,
+						boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+						background: 'white',
+						borderRadius: '8px',
+					}}
+				>
+					<EmojiPickerComponent onSelect={onEmojiSelect} onClose={onShowEmojiToggle} />
+				</div>
+			)}
 
 			<Form.Item name='text' style={{ flex: 1, marginBottom: 0 }}>
 				<Input

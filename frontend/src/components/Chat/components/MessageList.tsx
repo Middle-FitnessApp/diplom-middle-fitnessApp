@@ -1,13 +1,18 @@
 import React, { useEffect, useRef } from 'react'
-import type { MessageType } from '../../../../types'
-import { Message } from './'
+import type { MessageType } from '../../../types'
+import { Message } from '.'
 
 type MessageListProps = {
 	messages: MessageType[]
 	onPreview: (url: string) => void
+	role: 'client' | 'trainer'
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, onPreview }) => {
+export const MessageList: React.FC<MessageListProps> = ({
+	messages,
+	onPreview,
+	role,
+}) => {
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -28,7 +33,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, onPreview })
 			}}
 		>
 			{messages.map((msg) => (
-				<Message key={msg.id} msg={msg} onPreview={onPreview} />
+				<Message key={msg.id} msg={msg} onPreview={onPreview} role={role} />
 			))}
 			<div ref={messagesEndRef} />
 		</div>

@@ -1,24 +1,18 @@
 import React from 'react'
 import clsx from 'clsx'
-
-export type MessageType = {
-	id: number
-	text: string
-	createdAt: string
-	sender: 'client' | 'trainer'
-	imageUrl?: string
-}
+import type { MessageType } from '../../../types'
 
 type MessageProps = {
 	msg: MessageType
 	onPreview: (url: string) => void
+	role: 'client' | 'trainer'
 }
 
-export const Message: React.FC<MessageProps> = ({ msg, onPreview }) => (
+export const Message: React.FC<MessageProps> = ({ msg, onPreview, role }) => (
 	<div
 		className={clsx(
 			'w-fit min-w-[120px] max-w-[65%] px-4 py-3',
-			msg.sender === 'client' ? 'ml-auto' : 'mr-auto',
+			msg.sender === role ? 'ml-auto' : 'mr-auto',
 		)}
 		style={{
 			borderRadius: 15,
@@ -41,11 +35,11 @@ export const Message: React.FC<MessageProps> = ({ msg, onPreview }) => (
 		>
 			{msg.createdAt}
 		</div>
-		<div style={{ marginTop: 18 }}>{msg.text}</div>
-		{msg.imageUrl && (
+		<div style={{ marginTop: 18 }}>{msg?.text}</div>
+		{msg?.imageUrl && (
 			<div style={{ marginTop: 10 }}>
 				<img
-					src={msg.imageUrl}
+					src={msg?.imageUrl}
 					alt='attachment'
 					style={{
 						width: 120,
