@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
-import { ZodError } from 'zod'
 
 import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
 import { refreshTokenService } from 'services/refreshToken.service.js'

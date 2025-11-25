@@ -69,18 +69,10 @@ export const registerQuerySchema = z.object({
 	role: z.enum(['CLIENT', 'TRAINER']).optional().default('CLIENT'),
 })
 
-// Zod схема для Fastify с type provider
-export const registerSchemaZod = {
-	querystring: registerQuerySchema,
-	body: baseSchema.merge(clientFields).merge(trainerFields),
-}
-
 // Функция для получения правильной схемы в зависимости от роли
 export function getRegisterBodySchema(role: 'CLIENT' | 'TRAINER') {
 	return role === 'CLIENT' ? clientBodySchema : trainerBodySchema
 }
 
-export type RegisterDTO = z.infer<typeof registerSchemaZod.body>
-export type RegisterQuery = z.infer<typeof registerQuerySchema>
 export type ClientRegisterDTO = z.infer<typeof clientBodySchema>
 export type TrainerRegisterDTO = z.infer<typeof trainerBodySchema>
