@@ -1,6 +1,5 @@
 import { getUser } from 'controllers/user.js'
 import { FastifyInstance } from 'fastify'
-import jwt from 'jsonwebtoken'
 
 import { authGuard } from 'middleware/authGuard.js'
 import { hasRole } from 'middleware/hasRole.js'

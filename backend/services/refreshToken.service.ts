@@ -21,13 +21,13 @@ export async function refreshTokenService({ refreshToken }: { refreshToken: stri
 	})
 
 	// генерируем новые токены
-	const accessToken = generateAccessToken(user.id)
-	const newRefreshToken = await generateRefreshToken(user.id)
+	const refreshTokenData = await generateRefreshToken(user.id)
+	const accessToken = generateAccessToken(user.id, refreshTokenData.id)
 
 	return {
 		token: {
 			accessToken,
-			refreshToken: newRefreshToken,
+			refreshToken: refreshTokenData.token,
 		},
 		user: {
 			role: user.role,

@@ -41,8 +41,8 @@ export async function registerUser(
 		},
 	})
 
-	const accessToken = generateAccessToken(createdUser.id)
-	const refreshToken = await generateRefreshToken(createdUser.id)
+	const refreshTokenData = await generateRefreshToken(createdUser.id)
+	const accessToken = generateAccessToken(createdUser.id, refreshTokenData.id)
 
 	return {
 		user: {
@@ -50,7 +50,7 @@ export async function registerUser(
 		},
 		token: {
 			accessToken,
-			refreshToken,
+			refreshToken: refreshTokenData.token,
 		},
 	}
 }
@@ -71,8 +71,13 @@ export async function loginUser(data: LoginDTO) {
 		throw ApiError.unauthorized('Неверный Email/телефон или пароль')
 	}
 
-	const accessToken = generateAccessToken(user.id)
-	const refreshToken = await generateRefreshToken(user.id)
+	// Удаляем все старые refresh токены пользователя
+	await prisma.refreshToken.deleteMany({
+		where: { userId: user.id },
+	})
+
+	const refreshTokenData = await generateRefreshToken(user.id)
+	const accessToken = generateAccessToken(user.id, refreshTokenData.id)
 
 	return {
 		user: {
@@ -80,7 +85,7 @@ export async function loginUser(data: LoginDTO) {
 		},
 		token: {
 			accessToken,
-			refreshToken,
+			refreshToken: refreshTokenData.token,
 		},
 	}
 }
