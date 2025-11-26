@@ -1,0 +1,388 @@
+@import 'tailwindcss';
+
+:root {
+	--bg-dark: oklch(25% 0.02 260);
+	--bg: oklch(98% 0.005 260);
+	--bg-light: oklch(100% 0 0);
+	--text: oklch(25% 0.01 260);
+	--text-muted: oklch(45% 0.005 260);
+	--highlight: oklch(100% 0 0);
+	--border: oklch(85% 0.01 260);
+	--border-muted: oklch(90% 0.005 260);
+	--primary: oklch(60% 0.18 230);
+	--secondary: oklch(70% 0.15 200);
+	--accent: oklch(65% 0.15 270);
+	--info: oklch(65% 0.15 210);
+	--success: oklch(65% 0.18 145);
+	--warning: oklch(75% 0.18 85);
+	--danger: oklch(65% 0.2 25);
+	--gradient-start: oklch(70% 0.15 230);
+	--gradient-end: oklch(65% 0.15 270);
+}
+
+/* === ОСНОВНЫЕ СТИЛИ === */
+body {
+	margin: 0;
+	background-color: var(--bg);
+	color: var(--text);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+a:hover {
+	color: inherit;
+}
+
+/* === КОМПОНЕНТЫ СТРАНИЦ === */
+.gradient-bg {
+	background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+	background-attachment: fixed;
+	min-height: 100vh;
+}
+
+.page-container {
+	min-height: calc(100vh - 4rem);
+	padding: 40px 20px;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+.page-card {
+	background: var(--bg-light);
+	border-radius: 20px;
+	padding: 40px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--border);
+	width: 100%;
+	max-width: 1200px;
+}
+
+.card-hover {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.card-hover:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.section-title {
+	color: var(--text);
+	font-weight: 600;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 3px solid var(--primary);
+	display: inline-block;
+}
+
+/* === ФОРМЫ И ИНПУТЫ === */
+.ant-form {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+}
+
+.auth-container {
+	min-height: calc(100vh - 4rem);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.auth-card {
+	background: var(--bg-light);
+	border-radius: 20px;
+	padding: 40px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--border);
+	max-width: 480px;
+	width: 100%;
+}
+
+.form-section {
+	margin-bottom: 32px;
+}
+
+.photo-upload-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.upload-area {
+	border: 2px dashed var(--border);
+	border-radius: 12px;
+	padding: 20px;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	background: var(--bg);
+}
+
+.upload-area:hover {
+	border-color: var(--primary);
+	background: var(--bg-light);
+}
+
+.upload-preview {
+	width: 100%;
+	height: 120px;
+	object-fit: cover;
+	border-radius: 8px;
+	margin-top: 8px;
+}
+
+/* === ANT DESIGN КОМПОНЕНТЫ === */
+.ant-layout-header,
+.ant-card-head,
+.ant-modal-header,
+.ant-drawer-header {
+	background-color: var(--bg-light) !important;
+}
+
+.ant-form-item-label > label {
+	color: var(--text) !important;
+}
+
+.ant-btn {
+	border-radius: 8px !important;
+	background: var(--bg-light);
+	color: var(--text);
+	border-color: var(--border);
+}
+
+.ant-btn:hover,
+.ant-btn:focus {
+	color: var(--info);
+	border-color: var(--info);
+}
+
+.ant-btn-primary {
+	background: var(--primary) !important;
+	color: var(--highlight) !important;
+	border-color: var(--primary) !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+	background: var(--info) !important;
+	color: var(--highlight) !important;
+	border-color: var(--info) !important;
+}
+
+.ant-input,
+.ant-input-number .ant-input-number-input,
+.ant-picker,
+.ant-select .ant-select-selector {
+	border-radius: 8px !important;
+	background: var(--bg-light) !important;
+	color: var(--text) !important;
+}
+
+.ant-form-item-explain-error {
+	color: var(--danger) !important;
+}
+
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-number,
+.ant-form-item-has-error .ant-picker,
+.ant-form-item-has-error .ant-select .ant-select-selector {
+	border-color: var(--danger) !important;
+}
+
+/* === SELECT И DROPDOWN === */
+.ant-select-dropdown {
+	background: var(--bg-light) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: 12px !important;
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ant-select-item {
+	background: var(--bg-light) !important;
+	color: var(--text) !important;
+	border-radius: 6px !important;
+	margin: 2px 8px !important;
+	transition: all 0.2s ease !important;
+}
+
+.ant-select-item:hover,
+.ant-select-item-option-selected,
+.ant-select-item-option-active {
+	background: var(--primary) !important;
+	color: var(--highlight) !important;
+}
+
+/* === DATEPICKER === */
+.ant-picker-dropdown {
+	background: var(--bg-light) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: 12px !important;
+}
+
+.ant-picker-cell-selected .ant-picker-cell-inner {
+	background: var(--primary) !important;
+	color: var(--highlight) !important;
+}
+
+/* === УТИЛИТЫ === */
+.text-muted {
+	color: var(--text-muted);
+}
+
+.background-light {
+	background-color: var(--bg-light);
+}
+
+.border-muted {
+	border-color: var(--border-muted);
+}
+
+.report-card {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	transition: all 0.3s ease;
+	cursor: pointer;
+}
+
+.report-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+	border-color: var(--primary);
+}
+
+.filter-tabs {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 32px;
+	justify-content: center;
+}
+
+.filter-tab {
+	padding: 12px 24px;
+	border: 2px solid transparent;
+	border-radius: 8px;
+	background: var(--bg);
+	color: var(--text);
+	cursor: pointer;
+	transition: all 0.3s ease;
+	font-weight: 500;
+}
+
+.filter-tab.active {
+	background: var(--primary);
+	color: var(--highlight);
+	border-color: var(--primary);
+}
+
+.filter-tab:hover:not(.active) {
+	border-color: var(--primary);
+	color: var(--primary);
+}
+
+.admin-layout {
+	min-height: 100vh;
+}
+
+.admin-sidebar {
+	background: var(--bg-light) !important;
+	border-right: 1px solid var(--border) !important;
+	box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-content {
+	background: transparent !important;
+	padding: 0 !important;
+}
+/* Добавьте это в конец вашего CSS файла */
+
+/* Стили для Nutrition страницы */
+.nutrition-category-wrapper {
+  min-height: 120px; /* Минимальная высота для закрытой карточки */
+}
+
+.nutrition-category-card {
+  height: auto;
+  min-height: 120px;
+  transition: all 0.3s ease;
+  margin-bottom: 0;
+}
+
+.nutrition-category-card.expanded {
+  min-height: 300px; /* Минимальная высота для открытой карточки */
+}
+
+/* Убираем стандартные отступы Ant Design Card */
+.nutrition-category-card .ant-card-body {
+  padding: 16px !important;
+}
+
+/* Фиксируем высоту заголовка карточки */
+.nutrition-category-card .ant-card-meta {
+  min-height: 60px;
+}
+
+/* Стили для содержимого когда карточка открыта */
+.nutrition-category-card.expanded .ant-card-meta-description {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Убираем стандартный ховер Ant Design */
+.nutrition-category-card.ant-card-hoverable:hover {
+  transform: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.nutrition-category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Исправляем grid layout */
+.grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.gap-6 {
+  grid-auto-rows: minmax(120px, auto);
+  align-items: start;
+}
+
+/* Специальные стили для страницы Admin */
+.admin-page-card {
+  background: var(--bg-light);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Убираем ограничение максимальной ширины только для админской страницы */
+.admin-layout .admin-page-card {
+  max-width: none;
+}
+
+/* Фиксируем высоту и убираем общую прокрутку */
+.admin-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.admin-content {
+  height: 100%;
+  overflow: auto;
+}

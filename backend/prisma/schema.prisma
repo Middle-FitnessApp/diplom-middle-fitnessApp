@@ -7,11 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+enum UserRole {
+  CLIENT
+  TRAINER
+}
+
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  age          Int?
+  // общие поля
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  password  String
+  photo     String?  @default("/uploads/default/user.png")
+  age       Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  role      UserRole @default(CLIENT)
+
+  // поля client
   weight       Float?
   height       Float?
   waist        Float?
@@ -26,6 +41,21 @@ model User {
   photoFront   String?
   photoSide    String?
   photoBack    String?
-  password     String
-  createdAt    DateTime @default(now())
+
+  // поля trainer
+  telegram  String?
+  whatsapp  String?
+  instagram String?
+  bio       String?
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }

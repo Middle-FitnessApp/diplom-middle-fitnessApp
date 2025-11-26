@@ -1,42 +1,104 @@
 import { FastifyInstance } from 'fastify'
-import { prisma } from '../prisma.js'
-import { hash } from 'bcryptjs'
+import multipart from '@fastify/multipart'
 
-import registerSchema from '../schemas/auth/register.schema.js'
+import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
+import { refreshTokenService } from 'services/refreshToken.service.js'
 
-import { RegisterDTO, PublicUser } from '../types/auth.js'
-import { ApiError } from '../utils/ApiError.js'
+import { getRegisterBodySchema } from '../validation/zod/auth/register.dto.js'
+import { loginSchemaZod } from '../validation/zod/auth/login.dto.js'
 
-export default async function authRoutes(fastify: FastifyInstance) {
-	fastify.post<{ Body: RegisterDTO; Reply: PublicUser }>(
-		'/signup',
-		{ schema: registerSchema },
-		async (req, reply) => {
-			const data = req.body as RegisterDTO
+import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
+import { CLIENT } from 'consts/role.js'
+import { ApiError } from 'utils/ApiError.js'
+import { removeRefreshCookie, setRefreshCookie } from 'utils/refreshCookie.js'
+import { uploadPhotos } from '../utils/uploadPhotos.js'
+import { authGuard } from 'middleware/authGuard.js'
 
-			const exists = await prisma.user.findUnique({
-				where: { email: data.email },
-			})
+export default async function authRoutes(app: FastifyInstance) {
+	app.register(multipart)
 
-			if (exists) {
-				throw ApiError.badRequest('Email уже занят')
+	app.post('/signup', async (req, reply) => {
+		const query = req.query as { role?: 'CLIENT' | 'TRAINER' }
+		const role = query.role ?? CLIENT
+
+		let body: Record<string, string>
+		let files: Record<string, string> = {}
+
+		// Для клиентов обрабатываем фото, для тренеров - только тело запроса
+		if (role === CLIENT) {
+			const uploadResult = await uploadPhotos(req, [
+				'photoFront',
+				'photoSide',
+				'photoBack',
+			])
+			body = uploadResult.body
+			files = uploadResult.files
+
+			// Проверка обязательных фотографий для клиента
+			if (!files.photoFront || !files.photoSide || !files.photoBack) {
+				throw ApiError.badRequest(
+					'Необходимо загрузить все три фотографии (спереди, сбоку, сзади)',
+				)
 			}
+		} else {
+			// Для тренера всегда JSON
+			body = req.body as Record<string, string>
+		}
 
-			const passwordHash = await hash(data.password, 10)
+		// Валидация тела запроса в зависимости от роли
+		const bodySchema = getRegisterBodySchema(role)
 
-			const user = await prisma.user.create({
-				data: {
-					...data,
-					password: passwordHash,
-				},
-				select: {
-					id: true,
-					name: true,
-					email: true,
-				},
-			})
+		const validatedData = bodySchema.parse(body)
+		const user = await registerUser(validatedData, role, files)
 
-			return reply.status(201).send(user)
-		},
-	)
+		setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+
+		return reply.status(201).send({
+			user: user.user,
+			token: {
+				accessToken: user.token.accessToken,
+			},
+		})
+	})
+
+	app.post('/login', async (req, reply) => {
+		const validatedData = loginSchemaZod.body.parse(req.body)
+		const user = await loginUser(validatedData)
+
+		setRefreshCookie(reply, user.token.refreshToken, MAX_AGE_30_DAYS)
+
+		return reply.status(200).send({
+			user: user.user,
+			token: {
+				accessToken: user.token.accessToken,
+			},
+		})
+	})
+
+	app.post('/refresh', async (req, reply) => {
+		const refreshToken = req.cookies.refreshToken
+
+		if (!refreshToken) {
+			throw ApiError.unauthorized('Refresh token отсутствует')
+		}
+
+		const result = await refreshTokenService({ refreshToken })
+
+		setRefreshCookie(reply, result.token.refreshToken, MAX_AGE_30_DAYS)
+
+		return reply.status(200).send({
+			user: result.user,
+			token: {
+				accessToken: result.token.accessToken,
+			},
+		})
+	})
+
+	app.post('/logout', { preHandler: authGuard }, async (req, reply) => {
+		await logoutUser(req.user.id)
+
+		removeRefreshCookie(reply)
+
+		return reply.status(200).send({ message: 'Вы успешно вышли из аккаунта' })
+	})
 }

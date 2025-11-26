@@ -1,7 +1,11 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import 'fastify'
+import type { UserRole } from '@prisma/client'
 
-export type FastifyContext = {
-  fastify: FastifyInstance
-  req: FastifyRequest
-  reply: FastifyReply
+declare module 'fastify' {
+	interface FastifyRequest {
+		user: {
+			id: string
+			role: UserRole
+		}
+	}
 }

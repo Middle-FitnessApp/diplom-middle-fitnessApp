@@ -1,48 +1,35 @@
 import Fastify from 'fastify'
-import fastifySwagger from '@fastify/swagger'
-import fastifySwaggerUi from '@fastify/swagger-ui'
+import fastifyCookie from '@fastify/cookie'
+import fastifyCors from '@fastify/cors'
 
-import { ApiError } from './utils/ApiError.js'
-import type { ApiErrorResponse } from './types/error.js'
+import { errorHandler } from 'middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
+import userRoutes from 'routes/user.routers.js'
 
 const app = Fastify()
 
-app.register(fastifySwagger, {
-	openapi: {
-		info: {
-			title: 'Онлайн фитнес-тренер API',
-			description: 'API для платформы онлайн фитнес-тренера',
-			version: '1.0.0',
-		},
+errorHandler(app)
+
+app.register(fastifyCors, {
+	origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization'],
+})
+
+app.register(fastifyCookie, {
+	secret: process.env.COOKIE_SECRET,
+	parseOptions: {
+		// secure: process.env.NODE_ENV === 'production',
+		httpOnly: true,
+		sameSite: 'lax',
 	},
 })
 
-// Документация будет доступна по /docs
-app.register(fastifySwaggerUi, {
-	routePrefix: '/docs',
-})
-
-app.setErrorHandler((error, request, reply) => {
-	if (error instanceof ApiError) {
-		const resp: ApiErrorResponse = {
-			error: error.message,
-			statusCode: error.statusCode,
-		}
-
-		return reply.status(error.statusCode).send(resp)
-	}
-
-	const resp: ApiErrorResponse = {
-		error: 'Внутренняя ошибка сервера',
-		statusCode: 500,
-	}
-
-	console.error(error)
-	return reply.status(500).send(resp)
-})
-
-app.register(authRoutes)
+app.register(async (instance) => {
+  instance.register(authRoutes, { prefix: '/auth' })
+  instance.register(userRoutes, { prefix: '/user' })
+}, { prefix: '/api' })
 
 export default app
