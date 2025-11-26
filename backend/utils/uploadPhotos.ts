@@ -1,6 +1,7 @@
 import { FastifyRequest } from 'fastify'
 import fs from 'fs'
 import path from 'path'
+import { ApiError } from './ApiError.js'
 
 const __dirname = path.resolve()
 const UPLOAD_DIR = path.join(__dirname, './uploads/photos')
@@ -29,7 +30,7 @@ export async function uploadPhotos(
 	maxFileSize: number = MAX_FILE_SIZE,
 ): Promise<UploadResult> {
 	if (!req.isMultipart()) {
-		throw new Error('Ожидается multipart/form-data')
+		throw ApiError.badRequest('Ожидается multipart/form-data')
 	}
 
 	const body: Record<string, string> = {}
@@ -44,13 +45,18 @@ export async function uploadPhotos(
 			for await (const chunk of part.file) {
 				totalSize += chunk.length
 				if (totalSize > maxFileSize) {
-					throw new Error(
+					throw ApiError.badRequest(
 						`Файл "${part.fieldname}" слишком большой. Максимальный размер ${
 							maxFileSize / 1024
 						}КБ`,
 					)
 				}
 				chunks.push(chunk)
+			}
+
+			// Пропускаем пустые файлы
+			if (totalSize === 0) {
+				continue
 			}
 
 			// Сохранение файла

@@ -9,12 +9,26 @@ export const errorHandler = (app: FastifyInstance) => {
 			const zodError = error as unknown as ZodError
 			const firstError = zodError.issues[0]
 
-			return reply.status(400).send({
-				error: {
-					message: firstError.message,
-					statusCode: 400,
-				},
-			})
+			// Специальная обработка для unrecognized_keys
+			if (firstError.code === 'unrecognized_keys') {
+				const keys = (firstError as any).keys?.join(', ')
+				return reply.status(400).send({
+					error: {
+						message: `Недопустимые поля: ${keys}`,
+						statusCode: 400,
+					},
+				})
+			}
+
+			// Обработка пустого запроса
+			if (firstError.code === 'invalid_type') {
+				return reply.status(400).send({
+					error: {
+						message: 'Тело запроса не может быть пустым',
+						statusCode: 400,
+					},
+				})
+			}
 		}
 
 		// Обработка ошибок парсинга JSON
