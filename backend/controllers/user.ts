@@ -13,7 +13,7 @@ import {
 	ClientUpdateProfileDTO,
 	TrainerUpdateProfileDTO,
 } from 'validation/zod/user/update-profile.dto.js'
-import { ALL_ROLES, CLIENT, TRAINER } from 'consts/role.js'
+import { CLIENT, TRAINER } from 'consts/role.js'
 import { deletePhoto } from 'utils/uploadPhotos.js'
 
 // register
@@ -138,7 +138,8 @@ export async function getUser(userId: string) {
 	const base = {
 		id: user.id,
 		name: user.name,
-		contact: user.email ?? user.phone,
+		email: user.email,
+		phone: user.phone,
 		age: user.age,
 		role: user.role,
 		photo: user.photo,
@@ -163,10 +164,10 @@ export async function getUser(userId: string) {
 	return base
 }
 
-// edit profile
-export async function editProfile(
+// edit client profile
+export async function editClientProfile(
 	userId: string,
-	data: ClientUpdateProfileDTO | TrainerUpdateProfileDTO,
+	data: ClientUpdateProfileDTO,
 	filesMap?: Record<string, string>,
 ) {
 	const user = await prisma.user.findUnique({
@@ -201,34 +202,10 @@ export async function editProfile(
 		}
 	}
 
-	// Определяем разрешенные поля в зависимости от роли
-	const allowedFields =
-		user.role === TRAINER
-			? [
-					'name',
-					'age',
-					'email',
-					'phone',
-					'photo',
-					'bio',
-					'telegram',
-					'whatsapp',
-					'instagram',
-			  ]
-			: ['name', 'age', 'email', 'phone', 'photo']
-
-	// Фильтруем данные - оставляем только разрешенные поля
-	const filteredData: Record<string, any> = {}
-	for (const key of Object.keys(data)) {
-		if (allowedFields.includes(key)) {
-			filteredData[key] = data[key as keyof typeof data]
-		}
-	}
-
 	// Добавляем файлы, если они были загружены
-	const updateData = filesMap ? { ...filteredData, ...filesMap } : filteredData
+	const updateData = filesMap ? { ...data, ...filesMap } : data
 
-	// Обновляем профиль
+	// Обновляем профиль клиента
 	const updatedUser = await prisma.user.update({
 		where: { id: userId },
 		data: updateData,
@@ -242,7 +219,67 @@ export async function editProfile(
 			photo: true,
 			createdAt: true,
 			updatedAt: true,
-			// Поля тренера
+		},
+	})
+
+	return updatedUser
+}
+
+// edit trainer profile
+export async function editTrainerProfile(
+	userId: string,
+	data: TrainerUpdateProfileDTO,
+	filesMap?: Record<string, string>,
+) {
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { role: true, email: true, phone: true, photo: true },
+	})
+
+	if (!user) throw ApiError.notFound('Пользователь не найден')
+
+	// Если загружается новое фото, удаляем старое
+	if (filesMap?.photo && user.photo && user.photo !== '/uploads/default/user.png') {
+		deletePhoto(user.photo)
+	}
+
+	// Проверяем уникальность email, если он меняется
+	if (data.email && data.email !== user.email) {
+		const existingUser = await prisma.user.findUnique({
+			where: { email: data.email },
+		})
+		if (existingUser) {
+			throw ApiError.badRequest('Пользователь с таким email уже существует')
+		}
+	}
+
+	// Проверяем уникальность phone, если он меняется
+	if (data.phone && data.phone !== user.phone) {
+		const existingUser = await prisma.user.findUnique({
+			where: { phone: data.phone },
+		})
+		if (existingUser) {
+			throw ApiError.badRequest('Пользователь с таким телефоном уже существует')
+		}
+	}
+
+	// Добавляем файлы, если они были загружены
+	const updateData = filesMap ? { ...data, ...filesMap } : data
+
+	// Обновляем профиль тренера
+	const updatedUser = await prisma.user.update({
+		where: { id: userId },
+		data: updateData,
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			phone: true,
+			age: true,
+			role: true,
+			photo: true,
+			createdAt: true,
+			updatedAt: true,
 			bio: true,
 			telegram: true,
 			whatsapp: true,
@@ -250,28 +287,5 @@ export async function editProfile(
 		},
 	})
 
-	// Формируем ответ в зависимости от роли
-	const base = {
-		id: updatedUser.id,
-		name: updatedUser.name,
-		email: updatedUser.email,
-		phone: updatedUser.phone,
-		age: updatedUser.age,
-		role: updatedUser.role,
-		photo: updatedUser.photo,
-		createdAt: updatedUser.createdAt,
-		updatedAt: updatedUser.updatedAt,
-	}
-
-	if (user.role === TRAINER) {
-		return {
-			...base,
-			bio: updatedUser.bio,
-			telegram: updatedUser.telegram,
-			whatsapp: updatedUser.whatsapp,
-			instagram: updatedUser.instagram,
-		}
-	}
-
-	return base
+	return updatedUser
 }

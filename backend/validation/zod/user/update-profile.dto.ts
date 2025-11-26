@@ -37,24 +37,25 @@ const trainerFields = {
 }
 
 // Схема для обновления профиля клиента
-const ClientUpdateProfileSchema = z
+export const ClientUpdateProfileSchema = z
 	.object({
 		...commonFields,
 	})
 	.strict()
+	.refine((data) => Object.keys(data).length > 0, {
+		message: 'Тело запроса не может быть пустым',
+	})
 
 // Схема для обновления профиля тренера
-const TrainerUpdateProfileSchema = z
+export const TrainerUpdateProfileSchema = z
 	.object({
 		...commonFields,
 		...trainerFields,
 	})
 	.strict()
-
-// Функция для получения правильной схемы в зависимости от роли
-export function getUpdateProfileSchema(role: UserRole) {
-	return role === CLIENT ? ClientUpdateProfileSchema : TrainerUpdateProfileSchema
-}
+	.refine((data) => Object.keys(data).length > 0, {
+		message: 'Тело запроса не может быть пустым',
+	})
 
 export type ClientUpdateProfileDTO = z.infer<typeof ClientUpdateProfileSchema>
 export type TrainerUpdateProfileDTO = z.infer<typeof TrainerUpdateProfileSchema>
