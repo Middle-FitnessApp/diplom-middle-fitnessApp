@@ -5,8 +5,8 @@ import { ZodError } from 'zod'
 export const errorHandler = (app: FastifyInstance) => {
 	app.setErrorHandler((error: FastifyError, request, reply) => {
 		// Обработка ошибок валидации Zod
-		if (error.name === 'ZodError' && 'issues' in error) {
-			const zodError = error as unknown as ZodError
+		if (error instanceof ZodError || (error.name === 'ZodError' && 'issues' in error)) {
+			const zodError = error instanceof ZodError ? error : (error as unknown as ZodError)
 			const firstError = zodError.issues[0]
 
 			// Специальная обработка для unrecognized_keys
@@ -21,7 +21,10 @@ export const errorHandler = (app: FastifyInstance) => {
 			}
 
 			// Обработка пустого запроса
-			if (firstError.code === 'invalid_type') {
+			if (
+				firstError.code === 'invalid_type' &&
+				(firstError as any).received === 'undefined'
+			) {
 				return reply.status(400).send({
 					error: {
 						message: 'Тело запроса не может быть пустым',
@@ -29,6 +32,14 @@ export const errorHandler = (app: FastifyInstance) => {
 					},
 				})
 			}
+
+			// Обработка других ошибок валидации
+			return reply.status(400).send({
+				error: {
+					message: firstError.message,
+					statusCode: 400,
+				},
+			})
 		}
 
 		// Обработка ошибок парсинга JSON
