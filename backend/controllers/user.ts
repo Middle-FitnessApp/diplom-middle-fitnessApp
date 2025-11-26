@@ -32,9 +32,61 @@ export async function registerUser(
 
 	const { emailOrPhone, ...rest } = data
 
+	let userProfileData: any = { ...rest }
+
+	// Если клиент - извлекаем измерения для Progress
+	if (role === CLIENT) {
+		const { weight, height, waist, chest, hips, arm, leg, ...clientProfile } =
+			data as ClientRegisterDTO
+		userProfileData = clientProfile
+
+		// Создаем пользователя без измерений
+		const createdUser = await prisma.user.create({
+			data: {
+				...clientProfile,
+				[type]: emailOrPhone,
+				password: passwordHash,
+				role,
+				...filesMap,
+			},
+			select: {
+				id: true,
+				role: true,
+			},
+		})
+
+		// Создаем первый Progress с измерениями
+		await prisma.progress.create({
+			data: {
+				userId: createdUser.id,
+				weight,
+				waist,
+				hips,
+				height,
+				chest,
+				arm,
+				leg,
+			},
+		})
+
+		const refreshTokenData = await generateRefreshToken(createdUser.id)
+		const accessToken = generateAccessToken(createdUser.id, refreshTokenData.id)
+
+		return {
+			user: {
+				role: createdUser.role,
+			},
+			token: {
+				accessToken,
+				refreshToken: refreshTokenData.token,
+			},
+		}
+	}
+
+	// Создаем тренера (без измерений и Progress)
 	const createdUser = await prisma.user.create({
 		data: {
-			...rest,
+			...userProfileData,
 			[type]: emailOrPhone,
 			password: passwordHash,
 			role,

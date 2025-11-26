@@ -19,22 +19,101 @@ async function main() {
 			password: passwordHash,
 			age: 25,
 			role: 'CLIENT',
-			weight: 75.5,
-			height: 180,
-			waist: 85,
-			chest: 95,
-			hips: 90,
-			arm: 35,
-			leg: 55,
 			goal: 'Набрать мышечную массу',
 			restrictions: 'Нет противопоказаний',
 			experience: 'Занимался год в зале',
 			diet: 'Обычное питание',
-			photoFront: '/uploads/photos/client1-front.jpg',
-			photoSide: '/uploads/photos/client1-side.jpg',
-			photoBack: '/uploads/photos/client1-back.jpg',
+			photoFront: '/uploads/default/body-fitness.jpg',
+			photoSide: '/uploads/default/body-fitness.jpg',
+			photoBack: '/uploads/default/body-fitness.jpg',
 		},
 	})
+
+	// Создаём отчеты прогресса для клиента 1 (7 штук за 6 месяцев)
+	const client1Progress = [
+		{
+			date: new Date('2024-06-01'),
+			weight: 80.0,
+			waist: 90,
+			chest: 98,
+			hips: 95,
+			arm: 36,
+			leg: 57,
+		},
+		{
+			date: new Date('2024-07-01'),
+			weight: 78.5,
+			waist: 88,
+			chest: 97,
+			hips: 93,
+			arm: 35.5,
+			leg: 56,
+			trainerComment: 'Отличный прогресс! Продолжаем в том же духе.',
+			commentedAt: new Date('2024-07-02'),
+		},
+		{
+			date: new Date('2024-08-01'),
+			weight: 77.0,
+			waist: 86,
+			chest: 96,
+			hips: 92,
+			arm: 35,
+			leg: 55.5,
+		},
+		{
+			date: new Date('2024-09-01'),
+			weight: 76.0,
+			waist: 85,
+			chest: 96,
+			hips: 91,
+			arm: 35,
+			leg: 55,
+			trainerComment: 'Хорошая динамика, но следи за питанием.',
+			commentedAt: new Date('2024-09-03'),
+		},
+		{
+			date: new Date('2024-10-01'),
+			weight: 75.5,
+			waist: 84,
+			chest: 95,
+			hips: 90,
+			arm: 35,
+			leg: 55,
+		},
+		{
+			date: new Date('2024-11-01'),
+			weight: 75.0,
+			waist: 83,
+			chest: 95,
+			hips: 90,
+			arm: 35,
+			leg: 55,
+			trainerComment: 'Супер! Цель почти достигнута.',
+			commentedAt: new Date('2024-11-02'),
+		},
+		{
+			date: new Date('2024-11-26'),
+			weight: 74.5,
+			waist: 82,
+			chest: 95,
+			hips: 89,
+			arm: 35,
+			leg: 55,
+		},
+	]
+
+	for (const progress of client1Progress) {
+		await prisma.progress.create({
+			data: {
+				userId: client1.id,
+				height: 180,
+				photoFront: '/uploads/default/body-fitness.jpg',
+				photoSide: '/uploads/default/body-fitness.jpg',
+				photoBack: '/uploads/default/body-fitness.jpg',
+				...progress,
+			},
+		})
+	}
 
 	const client2 = await prisma.user.upsert({
 		where: { phone: '+79161234567' },
@@ -45,22 +124,101 @@ async function main() {
 			password: passwordHash,
 			age: 28,
 			role: 'CLIENT',
+			goal: 'Похудеть и подтянуть фигуру',
+			restrictions: 'Проблемы с коленями',
+			experience: 'Новичок в фитнесе',
+			diet: 'Стараюсь правильно питаться',
+			photoFront: '/uploads/default/body-fitness.jpg',
+			photoSide: '/uploads/default/body-fitness.jpg',
+			photoBack: '/uploads/default/body-fitness.jpg',
+		},
+	})
+
+	// Создаём отчеты прогресса для клиента 2 (7 штук за 6 месяцев)
+	const client2Progress = [
+		{
+			date: new Date('2024-06-01'),
+			weight: 62.0,
+			waist: 70,
+			chest: 88,
+			hips: 95,
+			arm: 30,
+			leg: 53,
+		},
+		{
+			date: new Date('2024-07-01'),
+			weight: 61.0,
+			waist: 69,
+			chest: 87,
+			hips: 94,
+			arm: 29.5,
+			leg: 52,
+			trainerComment: 'Молодец! Видны первые результаты.',
+			commentedAt: new Date('2024-07-02'),
+		},
+		{
+			date: new Date('2024-08-01'),
+			weight: 60.0,
+			waist: 68,
+			chest: 86,
+			hips: 93,
+			arm: 29,
+			leg: 51.5,
+		},
+		{
+			date: new Date('2024-09-01'),
+			weight: 59.0,
+			waist: 67,
+			chest: 86,
+			hips: 92,
+			arm: 28.5,
+			leg: 51,
+			trainerComment: 'Отлично! Не забывай про растяжку.',
+			commentedAt: new Date('2024-09-04'),
+		},
+		{
+			date: new Date('2024-10-01'),
+			weight: 58.5,
+			waist: 66,
+			chest: 85,
+			hips: 91,
+			arm: 28,
+			leg: 50.5,
+		},
+		{
+			date: new Date('2024-11-01'),
 			weight: 58.0,
-			height: 165,
 			waist: 65,
 			chest: 85,
 			hips: 90,
 			arm: 28,
 			leg: 50,
-			goal: 'Похудеть и подтянуть фигуру',
-			restrictions: 'Проблемы с коленями',
-			experience: 'Новичок в фитнесе',
-			diet: 'Стараюсь правильно питаться',
-			photoFront: '/uploads/photos/client2-front.jpg',
-			photoSide: '/uploads/photos/client2-side.jpg',
-			photoBack: '/uploads/photos/client2-back.jpg',
+			trainerComment: 'Прекрасная работа! Держи темп.',
+			commentedAt: new Date('2024-11-03'),
 		},
-	})
+		{
+			date: new Date('2024-11-26'),
+			weight: 57.5,
+			waist: 64,
+			chest: 84,
+			hips: 89,
+			arm: 28,
+			leg: 50,
+		},
+	]
+
+	for (const progress of client2Progress) {
+		await prisma.progress.create({
+			data: {
+				userId: client2.id,
+				height: 165,
+				photoFront: '/uploads/default/body-fitness.jpg',
+				photoSide: '/uploads/default/body-fitness.jpg',
+				photoBack: '/uploads/default/body-fitness.jpg',
+				...progress,
+			},
+		})
+	}
 
 	// Создаём двух тренеров
 	const trainer1 = await prisma.user.upsert({
