@@ -4,7 +4,7 @@ import type { LoginRequest, RegisterRequest, AuthResponse, ApiError } from '../.
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000/auth',
+    baseUrl: 'http://localhost:3000/api/auth',
     prepareHeaders: (headers, { endpoint }) => {
       const token = localStorage.getItem('token')
       if (token) {
