@@ -2,10 +2,10 @@ import { FastifyRequest } from 'fastify'
 import fs from 'fs'
 import path from 'path'
 import { ApiError } from './ApiError.js'
+import { MAX_PHOTO_SIZE } from 'consts/file.js'
 
 const __dirname = path.resolve()
 const UPLOAD_DIR = path.join(__dirname, './uploads/photos')
-const MAX_FILE_SIZE = 500 * 1024 // 500KB
 
 // Создаём директорию для загрузок, если её нет
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -27,7 +27,7 @@ interface UploadResult {
 export async function uploadPhotos(
 	req: FastifyRequest,
 	allowedFileFields: string[] = ['photoFront', 'photoSide', 'photoBack'],
-	maxFileSize: number = MAX_FILE_SIZE,
+	maxFileSize: number = MAX_PHOTO_SIZE,
 ): Promise<UploadResult> {
 	if (!req.isMultipart()) {
 		throw ApiError.badRequest('Ожидается multipart/form-data')
@@ -90,5 +90,54 @@ export function deletePhoto(photoPath: string): void {
 		}
 	} catch (error) {
 		console.error(`Failed to delete photo: ${photoPath}`, error)
+	}
+}
+
+/**
+ * Прикрепляет пути загруженных файлов к объекту request для возможной очистки при ошибке
+ * @param req - Fastify request объект
+ * @param filesMap - Объект с путями к загруженным файлам
+ */
+export function attachFilesToRequest(
+	req: FastifyRequest,
+	filesMap: Record<string, string>,
+): void {
+	const uploadedFiles = Object.values(filesMap)
+	Object.assign(req, { uploadedFiles })
+}
+
+/**
+ * Проверяет наличие всех обязательных фотографий
+ * @param filesMap - Объект с путями к загруженным файлам
+ * @param requiredFields - Массив имён обязательных полей
+ * @throws {ApiError} Если отсутствует хотя бы одна обязательная фотография
+ */
+export function validateRequiredPhotos(
+	filesMap: Record<string, string>,
+	requiredFields: string[],
+): void {
+	const missingPhotos = requiredFields.filter((field) => !filesMap[field])
+
+	if (missingPhotos.length > 0) {
+		throw ApiError.badRequest(
+			`Все фотографии обязательны: ${requiredFields.join(
+				', ',
+			)}. Отсутствуют: ${missingPhotos.join(', ')}`,
+		)
+	}
+}
+
+/**
+ * Fastify onError хук для автоматической очистки загруженных файлов при ошибке
+ * Использование: { onError: cleanupFilesOnError }
+ */
+export async function cleanupFilesOnError(
+	request: FastifyRequest,
+	reply: any,
+	error: Error,
+): Promise<void> {
+	const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
+	if (uploadedFiles && uploadedFiles.length > 0) {
+		uploadedFiles.forEach((filePath) => deletePhoto(filePath))
 	}
 }

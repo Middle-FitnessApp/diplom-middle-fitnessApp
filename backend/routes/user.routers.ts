@@ -1,4 +1,5 @@
 import { editClientProfile, editTrainerProfile, getUser } from 'controllers/user.js'
+import { createProgress } from 'controllers/progress.js'
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 
@@ -8,6 +9,13 @@ import {
 	ClientUpdateProfileSchema,
 	TrainerUpdateProfileSchema,
 } from 'validation/zod/user/update-profile.dto.js'
+import { CreateProgressSchema } from 'validation/zod/user/progress.dto.js'
+import { MAX_PHOTO_SIZE } from 'consts/file.js'
+import {
+	cleanupFilesOnError,
+	attachFilesToRequest,
+	validateRequiredPhotos,
+} from 'utils/uploadPhotos.js'
 
 export default async function userRoutes(app: FastifyInstance) {
 	app.register(multipart)
@@ -28,14 +36,7 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/client/profile',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT'])],
-			onError: async (request, reply, error) => {
-				// Удаляем загруженные файлы при ошибке
-				const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
-				if (uploadedFiles && uploadedFiles.length > 0) {
-					const { deletePhoto } = await import('utils/uploadPhotos.js')
-					uploadedFiles.forEach((filePath) => deletePhoto(filePath))
-				}
-			},
+			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
 			let body: Record<string, string>
@@ -50,8 +51,7 @@ export default async function userRoutes(app: FastifyInstance) {
 				filesMap = uploadResult.files
 
 				// Сохраняем пути загруженных файлов для возможной очистки при ошибке
-				const uploadedFiles = Object.values(uploadResult.files)
-				Object.assign(req, { uploadedFiles })
+				attachFilesToRequest(req, filesMap)
 			} else {
 				// Если нет файлов, просто берём body
 				body = (req.body as Record<string, string>) || {}
@@ -73,14 +73,7 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/trainer/profile',
 		{
 			preHandler: [authGuard, hasRole(['TRAINER'])],
-			onError: async (request, reply, error) => {
-				// Удаляем загруженные файлы при ошибке
-				const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
-				if (uploadedFiles && uploadedFiles.length > 0) {
-					const { deletePhoto } = await import('utils/uploadPhotos.js')
-					uploadedFiles.forEach((filePath) => deletePhoto(filePath))
-				}
-			},
+			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
 			let body: Record<string, string>
@@ -95,8 +88,7 @@ export default async function userRoutes(app: FastifyInstance) {
 				filesMap = uploadResult.files
 
 				// Сохраняем пути загруженных файлов для возможной очистки при ошибке
-				const uploadedFiles = Object.values(uploadResult.files)
-				Object.assign(req, { uploadedFiles })
+				attachFilesToRequest(req, filesMap)
 			} else {
 				// Если нет файлов, просто берём body
 				body = (req.body as Record<string, string>) || {}
@@ -113,6 +105,76 @@ export default async function userRoutes(app: FastifyInstance) {
 			return reply.status(200).send({
 				message: 'Профиль тренера успешно обновлён',
 				user: updatedProfile,
+			})
+		},
+	)
+
+	// Создание нового отчета о прогрессе
+	app.put(
+		'/progress/new-report',
+		{
+			preHandler: [authGuard, hasRole(['CLIENT'])],
+			onError: cleanupFilesOnError,
+		},
+		async (req, reply) => {
+			// Обрабатываем multipart запрос с тремя обязательными фотографиями
+			const { uploadPhotos } = await import('utils/uploadPhotos.js')
+			const { ApiError } = await import('utils/ApiError.js')
+
+			const uploadResult = await uploadPhotos(
+				req,
+				['photoFront', 'photoSide', 'photoBack'],
+				MAX_PHOTO_SIZE,
+			)
+
+			const { body, files: filesMap } = uploadResult
+
+			// Сохраняем пути загруженных файлов для возможной очистки при ошибке
+			attachFilesToRequest(req, filesMap)
+
+			// Проверяем наличие всех трех обязательных фотографий
+			validateRequiredPhotos(filesMap, ['photoFront', 'photoSide', 'photoBack'])
+
+			// Проверяем наличие всех обязательных полей
+			const requiredFields = [
+				'date',
+				'weight',
+				'height',
+				'waist',
+				'chest',
+				'hips',
+				'arm',
+				'leg',
+			]
+			const missingFields = requiredFields.filter((field) => !body[field])
+
+			if (missingFields.length > 0) {
+				throw ApiError.badRequest(
+					`Отсутствуют обязательные поля: ${missingFields.join(', ')}`,
+				)
+			}
+
+			// Преобразуем числовые поля из строк в числа
+			const numericBody = {
+				...body,
+				weight: parseFloat(body.weight),
+				height: parseFloat(body.height),
+				waist: parseFloat(body.waist),
+				chest: parseFloat(body.chest),
+				hips: parseFloat(body.hips),
+				arm: parseFloat(body.arm),
+				leg: parseFloat(body.leg),
+			}
+
+			// Валидируем данные
+			const validatedData = CreateProgressSchema.parse(numericBody)
+
+			// Создаём новый отчёт о прогрессе
+			const progress = await createProgress(req.user.id, validatedData, filesMap)
+
+			return reply.status(201).send({
+				message: 'Отчет о прогрессе успешно создан',
+				progress,
 			})
 		},
 	)
