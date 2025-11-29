@@ -1,30 +1,38 @@
+export interface NutritionCategory {
+	id: string
+	trainer_id: string
+	name: string
+	description?: string
+	programs: NutritionProgram[] // массив подкатегорий
+}
+
+export interface NutritionProgram {
+	id: string
+	category_id: string
+	name: string
+	description?: string
+	days_count: number // вычисляемое поле для UI
+}
+
+export interface ProgramDay {
+	id: string
+	program_id: string
+	day_title: string
+	day_order: number
+	meals: Meal[]
+}
+
 export interface Meal {
-  id: string;
-  name: string;
-  description: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  time: string; // "08:00", "13:00" etc
+	id: string
+	day_id: string
+	type: 'breakfast' | 'snack' | 'lunch' | 'dinner'
+	name: string
+	meal_order: number
+	items: string[]
 }
-
-export interface NutritionPlan {
-  id: string;
-  trainerId: string;
-  name: string;
-  description: string;
-  goal: 'weight_loss' | 'muscle_gain' | 'maintenance';
-  dailyCalories: number;
-  meals: Meal[];
-  created_at: string;
-}
-
 export interface AssignedNutritionPlan {
-  id: string;
-  clientId: string;
-  planId: string;
-  startDate: string;
-  endDate?: string;
-  plan: NutritionPlan;
+	id: string
+	clientId: string
+	programId: string
+	dayIds: string[]
 }
