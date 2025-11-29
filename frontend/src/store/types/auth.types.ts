@@ -1,45 +1,91 @@
-// store/types/auth.types.ts
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'client' | 'trainer' | 'admin';
-  avatar?: string;
-  phone?: string;
-  telegram?: string;
-  whatsapp?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-}
-
 export interface LoginRequest {
-  email: string;
-  password: string;
+	emailOrPhone: string
+	password: string
 }
 
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-  role: 'client' | 'trainer';
-  phone?: string;
+export interface RegisterBase {
+	name: string
+	emailOrPhone: string
+	password: string
+}
+
+export interface ClientFields {
+	age?: number
+	weight?: number
+	height?: number
+	waist?: number
+	chest?: number
+	hips?: number
+	arm?: number
+	leg?: number
+	goal?: string
+	restrictions?: string
+	experience?: string
+	diet?: string
+	photoFront?: string
+	photoSide?: string
+	photoBack?: string
+}
+export interface TrainerFields {
+	telegram?: string
+	whatsapp?: string
+	instagram?: string
+	bio?: string
+}
+
+export interface RegisterClientDTO extends RegisterBase, ClientFields {
+	role: 'CLIENT'
+}
+
+export interface RegisterTrainerDTO extends RegisterBase, TrainerFields {
+	role: 'TRAINER'
+}
+
+export type RegisterRequest = RegisterClientDTO | RegisterTrainerDTO
+
+export interface UserRole {
+	role: 'CLIENT' | 'TRAINER'
+}
+
+export interface Token {
+	accessToken: string
+	refreshToken?: string
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+	user: UserRole
+	token: Token
 }
 
-// Добавляем тип для ошибок RTK Query
+export interface AuthUser {
+	id: string
+	name: string
+	email: string | null
+	phone: string | null
+	age: number
+	role: 'CLIENT' | 'TRAINER'
+	photo: string | null
+	createdAt?: string
+	updatedAt?: string
+	// Дополнительные поля для тренера
+	bio?: string
+	telegram?: string
+	whatsapp?: string
+	instagram?: string
+}
+
+export interface AuthState {
+	user: AuthUser | null
+	token: string | null
+	isAuthenticated: boolean
+	isLoading: boolean
+}
+
 export interface ApiError {
-  status: number;
-  data: {
-    message: string;
-    code?: string;
-  };
+	status: number
+	data: {
+		message: string
+		error?: string
+		statusCode?: number
+	}
 }

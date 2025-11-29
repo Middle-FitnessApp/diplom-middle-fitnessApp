@@ -1,6 +1,8 @@
 import Fastify from 'fastify'
 import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
+import fastifyStatic from '@fastify/static'
+import path from 'path'
 
 import { errorHandler } from 'middleware/globalErrorHandler.js'
 
@@ -27,9 +29,17 @@ app.register(fastifyCookie, {
 	},
 })
 
-app.register(async (instance) => {
-  instance.register(authRoutes, { prefix: '/auth' })
-  instance.register(userRoutes, { prefix: '/user' })
-}, { prefix: '/api' })
+app.register(
+	async (instance) => {
+		instance.register(authRoutes, { prefix: '/auth' })
+		instance.register(userRoutes, { prefix: '/user' })
+	},
+	{ prefix: '/api' },
+)
+
+app.register(fastifyStatic, {
+	root: path.join(process.cwd(), 'uploads'),
+	prefix: '/uploads/',
+})
 
 export default app
