@@ -43,3 +43,31 @@ export async function createProgress(
 
 	return progress
 }
+
+/**
+ * Получает последний отчет о прогрессе для пользователя
+ * @param userId - ID пользователя
+ * @returns Последний отчет о прогрессе или null, если отчетов нет
+ */
+export async function getLatestProgress(userId: string) {
+	return await prisma.progress.findFirst({
+		where: { userId },
+		orderBy: { createdAt: 'desc' },
+		select: {
+			id: true,
+			date: true,
+			weight: true,
+			height: true,
+			chest: true,
+			waist: true,
+			hips: true,
+			arm: true,
+			leg: true,
+			photoFront: true,
+			photoSide: true,
+			photoBack: true,
+			createdAt: true,
+			updatedAt: true,
+		},
+	})
+}
