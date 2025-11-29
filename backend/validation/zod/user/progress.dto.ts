@@ -3,6 +3,7 @@ import { DATE_DD_MM_YYYY_REGEX } from 'consts/date.js'
 
 // Схема для создания отчета о прогрессе
 export const CreateProgressSchema = z.object({
+	// Обязательные поля
 	date: z
 		.string()
 		.regex(DATE_DD_MM_YYYY_REGEX, 'Дата должна быть в формате ДД/ММ/ГГГГ')
@@ -31,12 +32,14 @@ export const CreateProgressSchema = z.object({
 			},
 		),
 	weight: z.number().positive('Вес должен быть положительным числом'),
-	height: z.number().positive('Рост должен быть положительным числом'),
 	waist: z.number().positive('Обхват талии должен быть положительным числом'),
-	chest: z.number().positive('Обхват груди должен быть положительным числом'),
 	hips: z.number().positive('Обхват бедер должен быть положительным числом'),
-	arm: z.number().positive('Обхват руки должен быть положительным числом'),
-	leg: z.number().positive('Обхват ноги должен быть положительным числом'),
+
+	// Опциональные поля
+	height: z.number().positive('Рост должен быть положительным числом').optional(),
+	chest: z.number().positive('Обхват груди должен быть положительным числом').optional(),
+	arm: z.number().positive('Обхват руки должен быть положительным числом').optional(),
+	leg: z.number().positive('Обхват ноги должен быть положительным числом').optional(),
 })
 
 export type CreateProgressDTO = z.infer<typeof CreateProgressSchema>

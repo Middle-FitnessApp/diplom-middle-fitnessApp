@@ -109,6 +109,24 @@ export default async function userRoutes(app: FastifyInstance) {
 		},
 	)
 
+	// Получение последнего отчета о прогрессе
+	app.get(
+		'/progress/latest',
+		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		async (req, reply) => {
+			const { getLatestProgress } = await import('controllers/progress.js')
+			const { ApiError } = await import('utils/ApiError.js')
+
+			const latestProgress = await getLatestProgress(req.user.id)
+
+			if (!latestProgress) {
+				throw ApiError.notFound('Отчеты о прогрессе не найдены')
+			}
+
+			return reply.status(200).send({ progress: latestProgress })
+		},
+	)
+
 	// Создание нового отчета о прогрессе
 	app.put(
 		'/progress/new-report',
