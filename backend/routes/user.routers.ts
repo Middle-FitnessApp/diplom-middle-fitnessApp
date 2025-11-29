@@ -11,6 +11,11 @@ import {
 } from 'validation/zod/user/update-profile.dto.js'
 import { CreateProgressSchema } from 'validation/zod/user/progress.dto.js'
 import { MAX_PHOTO_SIZE } from 'consts/file.js'
+import {
+	cleanupFilesOnError,
+	attachFilesToRequest,
+	validateRequiredPhotos,
+} from 'utils/uploadPhotos.js'
 
 export default async function userRoutes(app: FastifyInstance) {
 	app.register(multipart)
@@ -31,14 +36,7 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/client/profile',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT'])],
-			onError: async (request, reply, error) => {
-				// Удаляем загруженные файлы при ошибке
-				const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
-				if (uploadedFiles && uploadedFiles.length > 0) {
-					const { deletePhoto } = await import('utils/uploadPhotos.js')
-					uploadedFiles.forEach((filePath) => deletePhoto(filePath))
-				}
-			},
+			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
 			let body: Record<string, string>
@@ -53,8 +51,7 @@ export default async function userRoutes(app: FastifyInstance) {
 				filesMap = uploadResult.files
 
 				// Сохраняем пути загруженных файлов для возможной очистки при ошибке
-				const uploadedFiles = Object.values(uploadResult.files)
-				Object.assign(req, { uploadedFiles })
+				attachFilesToRequest(req, filesMap)
 			} else {
 				// Если нет файлов, просто берём body
 				body = (req.body as Record<string, string>) || {}
@@ -76,14 +73,7 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/trainer/profile',
 		{
 			preHandler: [authGuard, hasRole(['TRAINER'])],
-			onError: async (request, reply, error) => {
-				// Удаляем загруженные файлы при ошибке
-				const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
-				if (uploadedFiles && uploadedFiles.length > 0) {
-					const { deletePhoto } = await import('utils/uploadPhotos.js')
-					uploadedFiles.forEach((filePath) => deletePhoto(filePath))
-				}
-			},
+			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
 			let body: Record<string, string>
@@ -98,8 +88,7 @@ export default async function userRoutes(app: FastifyInstance) {
 				filesMap = uploadResult.files
 
 				// Сохраняем пути загруженных файлов для возможной очистки при ошибке
-				const uploadedFiles = Object.values(uploadResult.files)
-				Object.assign(req, { uploadedFiles })
+				attachFilesToRequest(req, filesMap)
 			} else {
 				// Если нет файлов, просто берём body
 				body = (req.body as Record<string, string>) || {}
@@ -125,14 +114,7 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/progress/new-report',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT'])],
-			onError: async (request, reply, error) => {
-				// Удаляем загруженные файлы при ошибке
-				const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
-				if (uploadedFiles && uploadedFiles.length > 0) {
-					const { deletePhoto } = await import('utils/uploadPhotos.js')
-					uploadedFiles.forEach((filePath) => deletePhoto(filePath))
-				}
-			},
+			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
 			// Обрабатываем multipart запрос с тремя обязательными фотографиями
@@ -148,15 +130,10 @@ export default async function userRoutes(app: FastifyInstance) {
 			const { body, files: filesMap } = uploadResult
 
 			// Сохраняем пути загруженных файлов для возможной очистки при ошибке
-			const uploadedFiles = Object.values(filesMap)
-			Object.assign(req, { uploadedFiles })
+			attachFilesToRequest(req, filesMap)
 
 			// Проверяем наличие всех трех обязательных фотографий
-			if (!filesMap.photoFront || !filesMap.photoSide || !filesMap.photoBack) {
-				throw ApiError.badRequest(
-					'Все три фотографии обязательны: photoFront, photoSide, photoBack',
-				)
-			}
+			validateRequiredPhotos(filesMap, ['photoFront', 'photoSide', 'photoBack'])
 
 			// Проверяем наличие всех обязательных полей
 			const requiredFields = [
