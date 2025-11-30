@@ -2,7 +2,7 @@ import { FastifyRequest } from 'fastify'
 import fs from 'fs'
 import path from 'path'
 import { ApiError } from './ApiError.js'
-import { MAX_PHOTO_SIZE } from 'consts/file.js'
+import { MAX_PHOTO_SIZE } from '../consts/file.js'
 
 const __dirname = path.resolve()
 const UPLOAD_DIR = path.join(__dirname, './uploads/photos')

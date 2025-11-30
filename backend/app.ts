@@ -4,10 +4,10 @@ import fastifyCors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import path from 'path'
 
-import { errorHandler } from 'middleware/globalErrorHandler.js'
+import { errorHandler } from './middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
-import userRoutes from 'routes/user.routers.js'
+import userRoutes from './routes/user.routers.js'
 
 const app = Fastify()
 

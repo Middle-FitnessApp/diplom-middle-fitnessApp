@@ -1,6 +1,6 @@
 import { FastifyRequest } from 'fastify'
-import { verifyAccessToken } from 'services/token.service.js'
-import { ApiError } from 'utils/ApiError.js'
+import { verifyAccessToken } from '../services/token.service.js'
+import { ApiError } from '../utils/ApiError.js'
 import { prisma } from '../prisma.js'
 
 export async function authGuard(req: FastifyRequest) {

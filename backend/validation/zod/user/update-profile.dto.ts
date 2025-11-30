@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { UserRole } from '@prisma/client'
-import { CLIENT } from 'consts/role.js'
-import { Regex } from 'consts/regex.js'
+import { CLIENT } from '../../../consts/role.js'
+import { Regex } from '../../../consts/regex.js'
 
 // Общие поля для всех пользователей (обновляемые)
 const commonFields = {

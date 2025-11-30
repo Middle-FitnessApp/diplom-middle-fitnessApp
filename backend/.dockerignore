@@ -1,0 +1,67 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+doc
+
+# Uploads (будут в Supabase)
+uploads
+
+# Tests
+test
+tests
+*.test.ts
+*.spec.ts
+coverage
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Logs
+logs
+*.log
+
+# Prisma (кроме schema и migrations)
+prisma/seed.ts
+prisma/SEED.md
+
+# Misc
+.npmrc
+.nvmrc

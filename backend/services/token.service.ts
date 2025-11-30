@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { prisma } from '../prisma.js'
 import { randomUUID } from 'crypto'
-import { ACCESS_EXPIRES, REFRESH_EXPIRES_DAYS } from 'consts/token.js'
+import { ACCESS_EXPIRES, REFRESH_EXPIRES_DAYS } from '../consts/token.js'
 
 export function generateAccessToken(userId: string, refreshTokenId: string) {
 	return jwt.sign(

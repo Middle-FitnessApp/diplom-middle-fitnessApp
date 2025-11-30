@@ -2,19 +2,19 @@ import { prisma } from '../prisma.js'
 import { hash, compare } from 'bcryptjs'
 import { ApiError } from '../utils/ApiError.js'
 
-import { generateAccessToken, generateRefreshToken } from 'services/token.service.js'
-import { findUserByEmailOrPhone } from 'utils/findUserByContact.js'
+import { generateAccessToken, generateRefreshToken } from '../services/token.service.js'
+import { findUserByEmailOrPhone } from '../utils/findUserByContact.js'
 import {
 	ClientRegisterDTO,
 	TrainerRegisterDTO,
-} from 'validation/zod/auth/register.dto.js'
-import { LoginDTO } from 'validation/zod/auth/login.dto.js'
+} from '../validation/zod/auth/register.dto.js'
+import { LoginDTO } from '../validation/zod/auth/login.dto.js'
 import {
 	ClientUpdateProfileDTO,
 	TrainerUpdateProfileDTO,
-} from 'validation/zod/user/update-profile.dto.js'
-import { CLIENT, TRAINER } from 'consts/role.js'
-import { deletePhoto } from 'utils/uploadPhotos.js'
+} from '../validation/zod/user/update-profile.dto.js'
+import { CLIENT, TRAINER } from '../consts/role.js'
+import { deletePhoto } from '../utils/uploadPhotos.js'
 
 /**
  * Регистрация нового пользователя (клиента или тренера)
