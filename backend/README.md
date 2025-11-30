@@ -8,28 +8,32 @@ Backend для проекта онлайн-фитнеса на Fastify + TypeScr
 npm install
 ```
 
-Создаем .env файл в корне и указываем переменные:
+## Настройка переменных окружения
+
+Скопируйте файл `.env.example` и создайте `.env` со своими значениями:
+
+```bash
+cp .env.example .env
+```
+
+Отредактируйте `.env` файл, заполнив необходимые значения:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE_NAME
-
-# Пример:
-#
-# DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/fitnessApp
-
-# Порт для запуска сервера
+# Для локальной разработки
+DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/fitnessApp"
 PORT=3000
-
-# Секретные ключи для JWT токенов и cookies
 JWT_ACCESS_SECRET="ваш-секретный-ключ-для-jwt"
 COOKIE_SECRET="ваш-секретный-ключ-для-cookies"
-
-# Режим работы сервера
 NODE_ENV="development"
-
-# URL frontend для CORS
 FRONTEND_URL="http://localhost:5173"
+
+# Supabase (если используете для storage)
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_KEY="your-service-role-key"
 ```
+
+💡 Все необходимые переменные и их описание смотрите в файле `.env.example`
 
 ## Настройка базы данных
 
