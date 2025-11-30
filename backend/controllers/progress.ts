@@ -71,3 +71,46 @@ export async function getLatestProgress(userId: string) {
 		},
 	})
 }
+
+/**
+ * Получает конкретный отчет о прогрессе по ID
+ * @param progressId - ID отчета
+ * @param userId - ID пользователя
+ * @param userRole - Роль пользователя
+ * @returns Отчет о прогрессе с полной информацией
+ */
+export async function getProgressById(
+	progressId: string,
+	userId: string,
+	userRole: 'CLIENT' | 'TRAINER',
+) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// Находим отчет о прогрессе
+	const progress = await prisma.progress.findUnique({
+		where: { id: progressId },
+		include: {
+			user: {
+				select: {
+					id: true,
+					name: true,
+					photo: true,
+				},
+			},
+		},
+	})
+
+	// Проверяем существование отчета
+	if (!progress) {
+		throw ApiError.notFound('Отчет о прогрессе не найден')
+	}
+
+	// Проверка прав доступа:
+	// - Клиент может видеть только свои отчеты
+	// - Тренер может видеть все отчеты (в будущем добавим проверку связи клиент-тренер)
+	if (userRole === 'CLIENT' && progress.userId !== userId) {
+		throw ApiError.forbidden('Нет доступа к этому отчету')
+	}
+
+	return progress
+}

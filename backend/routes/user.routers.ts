@@ -196,4 +196,25 @@ export default async function userRoutes(app: FastifyInstance) {
 			})
 		},
 	)
+
+	// Получение конкретного отчета о прогрессе по ID
+	app.get(
+		'/progress/:id',
+		{ preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])] },
+		async (req, reply) => {
+			const { getProgressById } = await import('controllers/progress.js')
+			const { ApiError } = await import('utils/ApiError.js')
+			const { Regex } = await import('consts/regex.js')
+			const { id } = req.params as { id: string }
+
+			// Базовая валидация ID (cuid имеет длину 25 символов и содержит буквы и цифры)
+			if (!id || id.length < 10 || !Regex.cuid.test(id)) {
+				throw ApiError.badRequest('Некорректный формат ID отчета')
+			}
+
+			const progress = await getProgressById(id, req.user.id, req.user.role)
+
+			return reply.status(200).send({ progress })
+		},
+	)
 }
