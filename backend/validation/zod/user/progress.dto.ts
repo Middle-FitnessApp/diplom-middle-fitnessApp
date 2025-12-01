@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DATE_DD_MM_YYYY_REGEX } from 'consts/date.js'
+import { DATE_DD_MM_YYYY_REGEX } from '../../../consts/date.js'
 
 // Схема для создания отчета о прогрессе
 export const CreateProgressSchema = z.object({

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Regex } from 'consts/regex.js'
+import { Regex } from '../../../consts/regex.js'
 
 // Zod схема для валидации
 export const loginSchemaZod = {

@@ -1,16 +1,7 @@
 import { FastifyRequest } from 'fastify'
-import fs from 'fs'
-import path from 'path'
 import { ApiError } from './ApiError.js'
-import { MAX_PHOTO_SIZE } from 'consts/file.js'
-
-const __dirname = path.resolve()
-const UPLOAD_DIR = path.join(__dirname, './uploads/photos')
-
-// Создаём директорию для загрузок, если её нет
-if (!fs.existsSync(UPLOAD_DIR)) {
-	fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-}
+import { MAX_PHOTO_SIZE } from '../consts/file.js'
+import { supabase, PHOTOS_BUCKET } from './supabase.js'
 
 interface UploadResult {
 	body: Record<string, string>
@@ -18,11 +9,11 @@ interface UploadResult {
 }
 
 /**
- * Обрабатывает multipart/form-data запрос и сохраняет фото
+ * Обрабатывает multipart/form-data запрос и загружает фото в Supabase Storage
  * @param req - Fastify request объект
  * @param allowedFileFields - массив допустимых имён полей для файлов
  * @param maxFileSize - максимальный размер файла в байтах (по умолчанию 500KB)
- * @returns объект с текстовыми полями и путями к сохранённым файлам
+ * @returns объект с текстовыми полями и URL загруженных файлов
  */
 export async function uploadPhotos(
 	req: FastifyRequest,
@@ -33,70 +24,123 @@ export async function uploadPhotos(
 		throw ApiError.badRequest('Ожидается multipart/form-data')
 	}
 
+	if (!supabase) {
+		throw ApiError.internal(
+			'Supabase Storage не настроен. Проверьте переменные окружения.',
+		)
+	}
+
 	const body: Record<string, string> = {}
 	const files: Record<string, string> = {}
+	const uploadedPaths: string[] = [] // Для отката при ошибке
 
-	for await (const part of req.parts()) {
-		if (part.type === 'file') {
-			// Валидация размера файла
-			const chunks: Buffer[] = []
-			let totalSize = 0
+	try {
+		for await (const part of req.parts()) {
+			if (part.type === 'file') {
+				// Валидация размера файла
+				const chunks: Buffer[] = []
+				let totalSize = 0
 
-			for await (const chunk of part.file) {
-				totalSize += chunk.length
-				if (totalSize > maxFileSize) {
-					throw ApiError.badRequest(
-						`Файл "${part.fieldname}" слишком большой. Максимальный размер ${
-							maxFileSize / 1024
-						}КБ`,
+				for await (const chunk of part.file) {
+					totalSize += chunk.length
+					if (totalSize > maxFileSize) {
+						throw ApiError.badRequest(
+							`Файл "${part.fieldname}" слишком большой. Максимальный размер ${
+								maxFileSize / 1024
+							}КБ`,
+						)
+					}
+					chunks.push(chunk)
+				}
+
+				// Пропускаем пустые файлы
+				if (totalSize === 0) {
+					continue
+				}
+
+				// Проверяем допустимость поля
+				if (!allowedFileFields.includes(part.fieldname)) {
+					continue
+				}
+
+				// Загрузка в Supabase Storage
+				const buffer = Buffer.concat(chunks)
+				const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}-${
+					part.filename
+				}`
+				const filePath = `${filename}`
+
+				const { data, error } = await supabase.storage
+					.from(PHOTOS_BUCKET)
+					.upload(filePath, buffer, {
+						contentType: part.mimetype,
+						upsert: false,
+					})
+
+				if (error) {
+					throw ApiError.internal(
+						`Ошибка загрузки файла "${part.fieldname}": ${error.message}`,
 					)
 				}
-				chunks.push(chunk)
-			}
 
-			// Пропускаем пустые файлы
-			if (totalSize === 0) {
-				continue
-			}
+				// Получаем публичный URL
+				const {
+					data: { publicUrl },
+				} = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(data.path)
 
-			// Сохранение файла
-			const buffer = Buffer.concat(chunks)
-			const filename = `${Date.now()}-${part.filename}`
-			const filepath = path.join(UPLOAD_DIR, filename)
-			fs.writeFileSync(filepath, buffer)
-
-			// Добавляем путь к файлу, если поле разрешено
-			if (allowedFileFields.includes(part.fieldname)) {
-				files[part.fieldname] = `/uploads/photos/${filename}`
+				files[part.fieldname] = publicUrl
+				uploadedPaths.push(data.path)
+			} else {
+				// Текстовое поле
+				body[part.fieldname] = String(part.value)
 			}
-		} else {
-			// Текстовое поле
-			body[part.fieldname] = String(part.value)
 		}
-	}
 
-	return { body, files }
+		return { body, files }
+	} catch (error) {
+		// Откатываем загруженные файлы при ошибке
+		if (uploadedPaths.length > 0) {
+			await supabase.storage.from(PHOTOS_BUCKET).remove(uploadedPaths)
+		}
+		throw error
+	}
 }
 
 /**
- * Удаляет фото по указанному пути
- * @param photoPath - путь к фото (например, '/uploads/photos/123456-photo.jpg')
+ * Удаляет фото из Supabase Storage по URL
+ * @param photoUrl - публичный URL фото из Supabase
  */
-export function deletePhoto(photoPath: string): void {
+export async function deletePhoto(photoUrl: string): Promise<void> {
 	try {
-		const fullPath = path.join(__dirname, photoPath)
-		if (fs.existsSync(fullPath)) {
-			fs.unlinkSync(fullPath)
+		if (!supabase) {
+			console.error('Supabase Storage не настроен')
+			return
+		}
+
+		// Извлекаем путь файла из публичного URL
+		// URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+		const urlParts = photoUrl.split(`/object/public/${PHOTOS_BUCKET}/`)
+		if (urlParts.length !== 2) {
+			console.error(`Неверный формат URL: ${photoUrl}`)
+			return
+		}
+
+		const filePath = urlParts[1]
+
+		const { error } = await supabase.storage.from(PHOTOS_BUCKET).remove([filePath])
+
+		if (error) {
+			console.error(`Не удалось удалить фото из Supabase: ${photoUrl}`, error)
 		}
 	} catch (error) {
-		console.error(`Failed to delete photo: ${photoPath}`, error)
+		console.error(`Ошибка при удалении фото: ${photoUrl}`, error)
 	}
 }
 
 /**
- * Прикрепляет пути загруженных файлов к объекту request для возможной очистки при ошибке
+ * Прикрепляет URL загруженных файлов к объекту request для возможной очистки при ошибке
  * @param req - Fastify request объект
- * @param filesMap - Объект с путями к загруженным файлам
+ * @param filesMap - Объект с URL загруженных файлов
  */
 export function attachFilesToRequest(
 	req: FastifyRequest,
@@ -138,6 +182,6 @@ export async function cleanupFilesOnError(
 ): Promise<void> {
 	const uploadedFiles = (request as any).uploadedFiles as string[] | undefined
 	if (uploadedFiles && uploadedFiles.length > 0) {
-		uploadedFiles.forEach((filePath) => deletePhoto(filePath))
+		await Promise.all(uploadedFiles.map((fileUrl) => deletePhoto(fileUrl)))
 	}
 }

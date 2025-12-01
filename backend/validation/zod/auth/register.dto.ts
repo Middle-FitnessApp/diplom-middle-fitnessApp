@@ -1,6 +1,6 @@
-import { Regex } from 'consts/regex.js'
+import { Regex } from '../../../consts/regex.js'
 import type { UserRole } from '@prisma/client'
-import { CLIENT } from 'consts/role.js'
+import { CLIENT } from '../../../consts/role.js'
 import { z } from 'zod'
 
 // Базовые обязательные поля для обеих ролей

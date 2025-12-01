@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: fitness-backend
+    ports:
+      - '3000:3000'
+    environment:
+      # Переменные окружения для подключения
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      NODE_ENV: ${NODE_ENV:-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      PORT: 3000
+
+      # Supabase (добавим позже)
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      SUPABASE_PHOTOS_BUCKET: ${SUPABASE_PHOTOS_BUCKET:-fitness-photos}
+      SUPABASE_DEFAULTS_BUCKET: ${SUPABASE_DEFAULTS_BUCKET:-default-assets}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Опционально: локальная PostgreSQL для разработки
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: fitness-postgres
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: 123456
+  #     POSTGRES_DB: fitnessApp
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+# volumes:
+#   postgres_data:

@@ -1,18 +1,18 @@
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 
-import { loginUser, logoutUser, registerUser } from 'controllers/user.js'
-import { refreshTokenService } from 'services/refreshToken.service.js'
+import { loginUser, logoutUser, registerUser } from '../controllers/user.js'
+import { refreshTokenService } from '../services/refreshToken.service.js'
 
 import { getRegisterBodySchema } from '../validation/zod/auth/register.dto.js'
 import { loginSchemaZod } from '../validation/zod/auth/login.dto.js'
 
-import { MAX_AGE_30_DAYS } from 'consts/cookie.js'
-import { CLIENT } from 'consts/role.js'
-import { ApiError } from 'utils/ApiError.js'
-import { removeRefreshCookie, setRefreshCookie } from 'utils/refreshCookie.js'
+import { MAX_AGE_30_DAYS } from '../consts/cookie.js'
+import { CLIENT } from '../consts/role.js'
+import { ApiError } from '../utils/ApiError.js'
+import { removeRefreshCookie, setRefreshCookie } from '../utils/refreshCookie.js'
 import { uploadPhotos } from '../utils/uploadPhotos.js'
-import { authGuard } from 'middleware/authGuard.js'
+import { authGuard } from '../middleware/authGuard.js'
 
 export default async function authRoutes(app: FastifyInstance) {
 	app.register(multipart)

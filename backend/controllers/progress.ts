@@ -1,6 +1,6 @@
 import { prisma } from '../prisma.js'
-import { CreateProgressDTO } from 'validation/zod/user/progress.dto.js'
-import { parseDateString, checkReportExists } from 'services/progress.service.js'
+import { CreateProgressDTO } from '../validation/zod/user/progress.dto.js'
+import { parseDateString, checkReportExists } from '../services/progress.service.js'
 
 /**
  * Создание нового отчета о прогрессе

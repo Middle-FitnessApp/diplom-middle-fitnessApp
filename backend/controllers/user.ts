@@ -2,19 +2,19 @@ import { prisma } from '../prisma.js'
 import { hash, compare } from 'bcryptjs'
 import { ApiError } from '../utils/ApiError.js'
 
-import { generateAccessToken, generateRefreshToken } from 'services/token.service.js'
-import { findUserByEmailOrPhone } from 'utils/findUserByContact.js'
+import { generateAccessToken, generateRefreshToken } from '../services/token.service.js'
+import { findUserByEmailOrPhone } from '../utils/findUserByContact.js'
 import {
 	ClientRegisterDTO,
 	TrainerRegisterDTO,
-} from 'validation/zod/auth/register.dto.js'
-import { LoginDTO } from 'validation/zod/auth/login.dto.js'
+} from '../validation/zod/auth/register.dto.js'
+import { LoginDTO } from '../validation/zod/auth/login.dto.js'
 import {
 	ClientUpdateProfileDTO,
 	TrainerUpdateProfileDTO,
-} from 'validation/zod/user/update-profile.dto.js'
-import { CLIENT, TRAINER } from 'consts/role.js'
-import { deletePhoto } from 'utils/uploadPhotos.js'
+} from '../validation/zod/user/update-profile.dto.js'
+import { CLIENT, TRAINER } from '../consts/role.js'
+import { deletePhoto } from '../utils/uploadPhotos.js'
 
 /**
  * Регистрация нового пользователя (клиента или тренера)
@@ -39,8 +39,18 @@ export async function registerUser(
 
 	// Если клиент - извлекаем измерения для Progress
 	if (role === CLIENT) {
-		const { emailOrPhone, weight, height, waist, chest, hips, arm, leg, ...clientProfile } =
-			data as ClientRegisterDTO
+		const {
+			emailOrPhone,
+			password,
+			weight,
+			height,
+			waist,
+			chest,
+			hips,
+			arm,
+			leg,
+			...clientProfile
+		} = data as ClientRegisterDTO
 
 		// Создаем пользователя БЕЗ фотографий прогресса
 		const createdUser = await prisma.user.create({
@@ -89,7 +99,7 @@ export async function registerUser(
 	}
 
 	// Создаем тренера (без измерений и Progress)
-	const { emailOrPhone, ...trainerProfile } = data as TrainerRegisterDTO
+	const { emailOrPhone, password, ...trainerProfile } = data as TrainerRegisterDTO
 
 	const createdUser = await prisma.user.create({
 		data: {

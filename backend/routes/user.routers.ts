@@ -1,21 +1,21 @@
-import { editClientProfile, editTrainerProfile, getUser } from 'controllers/user.js'
-import { createProgress } from 'controllers/progress.js'
+import { editClientProfile, editTrainerProfile, getUser } from '../controllers/user.js'
+import { createProgress } from '../controllers/progress.js'
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 
-import { authGuard } from 'middleware/authGuard.js'
-import { hasRole } from 'middleware/hasRole.js'
+import { authGuard } from '../middleware/authGuard.js'
+import { hasRole } from '../middleware/hasRole.js'
 import {
 	ClientUpdateProfileSchema,
 	TrainerUpdateProfileSchema,
-} from 'validation/zod/user/update-profile.dto.js'
-import { CreateProgressSchema } from 'validation/zod/user/progress.dto.js'
-import { MAX_PHOTO_SIZE } from 'consts/file.js'
+} from '../validation/zod/user/update-profile.dto.js'
+import { CreateProgressSchema } from '../validation/zod/user/progress.dto.js'
+import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import {
 	cleanupFilesOnError,
 	attachFilesToRequest,
 	validateRequiredPhotos,
-} from 'utils/uploadPhotos.js'
+} from '../utils/uploadPhotos.js'
 
 export default async function userRoutes(app: FastifyInstance) {
 	app.register(multipart)
@@ -45,7 +45,7 @@ export default async function userRoutes(app: FastifyInstance) {
 			// Проверяем, является ли запрос multipart (есть ли файлы)
 			if (req.isMultipart()) {
 				// Обрабатываем загрузку файлов (только основное фото профиля, макс. 500KB)
-				const { uploadPhotos } = await import('utils/uploadPhotos.js')
+				const { uploadPhotos } = await import('../utils/uploadPhotos.js')
 				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024)
 				body = uploadResult.body
 				filesMap = uploadResult.files
@@ -82,7 +82,7 @@ export default async function userRoutes(app: FastifyInstance) {
 			// Проверяем, является ли запрос multipart (есть ли файлы)
 			if (req.isMultipart()) {
 				// Обрабатываем загрузку файлов (только основное фото профиля, макс. 500KB)
-				const { uploadPhotos } = await import('utils/uploadPhotos.js')
+				const { uploadPhotos } = await import('../utils/uploadPhotos.js')
 				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024)
 				body = uploadResult.body
 				filesMap = uploadResult.files
@@ -114,8 +114,8 @@ export default async function userRoutes(app: FastifyInstance) {
 		'/progress/latest',
 		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
 		async (req, reply) => {
-			const { getLatestProgress } = await import('controllers/progress.js')
-			const { ApiError } = await import('utils/ApiError.js')
+			const { getLatestProgress } = await import('../controllers/progress.js')
+			const { ApiError } = await import('../utils/ApiError.js')
 
 			const latestProgress = await getLatestProgress(req.user.id)
 
@@ -136,8 +136,8 @@ export default async function userRoutes(app: FastifyInstance) {
 		},
 		async (req, reply) => {
 			// Обрабатываем multipart запрос с тремя обязательными фотографиями
-			const { uploadPhotos } = await import('utils/uploadPhotos.js')
-			const { ApiError } = await import('utils/ApiError.js')
+			const { uploadPhotos } = await import('../utils/uploadPhotos.js')
+			const { ApiError } = await import('../utils/ApiError.js')
 
 			const uploadResult = await uploadPhotos(
 				req,
