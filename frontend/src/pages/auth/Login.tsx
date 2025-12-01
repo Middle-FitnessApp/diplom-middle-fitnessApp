@@ -5,6 +5,8 @@ import { setCredentials } from '../../store/slices/auth.slice'
 import { useAppDispatch } from '../../store/hooks'
 import { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
+import type { ApiError } from '../../store/types/auth.types'
+import { BadRequestState } from '../../components/errors'
 
 export const Login = () => {
 	const { Title, Text } = Typography
@@ -13,6 +15,7 @@ export const Login = () => {
 
 	const [login, { isLoading }] = useLoginMutation()
 	const [formError, setFormError] = useState<string | null>(null)
+	const [showBadRequestNotification, setShowBadRequestNotification] = useState(false)
 
 	type FieldType = {
 		login: string
@@ -22,6 +25,7 @@ export const Login = () => {
 	const onFinish = async (values: FieldType) => {
 		try {
 			setFormError(null)
+			setShowBadRequestNotification(false)
 
 			const loginData = {
 				emailOrPhone: values.login,
@@ -50,12 +54,23 @@ export const Login = () => {
 			console.error('Login error:', err)
 			const errorMessage =
 				err?.data?.message || err?.data?.error || err?.error || 'Ошибка входа'
-			setFormError(errorMessage)
+
+			if (err && (err as ApiError)?.status === 400) {
+				setShowBadRequestNotification(true)
+			} else {
+				setFormError(errorMessage)
+			}
 		}
 	}
 
 	return (
 		<div className='auth-container gradient-bg'>
+			{showBadRequestNotification && (
+				<BadRequestState
+					title='Вы ввели неверные данные'
+					message='Пожалуйста попробуйте снова'
+				/>
+			)}
 			<div className='auth-card'>
 				<div className='text-center mb-8'>
 					<Title level={2} className='!mb-2 !text-gray-800'>

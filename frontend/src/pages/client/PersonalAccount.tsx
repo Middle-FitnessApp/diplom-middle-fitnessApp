@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Form, Input, Button, Card, Typography, Result } from 'antd'
+import { Form, Input, Button, Card, Typography } from 'antd'
 import { EditOutlined, LogoutOutlined, SaveOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { ACCOUNT_FIELDS } from '../../constants/accountFields'
@@ -14,6 +14,7 @@ import {
 } from '../../store/api/user.api'
 import { logout, setUser, updateUser } from '../../store/slices/auth.slice'
 import type { ApiError } from '../../store/types/auth.types'
+import { ErrorState, UnauthorizedState } from '../../components/errors'
 
 const { Title, Text } = Typography
 
@@ -173,46 +174,18 @@ export const PersonalAccount = () => {
 	}
 
 	if (error && (error as ApiError)?.status === 401) {
-		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
-					<Result
-						status='403'
-						title='Требуется авторизация'
-						subTitle='Вы не авторизованы. Пожалуйста, войдите в аккаунт для доступа к профилю'
-						extra={
-							<Button type='primary' size='large' onClick={() => navigate('/login')}>
-								Войти
-							</Button>
-						}
-					/>
-				</div>
-			</div>
-		)
+		return <UnauthorizedState />
 	}
 
 	if (error) {
 		return (
-			<div className='flex flex-col items-center justify-center min-h-[400px] gap-4'>
-				<Text type='danger'>Ошибка загрузки данных профиля</Text>
-				<Button onClick={() => window.location.reload()}>Попробовать снова</Button>
-			</div>
-		)
-	}
-
-	if (error && (error as ApiError)?.status === 401) {
-		return (
 			<div className='page-container gradient-bg'>
 				<div className='page-card' style={{ maxWidth: '500px' }}>
-					<Result
-						status='403'
-						title='Требуется авторизация'
-						subTitle='Вы не авторизованы. Пожалуйста, войдите в аккаунт для доступа к профилю'
-						extra={
-							<Button type='primary' size='large' onClick={() => navigate('/login')}>
-								Перейти на вход
-							</Button>
-						}
+					<ErrorState
+						title='Ошибка загрузки'
+						message='Не удалось загрузить данные профиля'
+						onRetry={() => window.location.reload()}
+						showRetryButton={true}
 					/>
 				</div>
 			</div>
@@ -221,9 +194,16 @@ export const PersonalAccount = () => {
 
 	if (!user) {
 		return (
-			<div className='flex flex-col items-center justify-center min-h-[400px] gap-4'>
-				<Text type='secondary'>Пожалуйста, войдите в аккаунт</Text>
-				<Button onClick={() => navigate('/login')}>Войти</Button>
+			<div className='page-container gradient-bg'>
+				<div className='page-card' style={{ maxWidth: '500px' }}>
+					<ErrorState
+						title='Ошибка загрузки'
+						message='Пожалуйста, войдите в аккаунт'
+						onRetry={() => navigate('/login')}
+						showRetryButton={true}
+						buttonText='Войти'
+					/>
+				</div>
 			</div>
 		)
 	}
