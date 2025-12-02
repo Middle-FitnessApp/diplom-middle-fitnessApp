@@ -14,6 +14,7 @@ import {
 } from '../utils/uploadPhotos.js'
 
 export default async function progressRoutes(app: FastifyInstance) {
+	// Регистрируем multipart, но он будет работать только для multipart/form-data
 	app.register(multipart)
 
 	// Получение последнего отчета о прогрессе
@@ -147,11 +148,26 @@ export default async function progressRoutes(app: FastifyInstance) {
 				throw ApiError.badRequest('Некорректный формат ID отчета')
 			}
 
+			// Если body - строка (multipart обработал как текст), парсим JSON
+			let bodyData = req.body
+			if (typeof req.body === 'string') {
+				try {
+					bodyData = JSON.parse(req.body)
+				} catch {
+					throw ApiError.badRequest('Некорректный JSON в теле запроса')
+				}
+			}
+
 			// Валидация данных комментария
-			const validatedData = CreateCommentSchema.parse(req.body)
+			const validation = CreateCommentSchema.safeParse(bodyData)
+
+			if (!validation.success) {
+				const firstError = validation.error.issues[0]
+				throw ApiError.badRequest(firstError.message)
+			}
 
 			// Создание комментария
-			const comment = await addComment(id, req.user.id, validatedData)
+			const comment = await addComment(id, req.user.id, validation.data)
 
 			return reply.status(201).send({
 				message: 'Комментарий успешно добавлен',
