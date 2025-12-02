@@ -10,6 +10,7 @@ import {
 	TrainerUpdateProfileSchema,
 } from '../validation/zod/user/update-profile.dto.js'
 import { CreateProgressSchema } from '../validation/zod/progress/progress.dto.js'
+import { CreateCommentSchema } from '../validation/zod/progress/comment.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import {
 	cleanupFilesOnError,
@@ -225,6 +226,34 @@ export default async function userRoutes(app: FastifyInstance) {
 			const { getAllProgress } = await import('../controllers/progress.js')
 			const progress = await getAllProgress(req.user.id)
 			return reply.status(200).send({ progress })
+		},
+	)
+
+	// Добавление комментария тренером к отчету о прогрессе
+	app.post(
+		'/progress/:id/comments',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { addComment } = await import('../controllers/progress.js')
+			const { ApiError } = await import('../utils/ApiError.js')
+			const { Regex } = await import('../consts/regex.js')
+			const { id } = req.params as { id: string }
+
+			// Валидация ID отчета
+			if (!id || id.length < 10 || !Regex.cuid.test(id)) {
+				throw ApiError.badRequest('Некорректный формат ID отчета')
+			}
+
+			// Валидация данных комментария
+			const validatedData = CreateCommentSchema.parse(req.body)
+
+			// Создание комментария
+			const comment = await addComment(id, req.user.id, validatedData)
+
+			return reply.status(201).send({
+				message: 'Комментарий успешно добавлен',
+				comment,
+			})
 		},
 	)
 }
