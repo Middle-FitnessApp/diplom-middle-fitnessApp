@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
-import { getClientsForTrainer, toggleClientStar } from 'controllers/trainer.js'
+import { getClientsForTrainer, toggleClientStar } from '../controllers/trainer.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// список клиентов тренера

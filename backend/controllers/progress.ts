@@ -1,13 +1,14 @@
 import { prisma } from '../prisma.js'
 import { CreateProgressDTO } from '../validation/zod/progress/progress.dto.js'
 import { CreateCommentDTO } from '../validation/zod/progress/comment.dto.js'
-import { parseDateString, checkReportExists } from '../services/progress.service.js'
+import { parseDateString, getDayRange } from '../services/date.service.js'
+import { ApiError } from '../utils/ApiError.js'
 
 /**
  * Создание нового отчета о прогрессе
  * @param userId - ID пользователя
  * @param data - Данные отчета (измерения и дата)
- * @param filesMap - Объект с путями к загруженным фотографиям
+ * @param filesMap - Объект с путями к загруженным фотографиями
  * @returns Созданный отчет о прогрессе
  */
 export async function createProgress(
@@ -19,7 +20,20 @@ export async function createProgress(
 	const reportDate = parseDateString(data.date)
 
 	// Проверяем, существует ли уже отчет за эту дату
-	await checkReportExists(userId, reportDate)
+	const dateRange = getDayRange(reportDate)
+	const existingReport = await prisma.progress.findFirst({
+		where: {
+			userId,
+			date: {
+				gte: dateRange.start,
+				lt: dateRange.end,
+			},
+		},
+	})
+
+	if (existingReport) {
+		throw ApiError.badRequest('Отчет за эту дату уже существует')
+	}
 
 	// Создаем новый отчет о прогрессе
 	const progress = await prisma.progress.create({
