@@ -312,77 +312,90 @@ a:hover {
 
 /* Стили для Nutrition страницы */
 .nutrition-category-wrapper {
-  min-height: 120px; /* Минимальная высота для закрытой карточки */
+	min-height: 120px; /* Минимальная высота для закрытой карточки */
 }
 
 .nutrition-category-card {
-  height: auto;
-  min-height: 120px;
-  transition: all 0.3s ease;
-  margin-bottom: 0;
+	height: auto;
+	min-height: 120px;
+	transition: all 0.3s ease;
+	margin-bottom: 0;
 }
 
 .nutrition-category-card.expanded {
-  min-height: 300px; /* Минимальная высота для открытой карточки */
+	min-height: 300px; /* Минимальная высота для открытой карточки */
 }
 
 /* Убираем стандартные отступы Ant Design Card */
 .nutrition-category-card .ant-card-body {
-  padding: 16px !important;
+	padding: 16px !important;
 }
 
 /* Фиксируем высоту заголовка карточки */
 .nutrition-category-card .ant-card-meta {
-  min-height: 60px;
+	min-height: 60px;
 }
 
 /* Стили для содержимого когда карточка открыта */
 .nutrition-category-card.expanded .ant-card-meta-description {
-  max-height: none;
-  overflow: visible;
+	max-height: none;
+	overflow: visible;
 }
 
 /* Убираем стандартный ховер Ant Design */
 .nutrition-category-card.ant-card-hoverable:hover {
-  transform: none;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	transform: none;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .nutrition-category-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+	transform: translateY(-2px);
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 /* Исправляем grid layout */
 .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.gap-6 {
-  grid-auto-rows: minmax(120px, auto);
-  align-items: start;
+	grid-auto-rows: minmax(120px, auto);
+	align-items: start;
 }
 
 /* Специальные стили для страницы Admin */
 .admin-page-card {
-  background: var(--bg-light);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border);
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
+	background: var(--bg-light);
+	border-radius: 20px;
+	padding: 40px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--border);
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
 }
 
 /* Убираем ограничение максимальной ширины только для админской страницы */
 .admin-layout .admin-page-card {
-  max-width: none;
+	max-width: none;
 }
 
 /* Фиксируем высоту и убираем общую прокрутку */
 .admin-layout {
-  height: 100vh;
-  overflow: hidden;
+	height: 100vh;
+	overflow: hidden;
 }
 
 .admin-content {
-  height: 100%;
-  overflow: auto;
+	height: 100%;
+	overflow: auto;
+}
+.custom-segmented {
+	background: transparent;
+}
+.custom-segmented .ant-segmented-item {
+	background-color: lightgray; /* цвет фона всех табов */
+	color: black; /* цвет текста */
+	border-radius: 8px; /* например, радиус */
+}
+
+.custom-segmented .ant-segmented-item-selected {
+	background-color: #1890ff; /* цвет активного таба */
+	color: white;
 }

@@ -13,6 +13,14 @@ enum UserRole {
   TRAINER
 }
 
+// Тип приёма пищи
+enum MealType {
+  BREAKFAST
+  SNACK
+  LUNCH
+  DINNER
+}
+
 model User {
   // общие поля
   id        String   @id @default(cuid())
@@ -45,6 +53,10 @@ model User {
   // связи тренер–клиент
   trainerClients TrainerClient[] @relation("TrainerClientsAsTrainer")
   asClientOf     TrainerClient[] @relation("TrainerClientsAsClient")
+
+  // 🔽 связи для питания
+  nutritionCategories   NutritionCategory[]     @relation("UserNutritionCategories")
+  assignedNutritionPlan AssignedNutritionPlan[]
 }
 
 model RefreshToken {
@@ -109,10 +121,10 @@ model Comment {
 
 // Связь тренера и его клиента с флагом избранности
 model TrainerClient {
-  id        String   @id @default(cuid())
-  trainer   User     @relation("TrainerClientsAsTrainer", fields: [trainerId], references: [id])
+  id        String @id @default(cuid())
+  trainer   User   @relation("TrainerClientsAsTrainer", fields: [trainerId], references: [id])
   trainerId String
-  client    User     @relation("TrainerClientsAsClient", fields: [clientId], references: [id])
+  client    User   @relation("TrainerClientsAsClient", fields: [clientId], references: [id])
   clientId  String
 
   starred   Boolean  @default(false)
@@ -120,4 +132,85 @@ model TrainerClient {
 
   // Один клиент может быть только у одного тренера
   @@unique([clientId])
+}
+
+//
+// ======= Питание =======
+//
+
+// Категория программ питания
+model NutritionCategory {
+  id          String          @id @default(cuid())
+  trainerId   String
+  trainer     User            @relation("UserNutritionCategories", fields: [trainerId], references: [id], onDelete: Cascade)
+  name        String          @unique
+  description String?
+
+  programs    NutritionProgram[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+// Программа питания
+model NutritionProgram {
+  id           String                @id @default(cuid())
+  categoryId   String
+  category     NutritionCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name         String                @unique
+  description  String?
+
+  days         ProgramDay[]
+  assignedPlans AssignedNutritionPlan[]
+
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+}
+
+
+// День программы
+model ProgramDay {
+  id        String           @id @default(cuid())
+  programId String
+  program   NutritionProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  dayTitle String
+  dayOrder Int
+
+  meals Meal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Приём пищи
+model Meal {
+  id    String     @id @default(cuid())
+  dayId String
+  day   ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  type      MealType
+  name      String
+  mealOrder Int
+
+  items String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Назначенный клиенту план питания
+model AssignedNutritionPlan {
+  id       String @id @default(cuid())
+  clientId String
+  client   User   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  programId String
+  program   NutritionProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  // Если нужно ограничить конкретными днями — массив ID
+  dayIds String[]
+
+  createdAt DateTime @default(now())
 }

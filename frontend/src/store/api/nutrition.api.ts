@@ -1,18 +1,83 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type {
 	NutritionCategory,
 	NutritionProgram,
 	ProgramDay,
 	AssignedNutritionPlan,
 } from '../types/nutrition.types'
+import {
+	createApi,
+	fetchBaseQuery,
+	type BaseQueryFn,
+	type FetchArgs,
+	type FetchBaseQueryError,
+} from '@reduxjs/toolkit/query/react'
+
+const rawBaseQuery = fetchBaseQuery({
+	baseUrl: 'http://localhost:3000/api',
+	credentials: 'include',
+	prepareHeaders: (headers, { endpoint, type }) => {
+		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+		if (token) {
+			headers.set('authorization', `Bearer ${token}`)
+		}
+
+		const isFormDataEndpoint = [
+			'updateClientProfileWithPhoto',
+			'updateTrainerProfileWithPhoto',
+		].includes(endpoint)
+
+		//  НЕ ставим Content-Type для GET и для FormData
+		const isJsonMutation =
+			!isFormDataEndpoint && type === 'mutation' && !endpoint.includes('WithPhoto')
+
+		if (isJsonMutation) {
+			headers.set('Content-Type', 'application/json')
+		}
+
+		return headers
+	},
+})
+
+export const baseQueryWithReauth: BaseQueryFn<
+	string | FetchArgs,
+	unknown,
+	FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+	let result = await rawBaseQuery(args, api, extraOptions)
+
+	if (result.error && result.error.status === 401) {
+		const refreshResult = await rawBaseQuery(
+			{
+				url: '/../auth/refresh',
+				method: 'POST',
+				credentials: 'include',
+			},
+			api,
+			extraOptions,
+		)
+
+		if (refreshResult.data) {
+			result = await rawBaseQuery(args, api, extraOptions)
+		} else if (typeof window !== 'undefined') {
+			localStorage.removeItem('token')
+			window.location.href = '/login'
+		}
+	}
+
+	return result
+}
 
 export const nutritionApi = createApi({
 	reducerPath: 'nutritionApi',
-	baseQuery: fetchBaseQuery({
-		baseUrl: '/api/nutrition',
-	}),
+	baseQuery: baseQueryWithReauth,
 	tagTypes: ['Category', 'Program', 'Day', 'AssignedPlan'],
 	endpoints: (builder) => ({
+		// План питания текущего клиента
+		getClientNutritionPlan: builder.query<ProgramDay[], void>({
+			query: () => '/nutrition/client/plan',
+			providesTags: ['AssignedPlan', 'Day'],
+		}),
+
 		// == КАТЕГОРИИ === (для NutritionTrainer)
 		getCategories: builder.query<NutritionCategory[], void>({
 			query: () => '/categories',
@@ -33,7 +98,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Category'],
 		}),
 
-		// = ПРОГРАММЫ = (для CreateNutritionTraier)
+		// = ПРОГРАММЫ = (для CreateNutritionTrainer)
 		getPrograms: builder.query<NutritionProgram[], string>({
 			query: (categoryId) => `/categories/${categoryId}/programs`,
 			providesTags: ['Program'],
@@ -70,7 +135,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Program'],
 		}),
 
-		// === ДНИ (для NutritionPlanTrainer и CrateNutritionTrainer)
+		// === ДНИ (для NutritionPlanTrainer и CreateNutritionTrainer)
 		getProgramDays: builder.query<ProgramDay[], string>({
 			query: (programId) => `/programs/${programId}/days`,
 			providesTags: ['Day'],
@@ -148,4 +213,7 @@ export const {
 
 	// Назначение программы
 	useAssignNutritionPlanMutation,
+
+	// План клиента
+	useGetClientNutritionPlanQuery,
 } = nutritionApi

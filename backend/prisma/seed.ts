@@ -26,7 +26,182 @@ async function main() {
 		},
 	})
 
-	// Создаём отчеты прогресса для клиента 1 (7 штук за 6 месяцев)
+	const client2 = await prisma.user.upsert({
+		where: { phone: '+79161234567' },
+		update: {},
+		create: {
+			name: 'Мария Петрова',
+			phone: '+79161234567',
+			password: passwordHash,
+			age: 28,
+			role: 'CLIENT',
+			goal: 'Похудеть и подтянуть фигуру',
+			restrictions: 'Проблемы с коленями',
+			experience: 'Новичок в фитнесе',
+			diet: 'Стараюсь правильно питаться',
+		},
+	})
+
+	// Создаём двух тренеров
+	const trainer1 = await prisma.user.upsert({
+		where: { email: 'trainer1@mail.ru' },
+		update: {},
+		create: {
+			name: 'Алексей Смирнов',
+			email: 'trainer1@mail.ru',
+			password: passwordHash,
+			age: 32,
+			role: 'TRAINER',
+			telegram: '@trainer_alex',
+			whatsapp: '+79161111111',
+			instagram: '@alex_fitness_coach',
+			bio: 'Сертифицированный тренер с 10-летним опытом. Специализация: набор массы, функциональный тренинг.',
+		},
+	})
+
+	const trainer2 = await prisma.user.upsert({
+		where: { phone: '+79162222222' },
+		update: {},
+		create: {
+			name: 'Елена Кузнецова',
+			phone: '+79162222222',
+			password: passwordHash,
+			age: 29,
+			role: 'TRAINER',
+			telegram: '@elena_fit',
+			whatsapp: '+79162222222',
+			instagram: '@elena_fitness',
+			bio: 'Персональный тренер, специалист по йоге и пилатесу. Помогу достичь гармонии тела и духа.',
+		},
+	})
+
+	// 🔥 Создаём тестовый план питания (30 дней)
+	console.log('🍽️ Создаём план питания...')
+
+	// Категория
+	const nutritionCategory = await prisma.nutritionCategory.upsert({
+		where: { name: 'Тестовая программа' },
+		update: {},
+		create: {
+			name: 'Тестовая программа',
+			trainerId: trainer1.id,
+		},
+	})
+
+	// Программа
+	const nutritionProgram = await prisma.nutritionProgram.upsert({
+		where: { name: '30-дневный план питания' },
+		update: {},
+		create: {
+			name: '30-дневный план питания',
+			categoryId: nutritionCategory.id,
+		},
+	})
+
+	// Меню для дней (повторяется для простоты)
+	const dayMeals = [
+		{
+			type: 'BREAKFAST' as const,
+			name: 'Завтрак',
+			mealOrder: 1,
+			items: [
+				'яичница из двух яиц',
+				'огурец свежий и болгарский перец',
+				'бутерброд из бородинского хлеба с сыром тильзитер',
+				'банан',
+				'чай чёрный',
+			],
+		},
+		{
+			type: 'SNACK' as const,
+			name: 'Перекус 1',
+			mealOrder: 2,
+			items: ['греческий йогурт 150г', 'миндаль 20г'],
+		},
+		{
+			type: 'LUNCH' as const,
+			name: 'Обед',
+			mealOrder: 3,
+			items: [
+				'куриная грудка запечённая 150г',
+				'рис бурый 100г',
+				'салат из свежих овощей',
+				'оливковое масло 1 ст.л.',
+			],
+		},
+		{
+			type: 'SNACK' as const,
+			name: 'Перекус 2',
+			mealOrder: 4,
+			items: ['яблоко', 'творог 5% 100г'],
+		},
+		{
+			type: 'DINNER' as const,
+			name: 'Ужин',
+			mealOrder: 5,
+			items: ['рыба на пару 150г', 'овощи тушёные 200г', 'гречка 80г'],
+		},
+	]
+
+	// Создаём 30 дней
+	const programDays: string[] = []
+	for (let dayNum = 1; dayNum <= 30; dayNum++) {
+		const day = await prisma.programDay.create({
+			data: {
+				programId: nutritionProgram.id,
+				dayTitle: `День ${dayNum}`,
+				dayOrder: dayNum,
+				meals: {
+					create: dayMeals.map((meal) => ({
+						...meal,
+					})),
+				},
+			},
+		})
+		programDays.push(day.id)
+	}
+
+	console.log(
+		`✅ Создана программа "${nutritionProgram.name}" с ${programDays.length} днями`,
+	)
+
+	// Назначаем план клиентам (все 30 дней)
+	await prisma.assignedNutritionPlan.create({
+		data: {
+			clientId: client1.id,
+			programId: nutritionProgram.id,
+			dayIds: programDays,
+		},
+	})
+
+	await prisma.assignedNutritionPlan.create({
+		data: {
+			clientId: client2.id,
+			programId: nutritionProgram.id,
+			dayIds: programDays,
+		},
+	})
+
+	console.log('✅ План питания назначен обоим клиентам')
+
+	// Создаём связи Trainer-Client
+	await prisma.trainerClient.create({
+		data: {
+			trainerId: trainer1.id,
+			clientId: client1.id,
+			starred: true,
+		},
+	})
+
+	await prisma.trainerClient.create({
+		data: {
+			trainerId: trainer1.id,
+			clientId: client2.id,
+			starred: false,
+		},
+	})
+
+	// Создаём отчеты прогресса для client1 (7 штук)
 	const client1Progress = [
 		{
 			date: new Date('2024-06-01'),
@@ -111,24 +286,6 @@ async function main() {
 			},
 		})
 	}
-
-	const client2 = await prisma.user.upsert({
-		where: { phone: '+79161234567' },
-		update: {},
-		create: {
-			name: 'Мария Петрова',
-			phone: '+79161234567',
-			password: passwordHash,
-			age: 28,
-			role: 'CLIENT',
-			goal: 'Похудеть и подтянуть фигуру',
-			restrictions: 'Проблемы с коленями',
-			experience: 'Новичок в фитнесе',
-			diet: 'Стараюсь правильно питаться',
-		},
-	})
-
-	// Создаём отчеты прогресса для клиента 2 (7 штук за 6 месяцев)
 	const client2Progress = [
 		{
 			date: new Date('2024-06-01'),
@@ -213,39 +370,6 @@ async function main() {
 			},
 		})
 	}
-
-	// Создаём двух тренеров
-	const trainer1 = await prisma.user.upsert({
-		where: { email: 'trainer1@mail.ru' },
-		update: {},
-		create: {
-			name: 'Алексей Смирнов',
-			email: 'trainer1@mail.ru',
-			password: passwordHash,
-			age: 32,
-			role: 'TRAINER',
-			telegram: '@trainer_alex',
-			whatsapp: '+79161111111',
-			instagram: '@alex_fitness_coach',
-			bio: 'Сертифицированный тренер с 10-летним опытом. Специализация: набор массы, функциональный тренинг.',
-		},
-	})
-
-	const trainer2 = await prisma.user.upsert({
-		where: { phone: '+79162222222' },
-		update: {},
-		create: {
-			name: 'Елена Кузнецова',
-			phone: '+79162222222',
-			password: passwordHash,
-			age: 29,
-			role: 'TRAINER',
-			telegram: '@elena_fit',
-			whatsapp: '+79162222222',
-			instagram: '@elena_fitness',
-			bio: 'Персональный тренер, специалист по йоге и пилатесу. Помогу достичь гармонии тела и духа.',
-		},
-	})
 
 	console.log('✅ База данных успешно заполнена!')
 	console.log('\n📋 Созданные пользователи:')
