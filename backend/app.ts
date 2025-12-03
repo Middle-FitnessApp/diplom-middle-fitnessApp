@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
 import userRoutes from './routes/user.routers.js'
+import trainerRoutes from 'routes/trainer.routes.js'
 
 const app = Fastify()
 
@@ -30,16 +31,20 @@ app.register(fastifyCookie, {
 })
 
 app.register(
-	async (instance) => {
-		instance.register(authRoutes, { prefix: '/auth' })
-		instance.register(userRoutes, { prefix: '/user' })
-	},
-	{ prefix: '/api' },
+  async (instance) => {
+    instance.register(authRoutes, { prefix: '/auth' })
+    instance.register(userRoutes, { prefix: '/user' })
+    instance.register(trainerRoutes, { prefix: '/trainer' }) 
+  },
+  { prefix: '/api' },
 )
+
 
 app.register(fastifyStatic, {
 	root: path.join(process.cwd(), 'uploads'),
 	prefix: '/uploads/',
 })
+
+
 
 export default app

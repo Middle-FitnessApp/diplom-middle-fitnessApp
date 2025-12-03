@@ -41,6 +41,10 @@ model User {
   refreshTokens   RefreshToken[]
   progressReports Progress[]
   comments        Comment[]
+
+  // связи тренер–клиент
+  trainerClients TrainerClient[] @relation("TrainerClientsAsTrainer")
+  asClientOf     TrainerClient[] @relation("TrainerClientsAsClient")
 }
 
 model RefreshToken {
@@ -101,4 +105,19 @@ model Comment {
 
   @@index([progressId])
   @@index([trainerId])
+}
+
+// Связь тренера и его клиента с флагом избранности
+model TrainerClient {
+  id        String   @id @default(cuid())
+  trainer   User     @relation("TrainerClientsAsTrainer", fields: [trainerId], references: [id])
+  trainerId String
+  client    User     @relation("TrainerClientsAsClient", fields: [clientId], references: [id])
+  clientId  String
+
+  starred   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Один клиент может быть только у одного тренера
+  @@unique([clientId])
 }

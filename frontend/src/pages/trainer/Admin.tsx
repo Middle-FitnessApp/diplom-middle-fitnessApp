@@ -1,40 +1,94 @@
-import React, { useState } from 'react'
-import { Layout, Button, Typography } from 'antd'
+// src/pages/Admin/Admin.tsx
+import React, { useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import type { RootState, AppDispatch } from '../../store'
+import { Layout, Button, Typography, Spin } from 'antd'
 import { MenuOutlined } from '@ant-design/icons'
-import { mockClients } from '../../mocks/mock-data'
 import { ClientList, TrainerInfo, TrainerSidebar } from '../../components/Admin'
+import { useGetClientsQuery, useToggleClientStarMutation } from '../../store/api/trainer.api'
+import { useGetMeQuery } from '../../store/api/user.api'
+import { toggleSidebar } from '../../store/slices/ui.slice'
 
 const { Title } = Typography
 const { Content, Sider } = Layout
 
 export const Admin: React.FC = () => {
-  const filterStarClients = () =>
-    mockClients.filter((client) => client.starred).map((client) => client.id)
+  const dispatch = useDispatch<AppDispatch>()
 
-  const [starredClients, setStarredClients] = useState<string[]>(filterStarClients())
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // текущий пользователь (для проверки загрузки)
+  const { data: meData, isLoading: isLoadingMe } = useGetMeQuery()
+  const trainerId = meData?.user.id
 
-  const workingClients = mockClients
-    .filter((client) => starredClients.includes(client.id))
-    .map((client) => ({ ...client, starred: true }))
+  // клиенты тренера с сервера (все CLIENT с флагом starred)
+  const { 
+    data: clients = [], 
+    isLoading: isLoadingClients, 
+    isError 
+  } = useGetClientsQuery()
+  const [toggleStarMutation] = useToggleClientStarMutation()
 
-  const newClients = mockClients
-    .filter((client) => !starredClients.includes(client.id))
-    .map((client) => ({ ...client, starred: false }))
+  const sidebarCollapsed = useSelector(
+    (state: RootState) => state.ui.isSidebarOpen === false
+  )
 
-  const handleToggleSidebar = () => setSidebarCollapsed((prev) => !prev)
+  const handleToggleSidebar = () => dispatch(toggleSidebar())
 
-  const handleToggleStar = (clientId: string) => {
-    setStarredClients((prev) =>
-      prev.includes(clientId)
-        ? prev.filter((id) => id !== clientId)
-        : [...prev, clientId],
+  const handleToggleStar = async (clientId: string) => {
+    try {
+      await toggleStarMutation({ clientId }).unwrap()
+    } catch (error) {
+      console.error('Ошибка переключения starred:', error)
+    }
+  }
+
+  // разделяем на "в работе" и "новые" по серверному starred
+  const { workingClients, newClients, sidebarClients } = useMemo(() => {
+    const withStarFlag = clients.map((client) => ({
+      ...client,
+      starred: Boolean(client.starred), // гарантируем boolean
+    }))
+
+    const working = withStarFlag.filter((c) => c.starred)
+    const fresh = withStarFlag.filter((c) => !c.starred)
+
+    return {
+      workingClients: working,
+      newClients: fresh,
+      sidebarClients: withStarFlag,
+    }
+  }, [clients])
+
+  // загрузка
+  if (isLoadingMe || isLoadingClients) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  // ошибка API
+  if (isError) {
+    return (
+      <div className="p-6 text-red-500 text-center">
+        Не удалось загрузить клиентов тренера
+      </div>
+    )
+  }
+
+  // нет тренера
+  if (!trainerId) {
+    return (
+      <div className="p-6 text-red-500 text-center">
+        Не удалось определить тренера
+      </div>
     )
   }
 
   return (
-    <div className="gradient-bg">
-      <Layout className="admin-layout bg-transparent" style={{ minHeight: '100vh' }}>
+    <div className="gradient-bg" >
+      <Layout className="admin-layout bg-transparent" 
+>
         <Sider
           width={sidebarCollapsed ? 80 : 300}
           collapsed={sidebarCollapsed}
@@ -51,14 +105,11 @@ export const Admin: React.FC = () => {
               {!sidebarCollapsed && <span className="ml-2">Свернуть</span>}
             </Button>
           </div>
-          
+
           {!sidebarCollapsed && (
             <div className="p-4">
               <TrainerSidebar
-                clients={mockClients.map((client) => ({
-                  ...client,
-                  starred: starredClients.includes(client.id),
-                }))}
+                clients={sidebarClients}
                 onToggleStar={handleToggleStar}
               />
             </div>
