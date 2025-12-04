@@ -6,8 +6,10 @@ import {
 	getTrainerById,
 	getClientsForTrainer,
 	toggleClientFavorite,
+	getTrainerInvites,
 } from '../controllers/trainer.js'
 import { ApiError } from '../utils/ApiError.js'
+import { GetInvitesSchema } from '../validation/zod/trainer/get-invites.dto.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт - просмотр всех тренеров
@@ -15,6 +17,19 @@ export default async function trainerRoutes(app: FastifyInstance) {
 		const trainers = await getAllTrainers()
 		return reply.status(200).send({ trainers })
 	})
+
+	// Получение приглашений для тренера (должен быть ДО /:id чтобы не конфликтовать)
+	app.get(
+		'/invites',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { status, page, limit } = GetInvitesSchema.parse(req.query)
+
+			const invites = await getTrainerInvites(req.user.id, status, page, limit)
+
+			return reply.status(200).send({ invites })
+		},
+	)
 
 	// список клиентов тренера (должен быть ДО /:id чтобы не конфликтовать)
 	app.get(

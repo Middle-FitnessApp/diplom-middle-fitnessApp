@@ -137,3 +137,53 @@ export async function toggleClientFavorite(trainerId: string, clientId: string) 
 
 	return updated.isFavorite
 }
+
+/**
+ * Получение приглашений для тренера с пагинацией
+ * @param trainerId - ID тренера
+ * @param status - Статус приглашений (PENDING, ACCEPTED, REJECTED)
+ * @param page - Номер страницы
+ * @param limit - Количество элементов на странице
+ * @returns Список приглашений с информацией о клиентах
+ */
+export async function getTrainerInvites(
+	trainerId: string,
+	status: 'PENDING' | 'ACCEPTED' | 'REJECTED',
+	page: number,
+	limit: number,
+) {
+	const skip = (page - 1) * limit
+
+	const invites = await prisma.trainerClient.findMany({
+		where: {
+			trainerId,
+			status,
+		},
+		select: {
+			id: true,
+			status: true,
+			createdAt: true,
+			client: {
+				select: {
+					id: true,
+					name: true,
+					photo: true,
+					age: true,
+					goal: true,
+				},
+			},
+		},
+		orderBy: {
+			createdAt: 'desc',
+		},
+		skip,
+		take: limit,
+	})
+
+	return invites.map((invite) => ({
+		id: invite.id,
+		status: invite.status,
+		createdAt: invite.createdAt,
+		client: invite.client,
+	}))
+}
