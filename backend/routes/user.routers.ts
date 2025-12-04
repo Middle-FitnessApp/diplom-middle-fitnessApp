@@ -1,4 +1,5 @@
 import { editClientProfile, editTrainerProfile, getUser } from '../controllers/user.js'
+import { inviteTrainer } from '../controllers/client.js'
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 
@@ -8,6 +9,7 @@ import {
 	ClientUpdateProfileSchema,
 	TrainerUpdateProfileSchema,
 } from '../validation/zod/user/update-profile.dto.js'
+import { InviteTrainerSchema } from '../validation/zod/client/invite-trainer.dto.js'
 import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
 
 export default async function userRoutes(app: FastifyInstance) {
@@ -98,6 +100,22 @@ export default async function userRoutes(app: FastifyInstance) {
 			return reply.status(200).send({
 				message: 'Профиль тренера успешно обновлён',
 				user: updatedProfile,
+			})
+		},
+	)
+
+	// Отправка приглашения тренеру (только для клиентов)
+	app.post(
+		'/client/invite-trainer',
+		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		async (req, reply) => {
+			const { trainerId } = InviteTrainerSchema.parse(req.body)
+
+			const invite = await inviteTrainer(req.user.id, trainerId)
+
+			return reply.status(201).send({
+				message: 'Приглашение отправлено тренеру',
+				invite,
 			})
 		},
 	)
