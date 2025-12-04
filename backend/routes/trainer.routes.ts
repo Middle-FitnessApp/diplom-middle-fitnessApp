@@ -3,9 +3,11 @@ import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
 import {
 	getAllTrainers,
+	getTrainerById,
 	getClientsForTrainer,
 	toggleClientFavorite,
 } from '../controllers/trainer.js'
+import { ApiError } from '../utils/ApiError.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт - просмотр всех тренеров
@@ -14,7 +16,7 @@ export default async function trainerRoutes(app: FastifyInstance) {
 		return reply.status(200).send({ trainers })
 	})
 
-	// список клиентов тренера
+	// список клиентов тренера (должен быть ДО /:id чтобы не конфликтовать)
 	app.get(
 		'/clients',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
@@ -22,6 +24,35 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			const trainerId = req.user.id
 			const clients = await getClientsForTrainer(trainerId)
 			return reply.status(200).send({ clients })
+		},
+	)
+
+	// Публичный эндпоинт с опциональной авторизацией
+	// Используем authGuard как preValidation (не блокирует если нет токена)
+	app.get(
+		'/:id',
+		{
+			preValidation: async (req, reply) => {
+				try {
+					await authGuard(req)
+				} catch {
+					// Игнорируем ошибки авторизации - эндпоинт публичный
+				}
+			},
+		},
+		async (req, reply) => {
+			const { id } = req.params as { id: string }
+
+			// Если пользователь авторизован и это клиент - передаем его ID
+			const clientId = req.user?.role === 'CLIENT' ? req.user.id : undefined
+
+			const trainer = await getTrainerById(id, clientId)
+
+			if (!trainer) {
+				throw ApiError.notFound('Тренер не найден')
+			}
+
+			return reply.status(200).send({ trainer })
 		},
 	)
 

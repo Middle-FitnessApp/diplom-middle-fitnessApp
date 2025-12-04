@@ -51,6 +51,57 @@ export async function getClientsForTrainer(trainerId: string) {
 	}))
 }
 
+/**
+ * Получение профиля конкретного тренера
+ * @param trainerId - ID тренера
+ * @param clientId - ID авторизованного клиента (опционально)
+ * @returns Полная информация о тренере с дополнительными полями для авторизованного клиента
+ */
+export async function getTrainerById(trainerId: string, clientId?: string) {
+	const trainer = await prisma.user.findUnique({
+		where: { id: trainerId, role: 'TRAINER' },
+		select: {
+			id: true,
+			name: true,
+			photo: true,
+			age: true,
+			bio: true,
+			telegram: true,
+			whatsapp: true,
+			instagram: true,
+			createdAt: true,
+		},
+	})
+
+	if (!trainer) {
+		return null
+	}
+
+	// Если пользователь не авторизован - возвращаем базовую информацию
+	if (!clientId) {
+		return trainer
+	}
+
+	// Если авторизован - проверяем связь с тренером
+	const relationship = await prisma.trainerClient.findUnique({
+		where: {
+			clientId_trainerId: {
+				clientId,
+				trainerId,
+			},
+		},
+		select: {
+			status: true,
+		},
+	})
+
+	return {
+		...trainer,
+		inviteStatus: relationship?.status ?? null,
+		isMyTrainer: relationship?.status === 'ACCEPTED',
+	}
+}
+
 export async function toggleClientFavorite(trainerId: string, clientId: string) {
 	const existing = await prisma.trainerClient.findUnique({
 		where: {
