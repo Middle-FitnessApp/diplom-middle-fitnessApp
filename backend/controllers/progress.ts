@@ -1,6 +1,7 @@
 import { prisma } from '../prisma.js'
 import { CreateProgressDTO } from '../validation/zod/progress/progress.dto.js'
 import { CreateCommentDTO } from '../validation/zod/progress/comment.dto.js'
+import { GetProgressCommentsQueryDTO } from '../validation/zod/progress/get-comments.dto.js'
 import { parseDateString, getDayRange } from '../services/date.service.js'
 import { ApiError } from '../utils/ApiError.js'
 
@@ -215,4 +216,68 @@ export async function addComment(
 	})
 
 	return comment
+}
+
+/**
+ * Получение комментариев к отчету о прогрессе с пагинацией
+ * @param progressId - ID отчета о прогрессе
+ * @param query - Параметры пагинации (page, limit)
+ * @returns Комментарии с метаданными пагинации
+ */
+export async function getProgressComments(
+	progressId: string,
+	query: GetProgressCommentsQueryDTO,
+) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// Проверяем существование отчета о прогрессе
+	const progress = await prisma.progress.findUnique({
+		where: { id: progressId },
+	})
+
+	if (!progress) {
+		throw ApiError.notFound('Отчет о прогрессе не найден')
+	}
+
+	const { page, limit } = query
+
+	// Вычисляем offset для пагинации
+	const skip = (page - 1) * limit
+	const take = limit
+
+	// Получаем комментарии с информацией о тренере
+	const comments = await prisma.comment.findMany({
+		where: { progressId },
+		include: {
+			trainer: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					photo: true,
+				},
+			},
+		},
+		orderBy: { createdAt: 'desc' }, // Сортировка по дате (новые первыми)
+		skip,
+		take,
+	})
+
+	// Получаем общее количество комментариев
+	const total = await prisma.comment.count({
+		where: { progressId },
+	})
+
+	// Вычисляем общее количество страниц
+	const totalPages = Math.ceil(total / limit)
+
+	return {
+		comments,
+		pagination: {
+			page,
+			limit,
+			total,
+			totalPages,
+		},
+	}
 }
