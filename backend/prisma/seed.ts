@@ -184,12 +184,14 @@ async function main() {
 
 	console.log('✅ План питания назначен обоим клиентам')
 
-	// Создаём связи Trainer-Client
+	// Создаём связи Trainer-Client (приглашения приняты тренером)
 	await prisma.trainerClient.create({
 		data: {
 			trainerId: trainer1.id,
 			clientId: client1.id,
+			status: 'ACCEPTED',
 			isFavorite: true,
+			acceptedAt: new Date(),
 		},
 	})
 
@@ -197,7 +199,9 @@ async function main() {
 		data: {
 			trainerId: trainer1.id,
 			clientId: client2.id,
+			status: 'ACCEPTED',
 			isFavorite: false,
+			acceptedAt: new Date(),
 		},
 	})
 

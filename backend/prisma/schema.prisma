@@ -115,19 +115,35 @@ model Comment {
   @@index([trainerId])
 }
 
-// Связь тренера и его клиента с флагом избранности
+// Статусы приглашений тренер-клиент
+enum TrainerClientStatus {
+  PENDING // Клиент отправил приглашение, ждёт ответа
+  ACCEPTED // Тренер принял, работает с клиентом
+  REJECTED // Тренер отклонил приглашение
+}
+
+// Связь тренера и его клиента с системой приглашений
 model TrainerClient {
   id        String @id @default(cuid())
-  trainer   User   @relation("TrainerClientsAsTrainer", fields: [trainerId], references: [id])
+  trainer   User   @relation("TrainerClientsAsTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
   trainerId String
-  client    User   @relation("TrainerClientsAsClient", fields: [clientId], references: [id])
+  client    User   @relation("TrainerClientsAsClient", fields: [clientId], references: [id], onDelete: Cascade)
   clientId  String
 
-  isFavorite   Boolean  @default(false)
-  createdAt DateTime @default(now())
+  // Статус приглашения
+  status TrainerClientStatus @default(PENDING)
 
-  // Один клиент может быть только у одного тренера
-  @@unique([clientId])
+  // Флаг избранности (только для ACCEPTED)
+  isFavorite Boolean @default(false)
+
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime? // Когда тренер принял приглашение
+
+  // Один клиент может пригласить одного тренера только один раз
+  @@unique([clientId, trainerId])
+  @@index([clientId])
+  @@index([trainerId])
+  @@index([status])
 }
 
 //
@@ -136,34 +152,33 @@ model TrainerClient {
 
 // Категория программ питания
 model NutritionCategory {
-  id          String          @id @default(cuid())
+  id          String  @id @default(cuid())
   trainerId   String
-  trainer     User            @relation("UserNutritionCategories", fields: [trainerId], references: [id], onDelete: Cascade)
-  name        String          @unique
+  trainer     User    @relation("UserNutritionCategories", fields: [trainerId], references: [id], onDelete: Cascade)
+  name        String  @unique
   description String?
 
-  programs    NutritionProgram[]
+  programs NutritionProgram[]
 
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Программа питания
 model NutritionProgram {
-  id           String                @id @default(cuid())
-  categoryId   String
-  category     NutritionCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id         String            @id @default(cuid())
+  categoryId String
+  category   NutritionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  name         String                @unique
-  description  String?
+  name        String  @unique
+  description String?
 
-  days         ProgramDay[]
+  days          ProgramDay[]
   assignedPlans AssignedNutritionPlan[]
 
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
 
 // День программы
 model ProgramDay {
