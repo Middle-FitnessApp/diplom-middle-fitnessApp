@@ -1,19 +1,75 @@
 import type { FastifyInstance } from 'fastify'
 import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
-import { getClientNutritionPlan } from '../controllers/nutrition.js'
+import {
+	getClientNutritionPlan,
+	createNutritionCategory,
+	getTrainerNutritionCategories,
+	updateNutritionCategory,
+	deleteNutritionCategory,
+	createNutritionSubcategory,
+	getNutritionSubcategories,
+	updateNutritionSubcategory,
+	deleteNutritionSubcategory,
+} from '../controllers/nutrition.js'
 
 export default async function nutritionRoutes(app: FastifyInstance) {
 	// План питания для текущего клиента (CLIENT)
 	app.get(
 		'/client/plan',
 		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
-		async (req, reply) => {
-			const clientId = req.user.id
+		getClientNutritionPlan,
+	)
 
-			const days = await getClientNutritionPlan(clientId)
+	// CRUD КАТЕГОРИЙ (TRAINER)
 
-			return reply.status(200).send(days)
-		},
+	app.post(
+		'/categories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		createNutritionCategory,
+	)
+
+	app.get(
+		'/categories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		getTrainerNutritionCategories,
+	)
+
+	app.put(
+		'/categories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		updateNutritionCategory,
+	)
+
+	app.delete(
+		'/categories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		deleteNutritionCategory,
+	)
+
+	// CRUD ПОДКАТЕГОРИЙ (TRAINER)
+
+	app.post(
+		'/categories/:id/subcategories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		createNutritionSubcategory,
+	)
+
+	app.get(
+		'/categories/:id/subcategories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		getNutritionSubcategories,
+	)
+
+	app.put(
+		'/subcategories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		updateNutritionSubcategory,
+	)
+
+	app.delete(
+		'/subcategories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		deleteNutritionSubcategory,
 	)
 }
