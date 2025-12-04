@@ -2,7 +2,7 @@ import { prisma } from '../prisma.js'
 
 export async function getClientNutritionPlan(clientId: string) {
 	// Находим последнее назначение плана для клиента
-	const assignment = await prisma.assignedNutritionPlan.findFirst({
+	const assignment = await prisma.clientNutritionPlan.findFirst({
 		where: { clientId },
 		orderBy: { createdAt: 'desc' },
 	})
@@ -11,10 +11,10 @@ export async function getClientNutritionPlan(clientId: string) {
 		return []
 	}
 
-	const { programId, dayIds } = assignment
+	const { subcatId, dayIds } = assignment
 
-	const days = await prisma.programDay.findMany({
-		where: dayIds.length ? { id: { in: dayIds } } : { programId },
+	const days = await prisma.nutritionDay.findMany({
+		where: dayIds.length ? { id: { in: dayIds } } : { subcatId },
 		orderBy: { dayOrder: 'asc' },
 		include: {
 			meals: {
