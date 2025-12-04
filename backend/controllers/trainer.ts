@@ -187,3 +187,81 @@ export async function getTrainerInvites(
 		client: invite.client,
 	}))
 }
+
+/**
+ * Принятие приглашения от клиента
+ * @param trainerId - ID тренера
+ * @param inviteId - ID приглашения
+ * @returns Информация о принятом клиенте
+ */
+export async function acceptInvite(trainerId: string, inviteId: string) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// 1. Проверяем, что приглашение существует и в статусе PENDING
+	const invite = await prisma.trainerClient.findUnique({
+		where: { id: inviteId },
+		include: {
+			client: {
+				select: {
+					id: true,
+					name: true,
+					photo: true,
+				},
+			},
+		},
+	})
+
+	if (!invite) {
+		throw ApiError.notFound('Приглашение не найдено')
+	}
+
+	if (invite.trainerId !== trainerId) {
+		throw ApiError.forbidden('Это приглашение предназначено другому тренеру')
+	}
+
+	if (invite.status !== 'PENDING') {
+		throw ApiError.badRequest('Приглашение уже обработано')
+	}
+
+	// 2. Проверяем, что у клиента ещё нет активного тренера
+	const activeTrainer = await prisma.trainerClient.findFirst({
+		where: {
+			clientId: invite.clientId,
+			status: 'ACCEPTED',
+		},
+	})
+
+	if (activeTrainer) {
+		throw ApiError.conflict('Клиент уже работает с другим тренером')
+	}
+
+	// 3. Принимаем приглашение и отклоняем остальные приглашения этого клиента
+	await prisma.$transaction([
+		// Принимаем текущее приглашение
+		prisma.trainerClient.update({
+			where: { id: inviteId },
+			data: {
+				status: 'ACCEPTED',
+				acceptedAt: new Date(),
+			},
+		}),
+		// Отклоняем все остальные PENDING приглашения этого клиента
+		prisma.trainerClient.updateMany({
+			where: {
+				clientId: invite.clientId,
+				status: 'PENDING',
+				id: { not: inviteId },
+			},
+			data: {
+				status: 'REJECTED',
+			},
+		}),
+	])
+
+	return {
+		id: invite.client.id,
+		name: invite.client.name,
+		photo: invite.client.photo,
+		isFavorite: invite.isFavorite,
+	}
+}
