@@ -6,7 +6,10 @@ Backend API для фитнес-приложения, построенный н�
 
 **База данных:** PostgreSQL
 **Аутентификация:** JWT (Access Token + Refresh Token в cookie)
-**Хранилище файлов:** Supabase Storage
+**Хранилище файлов:**
+
+- Development: локальная файловая система (`uploads/photos`)
+- Production: Supabase Storage
 
 ---
 
@@ -102,7 +105,7 @@ Backend API для фитнес-приложения, построенный н�
 - **Database:** PostgreSQL + Prisma ORM 6.19.0
 - **Validation:** Zod 4.1.12
 - **Authentication:** JWT (Access + Refresh tokens)
-- **File Storage:** Supabase Storage
+- **File Storage:** Local (dev) / Supabase Storage (prod)
 
 ### Роли пользователей
 

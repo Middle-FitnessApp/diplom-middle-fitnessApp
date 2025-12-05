@@ -35,22 +35,19 @@ API для аутентификации и управления сессиями
 
 **Параметры запроса:**
 
-| Поле         | Тип    | Обязательное | Описание                       |
-| ------------ | ------ | ------------ | ------------------------------ |
-| name         | string | ✅           | Имя пользователя               |
-| email        | string | ✅\*         | Email (уникальный)             |
-| phone        | string | ✅\*         | Телефон в формате +7XXXXXXXXXX |
-| password     | string | ✅           | Пароль (мин. 6 символов)       |
-| age          | number | ✅           | Возраст                        |
-| photoFront   | file   | ✅           | Фото спереди (макс. 500KB)     |
-| photoSide    | file   | ✅           | Фото сбоку (макс. 500KB)       |
-| photoBack    | file   | ✅           | Фото сзади (макс. 500KB)       |
-| goal         | string | ❌           | Цель тренировок                |
-| restrictions | string | ❌           | Ограничения по здоровью        |
-| experience   | string | ❌           | Опыт тренировок                |
-| diet         | string | ❌           | Особенности питания            |
-
-_\*Требуется либо email, либо phone (или оба)_
+| Поле         | Тип    | Обязательное | Описание                         |
+| ------------ | ------ | ------------ | -------------------------------- |
+| name         | string | ✅           | Имя пользователя                 |
+| emailOrPhone | string | ✅           | Email или телефон (+7XXXXXXXXXX) |
+| password     | string | ✅           | Пароль (мин. 6 символов)         |
+| age          | number | ✅           | Возраст                          |
+| photoFront   | file   | ✅           | Фото спереди (макс. 500KB)       |
+| photoSide    | file   | ✅           | Фото сбоку (макс. 500KB)         |
+| photoBack    | file   | ✅           | Фото сзади (макс. 500KB)         |
+| goal         | string | ❌           | Цель тренировок                  |
+| restrictions | string | ❌           | Ограничения по здоровью          |
+| experience   | string | ❌           | Опыт тренировок                  |
+| diet         | string | ❌           | Особенности питания              |
 
 ### Регистрация тренера (TRAINER)
 
@@ -58,19 +55,16 @@ _\*Требуется либо email, либо phone (или оба)_
 
 **Параметры запроса:**
 
-| Поле      | Тип    | Обязательное | Описание                       |
-| --------- | ------ | ------------ | ------------------------------ |
-| name      | string | ✅           | Имя тренера                    |
-| email     | string | ✅\*         | Email (уникальный)             |
-| phone     | string | ✅\*         | Телефон в формате +7XXXXXXXXXX |
-| password  | string | ✅           | Пароль (мин. 6 символов)       |
-| age       | number | ✅           | Возраст                        |
-| telegram  | string | ❌           | Username в Telegram            |
-| whatsapp  | string | ❌           | Номер WhatsApp                 |
-| instagram | string | ❌           | Username в Instagram           |
-| bio       | string | ❌           | Биография тренера              |
-
-_\*Требуется либо email, либо phone (или оба)_
+| Поле         | Тип    | Обязательное | Описание                         |
+| ------------ | ------ | ------------ | -------------------------------- |
+| name         | string | ✅           | Имя тренера                      |
+| emailOrPhone | string | ✅           | Email или телефон (+7XXXXXXXXXX) |
+| password     | string | ✅           | Пароль (мин. 6 символов)         |
+| age          | number | ✅           | Возраст                          |
+| telegram     | string | ❌           | Username в Telegram              |
+| whatsapp     | string | ❌           | Номер WhatsApp                   |
+| instagram    | string | ❌           | Username в Instagram             |
+| bio          | string | ❌           | Биография тренера                |
 
 ### Примеры запросов
 
@@ -80,8 +74,7 @@ _\*Требуется либо email, либо phone (или оба)_
 # Используя curl
 curl -X POST http://localhost:3000/api/auth/signup?role=CLIENT \
   -F "name=Иван Петров" \
-  -F "email=ivan@example.com" \
-  -F "phone=+79991234567" \
+  -F "emailOrPhone=ivan@example.com" \
   -F "password=myPassword123" \
   -F "age=25" \
   -F "goal=Похудение" \
@@ -98,8 +91,7 @@ curl -X POST http://localhost:3000/api/auth/signup?role=TRAINER \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Алексей Смирнов",
-    "email": "alex@example.com",
-    "phone": "+79991234567",
+    "emailOrPhone": "alex@example.com",
     "password": "trainerPass123",
     "age": 30,
     "bio": "Сертифицированный тренер с 10-летним опытом",
@@ -344,11 +336,13 @@ Authorization: Bearer <access_token>
 - **Для тренеров:** фото не требуется при регистрации
 - **Максимальный размер:** 500KB на файл
 - **Форматы:** JPG, PNG
-- **Хранение:** Supabase Storage
+- **Хранение:**
+  - Development: локальная папка `uploads/photos` (для разработки)
+  - Production: Supabase Storage (публичные URL)
 
 ### Контактные данные
 
-- Требуется хотя бы один способ связи: email или телефон
+- Поле `emailOrPhone` принимает либо email, либо телефон (определяется автоматически по формату)
 - Формат телефона: `+7XXXXXXXXXX` (11 цифр с кодом страны)
 - Email проверяется на корректность формата
-- При входе можно использовать любой из указанных контактов
+- При входе в поле `contact` можно использовать email или телефон

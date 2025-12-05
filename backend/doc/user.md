@@ -300,7 +300,9 @@ curl -X PUT http://localhost:3000/api/user/trainer/profile \
 - **Регистрационные фото** (`photoFront`, `photoSide`, `photoBack`) - только для клиентов, устанавливаются при регистрации и **не обновляются** через этот API
 - **Максимальный размер:** 500KB
 - **Форматы:** JPG, PNG
-- **Хранение:** Supabase Storage
+- **Хранение:**
+  - Development: локальная папка `uploads/photos`
+  - Production: Supabase Storage (публичные URL)
 
 ### Контактные данные
 
