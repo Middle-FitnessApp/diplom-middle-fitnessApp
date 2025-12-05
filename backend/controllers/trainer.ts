@@ -145,8 +145,17 @@ export async function getTrainerById(trainerId: string, clientId?: string) {
 	}
 }
 
+/**
+ * Переключение статуса избранного для клиента
+ * @param trainerId - ID тренера
+ * @param clientId - ID клиента
+ * @returns Новый статус избранного и сообщение
+ */
 export async function toggleClientFavorite(trainerId: string, clientId: string) {
-	const existing = await prisma.trainerClient.findUnique({
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// Проверяем, что связь существует и в статусе ACCEPTED
+	const relationship = await prisma.trainerClient.findUnique({
 		where: {
 			clientId_trainerId: {
 				clientId,
@@ -155,19 +164,15 @@ export async function toggleClientFavorite(trainerId: string, clientId: string) 
 		},
 	})
 
-	if (!existing) {
-		const created = await prisma.trainerClient.create({
-			data: {
-				trainerId,
-				clientId,
-				status: 'ACCEPTED',
-				isFavorite: true,
-				acceptedAt: new Date(),
-			},
-		})
-		return created.isFavorite
+	if (!relationship) {
+		throw ApiError.notFound('Клиент не найден')
 	}
 
+	if (relationship.status !== 'ACCEPTED') {
+		throw ApiError.forbidden('Вы не работаете с этим клиентом')
+	}
+
+	// Переключаем флаг избранного
 	const updated = await prisma.trainerClient.update({
 		where: {
 			clientId_trainerId: {
@@ -175,10 +180,15 @@ export async function toggleClientFavorite(trainerId: string, clientId: string) 
 				trainerId,
 			},
 		},
-		data: { isFavorite: !existing.isFavorite },
+		data: { isFavorite: !relationship.isFavorite },
 	})
 
-	return updated.isFavorite
+	return {
+		isFavorite: updated.isFavorite,
+		message: updated.isFavorite
+			? 'Клиент добавлен в избранное'
+			: 'Клиент убран из избранного',
+	}
 }
 
 /**

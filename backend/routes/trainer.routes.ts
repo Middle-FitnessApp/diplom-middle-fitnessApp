@@ -17,6 +17,7 @@ import { GetClientsSchema } from '../validation/zod/trainer/get-clients.dto.js'
 import { AcceptInviteParamsSchema } from '../validation/zod/trainer/accept-invite.dto.js'
 import { RejectInviteParamsSchema } from '../validation/zod/trainer/reject-invite.dto.js'
 import { GetClientProfileParamsSchema } from '../validation/zod/trainer/get-client-profile.dto.js'
+import { ToggleFavoriteParamsSchema } from '../validation/zod/trainer/toggle-favorite.dto.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт - просмотр всех тренеров
@@ -128,16 +129,16 @@ export default async function trainerRoutes(app: FastifyInstance) {
 		},
 	)
 
-	app.patch(
-		'/clients/:clientId/favorite',
+	// Добавление/удаление клиента в избранное
+	app.put(
+		'/clients/:id/favorite',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		async (req, reply) => {
-			const trainerId = req.user.id
-			const { clientId } = req.params as { clientId: string }
+			const { id } = ToggleFavoriteParamsSchema.parse(req.params)
 
-			const isFavorite = await toggleClientFavorite(trainerId, clientId)
+			const result = await toggleClientFavorite(req.user.id, id)
 
-			return reply.status(200).send({ isFavorite })
+			return reply.status(200).send(result)
 		},
 	)
 }
