@@ -32,7 +32,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
           no-cache: true
 
       - name: Deploy to Timeweb VPS
@@ -43,14 +43,11 @@ jobs:
           key: ${{ secrets.TIMEWEB_SSH_KEY }}
           script: |
             echo "🔄 Скачивание последнего Docker образа..."
-            docker pull --no-cache ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
 
             echo "🛑 Остановка старого контейнера..."
             docker stop fitness-backend || true
             docker rm fitness-backend || true
-
-            echo "🗑️ Удаление старого образа..."
-            docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest || true
 
             echo "🚀 Запуск нового контейнера..."
             docker run -d \
@@ -58,10 +55,13 @@ jobs:
               --restart unless-stopped \
               -p 3000:3000 \
               --env-file /root/fitness-backend.env \
-              ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
+              ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
 
             echo "🧹 Очистка неиспользуемых Docker ресурсов..."
             docker system prune -f
+
+            echo "🗑️ Удаление старых образов (оставляем последние 3 версии)..."
+            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-backend --format "{{.Tag}}" | grep -E '^[0-9]+$' | sort -rn | tail -n +4 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-backend:{} || true
 
             echo "✅ Деплой завершён!"
 
