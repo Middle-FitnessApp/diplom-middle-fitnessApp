@@ -151,3 +151,52 @@ export async function cancelTrainerCooperation(clientId: string) {
 		deletedNutritionPlans: planIds.length,
 	}
 }
+
+/**
+ * Отмена приглашения тренеру
+ * @param clientId - ID клиента
+ * @param inviteId - ID приглашения
+ * @returns Сообщение об успешной отмене
+ */
+export async function cancelInvite(clientId: string, inviteId: string) {
+	// 1. Находим приглашение
+	const invite = await prisma.trainerClient.findUnique({
+		where: { id: inviteId },
+		include: {
+			trainer: {
+				select: {
+					name: true,
+				},
+			},
+		},
+	})
+
+	if (!invite) {
+		throw ApiError.notFound('Приглашение не найдено')
+	}
+
+	// 2. Проверяем, что приглашение принадлежит этому клиенту
+	if (invite.clientId !== clientId) {
+		throw ApiError.forbidden('Это не ваше приглашение')
+	}
+
+	// 3. Проверяем статус приглашения
+	if (invite.status === 'ACCEPTED') {
+		throw ApiError.badRequest(
+			'Нельзя отменить принятое приглашение. Используйте DELETE /api/client/trainer для отмены сотрудничества',
+		)
+	}
+
+	if (invite.status === 'REJECTED') {
+		throw ApiError.badRequest('Это приглашение уже отклонено тренером')
+	}
+
+	// 4. Удаляем приглашение
+	await prisma.trainerClient.delete({
+		where: { id: inviteId },
+	})
+
+	return {
+		message: `Приглашение тренеру "${invite.trainer.name}" успешно отменено`,
+	}
+}
