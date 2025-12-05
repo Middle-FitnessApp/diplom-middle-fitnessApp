@@ -215,6 +215,10 @@ export async function getUser(userId: string) {
 			telegram: true,
 			whatsapp: true,
 			instagram: true,
+			goal: true,
+			restrictions: true,
+			experience: true,
+			diet: true,
 		},
 	})
 
@@ -232,17 +236,57 @@ export async function getUser(userId: string) {
 		updatedAt: user.updatedAt,
 	}
 
-	const trainer = {
-		bio: user.bio,
-		telegram: user.telegram,
-		whatsapp: user.whatsapp,
-		instagram: user.instagram,
-	}
-
+	// Для тренера возвращаем дополнительные поля
 	if (user.role === TRAINER) {
 		return {
 			...base,
-			...trainer,
+			bio: user.bio,
+			telegram: user.telegram,
+			whatsapp: user.whatsapp,
+			instagram: user.instagram,
+		}
+	}
+
+	// Для клиента возвращаем дополнительные поля и информацию о тренере
+	if (user.role === CLIENT) {
+		// Находим активного тренера клиента
+		const trainerRelation = await prisma.trainerClient.findFirst({
+			where: {
+				clientId: userId,
+				status: 'ACCEPTED',
+			},
+			include: {
+				trainer: {
+					select: {
+						id: true,
+						name: true,
+						photo: true,
+						bio: true,
+						telegram: true,
+						whatsapp: true,
+						instagram: true,
+					},
+				},
+			},
+		})
+
+		return {
+			...base,
+			goal: user.goal,
+			restrictions: user.restrictions,
+			experience: user.experience,
+			diet: user.diet,
+			trainer: trainerRelation
+				? {
+						id: trainerRelation.trainer.id,
+						name: trainerRelation.trainer.name,
+						photo: trainerRelation.trainer.photo,
+						bio: trainerRelation.trainer.bio,
+						telegram: trainerRelation.trainer.telegram,
+						whatsapp: trainerRelation.trainer.whatsapp,
+						instagram: trainerRelation.trainer.instagram,
+				  }
+				: null,
 		}
 	}
 

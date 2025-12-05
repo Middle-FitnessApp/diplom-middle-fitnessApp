@@ -47,11 +47,40 @@ Authorization: Bearer <access_token>
 		"restrictions": "Проблемы с коленями",
 		"experience": "Новичок",
 		"diet": "Без ограничений",
-		"photoFront": "/uploads/photos/front-abc123.jpg",
-		"photoSide": "/uploads/photos/side-abc123.jpg",
-		"photoBack": "/uploads/photos/back-abc123.jpg",
 		"createdAt": "2025-11-20T10:30:00.000Z",
-		"updatedAt": "2025-12-03T10:30:00.000Z"
+		"updatedAt": "2025-12-03T10:30:00.000Z",
+		"trainer": {
+			"id": "cm4xyz789ghi012",
+			"name": "Алексей Смирнов",
+			"photo": "/uploads/photos/trainer-photo.jpg",
+			"bio": "Сертифицированный тренер с 10-летним опытом",
+			"telegram": "@alextrainer",
+			"whatsapp": "+79997654321",
+			"instagram": "alex_fitness"
+		}
+	}
+}
+```
+
+**Если у клиента нет тренера:**
+
+```json
+{
+	"user": {
+		"id": "cm4abc123def456",
+		"name": "Иван Петров",
+		"email": "ivan@example.com",
+		"phone": "+79991234567",
+		"photo": "/uploads/photos/user-photo.jpg",
+		"age": 25,
+		"role": "CLIENT",
+		"goal": "Похудение",
+		"restrictions": "Проблемы с коленями",
+		"experience": "Новичок",
+		"diet": "Без ограничений",
+		"createdAt": "2025-11-20T10:30:00.000Z",
+		"updatedAt": "2025-12-03T10:30:00.000Z",
+		"trainer": null
 	}
 }
 ```
@@ -94,25 +123,66 @@ Authorization: Bearer <access_token>
 
 **Поля клиента (CLIENT):**
 
-- `goal` - цель тренировок
-- `restrictions` - ограничения по здоровью
-- `experience` - опыт тренировок
-- `diet` - особенности питания
-- `photoFront` - фото спереди
-- `photoSide` - фото сбоку
-- `photoBack` - фото сзади
+- `goal` - цель тренировок (может быть `null`)
+- `restrictions` - ограничения по здоровью (может быть `null`)
+- `experience` - опыт тренировок (может быть `null`)
+- `diet` - особенности питания (может быть `null`)
+- `trainer` - информация о назначенном тренере (может быть `null` если тренер не назначен):
+  - `id` - ID тренера
+  - `name` - имя тренера
+  - `photo` - фото профиля тренера
+  - `bio` - биография тренера
+  - `telegram` - username в Telegram (может быть `null`)
+  - `whatsapp` - номер WhatsApp (может быть `null`)
+  - `instagram` - username в Instagram (может быть `null`)
 
 **Поля тренера (TRAINER):**
 
-- `telegram` - username в Telegram
-- `whatsapp` - номер WhatsApp
-- `instagram` - username в Instagram
-- `bio` - биография
+- `telegram` - username в Telegram (может быть `null`)
+- `whatsapp` - номер WhatsApp (может быть `null`)
+- `instagram` - username в Instagram (может быть `null`)
+- `bio` - биография (может быть `null`)
+
+### Логика работы
+
+**Для клиента:**
+
+- Автоматически ищется запись `TrainerClient` со статусом `ACCEPTED`
+- Если найдена - возвращается информация о тренере
+- Если не найдена - поле `trainer` будет `null`
+- У клиента может быть только один активный тренер
+
+**Для тренера:**
+
+- Возвращается полная информация профиля
+- Включает контактные данные и биографию
 
 ### Ошибки
 
-- **401 Unauthorized** - Отсутствует или недействителен access token
-- **404 Not Found** - Пользователь не найден
+**401 Unauthorized** - Отсутствует или недействителен access token
+
+```json
+{
+	"statusCode": 401,
+	"message": "Unauthorized"
+}
+```
+
+**404 Not Found** - Пользователь не найден
+
+```json
+{
+	"statusCode": 404,
+	"message": "Пользователь не найден"
+}
+```
+
+### Примечания
+
+- Эндпоинт доступен как клиентам, так и тренерам
+- Возвращаемые поля зависят от роли пользователя
+- Для клиентов автоматически подгружается информация о назначенном тренере
+- Информация о тренере включает только публичные данные (без email и phone)
 
 ---
 
