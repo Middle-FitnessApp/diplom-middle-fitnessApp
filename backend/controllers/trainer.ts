@@ -20,34 +20,77 @@ export async function getAllTrainers() {
 	})
 }
 
-export async function getClientsForTrainer(trainerId: string) {
-	// 1) все клиенты
-	const [allClients, links] = await Promise.all([
-		prisma.user.findMany({
-			where: { role: 'CLIENT' },
-			select: {
-				id: true,
-				email: true,
-				name: true,
-				age: true,
-				phone: true,
-				photo: true,
-				role: true,
+/**
+ * Получение клиентов тренера в работе
+ * @param trainerId - ID тренера
+ * @param favorites - Фильтр по избранным (опционально)
+ * @param search - Поиск по имени (опционально)
+ * @param page - Номер страницы
+ * @param limit - Количество элементов на странице
+ * @returns Список клиентов со статусом ACCEPTED
+ */
+export async function getClientsForTrainer(
+	trainerId: string,
+	favorites?: boolean,
+	search?: string,
+	page: number = 1,
+	limit: number = 10,
+) {
+	const skip = (page - 1) * limit
+
+	// Строим фильтр для клиентов
+	const whereClause: any = {
+		trainerClients: {
+			some: {
+				trainerId,
+				status: 'ACCEPTED',
+				...(favorites !== undefined && { isFavorite: favorites }),
 			},
-		}),
-		prisma.trainerClient.findMany({
-			where: { trainerId },
-			select: { clientId: true, isFavorite: true },
-		}),
-	])
+		},
+	}
 
-	const map = new Map<string, boolean>()
-	links.forEach((l) => map.set(l.clientId, l.isFavorite))
+	// Добавляем поиск по имени если указан
+	if (search) {
+		whereClause.name = {
+			contains: search,
+			mode: 'insensitive',
+		}
+	}
 
-	// 2) всем клиентам добавляем флаг isFavorite, если есть связь
-	return allClients.map((c) => ({
-		...c,
-		isFavorite: map.get(c.id) ?? false,
+	const clients = await prisma.user.findMany({
+		where: whereClause,
+		select: {
+			id: true,
+			email: true,
+			name: true,
+			age: true,
+			phone: true,
+			photo: true,
+			role: true,
+			trainerClients: {
+				where: {
+					trainerId,
+					status: 'ACCEPTED',
+				},
+				select: {
+					isFavorite: true,
+				},
+			},
+		},
+		orderBy: { name: 'asc' },
+		skip,
+		take: limit,
+	})
+
+	return clients.map((client) => ({
+		id: client.id,
+		email: client.email,
+		name: client.name,
+		age: client.age,
+		phone: client.phone,
+		photo: client.photo,
+		role: client.role,
+		isFavorite: client.trainerClients[0]?.isFavorite ?? false,
 	}))
 }
 
