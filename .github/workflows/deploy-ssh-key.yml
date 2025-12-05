@@ -41,14 +41,14 @@ jobs:
           username: root
           key: ${{ secrets.TIMEWEB_SSH_KEY }}
           script: |
-            echo "🔄 Pulling latest Docker image..."
+            echo "🔄 Скачивание последнего Docker образа..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
 
-            echo "🛑 Stopping old container..."
+            echo "🛑 Остановка старого контейнера..."
             docker stop fitness-backend || true
             docker rm fitness-backend || true
 
-            echo "🚀 Starting new container..."
+            echo "🚀 Запуск нового контейнера..."
             docker run -d \
               --name fitness-backend \
               --restart unless-stopped \
@@ -56,10 +56,16 @@ jobs:
               --env-file /root/fitness-backend.env \
               ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
 
-            echo "✅ Deployment completed!"
+            echo "🧹 Очистка неиспользуемых Docker ресурсов..."
+            docker system prune -f
 
-            echo "📊 Container status:"
+            echo "✅ Деплой завершён!"
+
+            echo "📊 Статус контейнера:"
             docker ps | grep fitness-backend
 
-            echo "📝 Recent logs:"
-            docker logs --tail 20 fitness-backend
+            echo "📝 Ожидание запуска приложения..."
+            sleep 3
+
+            echo "📝 Последние логи:"
+            docker logs --tail 30 fitness-backend
