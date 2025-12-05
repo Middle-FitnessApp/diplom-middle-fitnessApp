@@ -347,3 +347,142 @@ export async function rejectInvite(trainerId: string, inviteId: string) {
 		message: 'Приглашение отклонено',
 	}
 }
+
+/**
+ * Получение полной информации о клиенте для тренера
+ * @param trainerId - ID тренера
+ * @param clientId - ID клиента
+ * @returns Полная информация о клиенте, последний отчет, статистика и планы питания
+ */
+export async function getClientProfileForTrainer(trainerId: string, clientId: string) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// 1. Проверяем связь между тренером и клиентом
+	const relationship = await prisma.trainerClient.findUnique({
+		where: {
+			clientId_trainerId: {
+				clientId,
+				trainerId,
+			},
+		},
+	})
+
+	if (!relationship || relationship.status !== 'ACCEPTED') {
+		throw ApiError.forbidden('Вы не работаете с этим клиентом')
+	}
+
+	// 2. Получаем полную информацию о клиенте
+	const client = await prisma.user.findUnique({
+		where: { id: clientId, role: 'CLIENT' },
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			phone: true,
+			photo: true,
+			age: true,
+			goal: true,
+			restrictions: true,
+			experience: true,
+			diet: true,
+			createdAt: true,
+		},
+	})
+
+	if (!client) {
+		throw ApiError.notFound('Клиент не найден')
+	}
+
+	// 3. Получаем последний отчет о прогрессе
+	const lastProgress = await prisma.progress.findFirst({
+		where: { userId: clientId },
+		orderBy: { createdAt: 'desc' },
+		select: {
+			id: true,
+			date: true,
+			weight: true,
+			waist: true,
+			hips: true,
+			height: true,
+			chest: true,
+			arm: true,
+			leg: true,
+			photoFront: true,
+			photoSide: true,
+			photoBack: true,
+			createdAt: true,
+		},
+	})
+
+	// 4. Получаем статистику по отчетам
+	const totalReports = await prisma.progress.count({
+		where: { userId: clientId },
+	})
+
+	// 5. Получаем динамику (первый и последний отчеты для сравнения)
+	const firstProgress = await prisma.progress.findFirst({
+		where: { userId: clientId },
+		orderBy: { createdAt: 'asc' },
+		select: {
+			weight: true,
+			waist: true,
+			hips: true,
+			createdAt: true,
+		},
+	})
+
+	let dynamics = null
+	if (firstProgress && lastProgress && totalReports > 1) {
+		dynamics = {
+			weightChange: lastProgress.weight - firstProgress.weight,
+			waistChange: lastProgress.waist - firstProgress.waist,
+			hipsChange: lastProgress.hips - firstProgress.hips,
+			periodDays: Math.floor(
+				(lastProgress.createdAt.getTime() - firstProgress.createdAt.getTime()) /
+					(1000 * 60 * 60 * 24),
+			),
+		}
+	}
+
+	// 6. Получаем назначенные планы питания
+	const nutritionPlans = await prisma.clientNutritionPlan.findMany({
+		where: { clientId },
+		select: {
+			id: true,
+			createdAt: true,
+			subcategory: {
+				select: {
+					id: true,
+					name: true,
+					description: true,
+					category: {
+						select: {
+							id: true,
+							name: true,
+							description: true,
+						},
+					},
+				},
+			},
+			dayIds: true,
+		},
+		orderBy: { createdAt: 'desc' },
+	})
+
+	return {
+		client,
+		lastProgress,
+		statistics: {
+			totalReports,
+			dynamics,
+		},
+		nutritionPlans: nutritionPlans.map((plan) => ({
+			id: plan.id,
+			categoryName: plan.subcategory.category.name,
+			subcategoryName: plan.subcategory.name,
+			subcategoryDescription: plan.subcategory.description,
+			assignedDays: plan.dayIds,
+			assignedAt: plan.createdAt,
+		})),
+	}
+}

@@ -9,12 +9,14 @@ import {
 	getTrainerInvites,
 	acceptInvite,
 	rejectInvite,
+	getClientProfileForTrainer,
 } from '../controllers/trainer.js'
 import { ApiError } from '../utils/ApiError.js'
 import { GetInvitesSchema } from '../validation/zod/trainer/get-invites.dto.js'
 import { GetClientsSchema } from '../validation/zod/trainer/get-clients.dto.js'
 import { AcceptInviteParamsSchema } from '../validation/zod/trainer/accept-invite.dto.js'
 import { RejectInviteParamsSchema } from '../validation/zod/trainer/reject-invite.dto.js'
+import { GetClientProfileParamsSchema } from '../validation/zod/trainer/get-client-profile.dto.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт - просмотр всех тренеров
@@ -81,6 +83,19 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			)
 
 			return reply.status(200).send({ clients })
+		},
+	)
+
+	// Просмотр полного профиля клиента тренером
+	app.get(
+		'/clients/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { id } = GetClientProfileParamsSchema.parse(req.params)
+
+			const clientProfile = await getClientProfileForTrainer(req.user.id, id)
+
+			return reply.status(200).send(clientProfile)
 		},
 	)
 
