@@ -8,11 +8,7 @@ import { CreateProgressSchema } from '../validation/zod/progress/progress.dto.js
 import { CreateCommentSchema } from '../validation/zod/progress/comment.dto.js'
 import { GetProgressCommentsQuerySchema } from '../validation/zod/progress/get-comments.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
-import {
-	cleanupFilesOnError,
-	attachFilesToRequest,
-	validateRequiredPhotos,
-} from '../utils/uploadPhotos.js'
+import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
 
 export default async function progressRoutes(app: FastifyInstance) {
 	// Регистрируем multipart, но он будет работать только для multipart/form-data
@@ -44,7 +40,7 @@ export default async function progressRoutes(app: FastifyInstance) {
 			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
-			// Обрабатываем multipart запрос с тремя обязательными фотографиями
+			// Обрабатываем multipart запрос с опциональными фотографиями
 			const { uploadPhotos } = await import('../utils/uploadPhotos.js')
 			const { ApiError } = await import('../utils/ApiError.js')
 
@@ -59,20 +55,8 @@ export default async function progressRoutes(app: FastifyInstance) {
 			// Сохраняем пути загруженных файлов для возможной очистки при ошибке
 			attachFilesToRequest(req, filesMap)
 
-			// Проверяем наличие всех трех обязательных фотографий
-			validateRequiredPhotos(filesMap, ['photoFront', 'photoSide', 'photoBack'])
-
-			// Проверяем наличие всех обязательных полей
-			const requiredFields = [
-				'date',
-				'weight',
-				'height',
-				'waist',
-				'chest',
-				'hips',
-				'arm',
-				'leg',
-			]
+			// Проверяем наличие ОБЯЗАТЕЛЬНЫХ полей (согласно Zod схеме)
+			const requiredFields = ['date', 'weight', 'waist', 'hips']
 			const missingFields = requiredFields.filter((field) => !body[field])
 
 			if (missingFields.length > 0) {
@@ -82,21 +66,24 @@ export default async function progressRoutes(app: FastifyInstance) {
 			}
 
 			// Преобразуем числовые поля из строк в числа
-			const numericBody = {
-				...body,
+			// Обязательные поля
+			const numericBody: Record<string, any> = {
+				date: body.date,
 				weight: parseFloat(body.weight),
-				height: parseFloat(body.height),
 				waist: parseFloat(body.waist),
-				chest: parseFloat(body.chest),
 				hips: parseFloat(body.hips),
-				arm: parseFloat(body.arm),
-				leg: parseFloat(body.leg),
 			}
 
-			// Валидируем данные
+			// Опциональные поля - добавляем только если они есть
+			if (body.height) numericBody.height = parseFloat(body.height)
+			if (body.chest) numericBody.chest = parseFloat(body.chest)
+			if (body.arm) numericBody.arm = parseFloat(body.arm)
+			if (body.leg) numericBody.leg = parseFloat(body.leg)
+
+			// Валидируем данные через Zod схему
 			const validatedData = CreateProgressSchema.parse(numericBody)
 
-			// Создаём новый отчёт о прогрессе
+			// Создаём новый отчёт о прогрессе (фото опциональны)
 			const progress = await createProgress(req.user.id, validatedData, filesMap)
 
 			return reply.status(201).send({

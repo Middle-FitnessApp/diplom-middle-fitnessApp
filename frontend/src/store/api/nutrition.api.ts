@@ -11,9 +11,10 @@ import {
 	type FetchArgs,
 	type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react'
+import { API_ENDPOINTS } from '../../config/api.config'
 
 const rawBaseQuery = fetchBaseQuery({
-	baseUrl: 'http://localhost:3000/api',
+	baseUrl: API_ENDPOINTS.base,
 	credentials: 'include',
 	prepareHeaders: (headers, { endpoint, type }) => {
 		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -26,7 +27,6 @@ const rawBaseQuery = fetchBaseQuery({
 			'updateTrainerProfileWithPhoto',
 		].includes(endpoint)
 
-		//  НЕ ставим Content-Type для GET и для FormData
 		const isJsonMutation =
 			!isFormDataEndpoint && type === 'mutation' && !endpoint.includes('WithPhoto')
 
@@ -78,7 +78,7 @@ export const nutritionApi = createApi({
 			providesTags: ['AssignedPlan', 'Day'],
 		}),
 
-		// == КАТЕГОРИИ === (для NutritionTrainer)
+		// === КАТЕГОРИИ ===
 		getCategories: builder.query<NutritionCategory[], void>({
 			query: () => '/categories',
 			providesTags: ['Category'],
@@ -98,7 +98,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Category'],
 		}),
 
-		// = ПРОГРАММЫ = (для CreateNutritionTrainer)
+		// === ПРОГРАММЫ ===
 		getPrograms: builder.query<NutritionProgram[], string>({
 			query: (categoryId) => `/categories/${categoryId}/programs`,
 			providesTags: ['Program'],
@@ -135,7 +135,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Program'],
 		}),
 
-		// === ДНИ (для NutritionPlanTrainer и CreateNutritionTrainer)
+		// === ДНИ ===
 		getProgramDays: builder.query<ProgramDay[], string>({
 			query: (programId) => `/programs/${programId}/days`,
 			providesTags: ['Day'],
@@ -172,7 +172,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Day'],
 		}),
 
-		// === НАЗНАЧЕНИЕ ПЛАНОВ  (для AddNutritionTrainer)
+		// === НАЗНАЧЕНИЕ ПЛАНОВ ===
 		assignNutritionPlan: builder.mutation<
 			AssignedNutritionPlan,
 			{
@@ -192,28 +192,19 @@ export const nutritionApi = createApi({
 })
 
 export const {
-	// Категории
 	useGetCategoriesQuery,
 	useGetCategoryQuery,
 	useCreateCategoryMutation,
-
-	// Программы
 	useGetProgramsQuery,
 	useGetProgramQuery,
 	useCreateProgramMutation,
 	useUpdateProgramMutation,
 	useDeleteProgramMutation,
-
-	// Дни
 	useGetProgramDaysQuery,
 	useGetDayQuery,
 	useCreateDayMutation,
 	useUpdateDayMutation,
 	useDeleteDayMutation,
-
-	// Назначение программы
 	useAssignNutritionPlanMutation,
-
-	// План клиента
 	useGetClientNutritionPlanQuery,
 } = nutritionApi

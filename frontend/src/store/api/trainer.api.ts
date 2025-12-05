@@ -8,9 +8,10 @@ import {
 	type FetchArgs,
 	type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react'
+import { API_ENDPOINTS } from '../../config/api.config'
 
 const rawBaseQuery = fetchBaseQuery({
-	baseUrl: 'http://localhost:3000/api/trainer',
+	baseUrl: API_ENDPOINTS.trainer,
 	credentials: 'include',
 	prepareHeaders: (headers) => {
 		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -57,8 +58,6 @@ export const trainerApi = createApi({
 	baseQuery: baseQueryWithReauth,
 	tagTypes: ['Clients', 'Client'],
 	endpoints: (builder) => ({
-		//  Получение всех клиентов тренера (все CLIENT + isFavorite флаги)
-		// В trainer.api.ts — добавить computed поля
 		getClients: builder.query<
 			Array<{
 				id: string
@@ -84,16 +83,14 @@ export const trainerApi = createApi({
 			providesTags: ['Clients'],
 		}),
 
-		// Переключение isFavorite статуса клиента
 		toggleClientStar: builder.mutation<{ isFavorite: boolean }, { clientId: string }>({
 			query: ({ clientId }) => ({
 				url: `/clients/${clientId}/favorite`,
 				method: 'PATCH',
 			}),
-			invalidatesTags: ['Clients'], // Автоматически перезагружает getClients
+			invalidatesTags: ['Clients'],
 		}),
 
-		// Для страницы /admin/client/:id (профиль клиента)
 		getClientProfile: builder.query<UserProfile, { trainerId: string; clientId: string }>(
 			{
 				query: ({ trainerId, clientId }) => `/${trainerId}/clients/${clientId}/profile`,
@@ -101,7 +98,6 @@ export const trainerApi = createApi({
 			},
 		),
 
-		// Для страницы /admin/client/:id (прогресс клиента)
 		getClientProgress: builder.query<
 			ProgressReport[],
 			{ trainerId: string; clientId: string }
@@ -110,7 +106,6 @@ export const trainerApi = createApi({
 			providesTags: ['Client'],
 		}),
 
-		// Для обновления профиля клиента тренером
 		updateClientProfile: builder.mutation<
 			UserProfile,
 			{
@@ -127,7 +122,6 @@ export const trainerApi = createApi({
 			invalidatesTags: ['Client'],
 		}),
 
-		// Для добавления комментария к прогрессу клиента
 		addCommentToClientProgress: builder.mutation<
 			void,
 			{

@@ -1,10 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { LoginRequest, AuthResponse } from '../types/auth.types'
+import { API_ENDPOINTS } from '../../config/api.config'
 
 export const authApi = createApi({
 	reducerPath: 'authApi',
 	baseQuery: fetchBaseQuery({
-		baseUrl: 'http://localhost:3000/api/auth',
+		baseUrl: API_ENDPOINTS.auth,
 		credentials: 'include',
 		prepareHeaders: (headers, { endpoint }) => {
 			const token = localStorage.getItem('token')

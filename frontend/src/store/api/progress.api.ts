@@ -1,110 +1,108 @@
-// store/api/progress.api.ts - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { API_ENDPOINTS } from '../../config/api.config'
 
 export interface ProgressReport {
-  id: string;
-  date: string;
-  weight: number;
-  height?: number;
-  chest?: number;
-  waist: number;
-  hips: number;
-  arm?: number;
-  leg?: number;
-  photoFront?: string;
-  photoSide?: string;
-  photoBack?: string;
-  trainerComment?: string;
-  commentedAt?: string;
-  createdAt: string;
-  updatedAt: string;
+	id: string
+	date: string
+	weight: number
+	height?: number
+	chest?: number
+	waist: number
+	hips: number
+	arm?: number
+	leg?: number
+	photoFront?: string
+	photoSide?: string
+	photoBack?: string
+	trainerComment?: string
+	commentedAt?: string
+	createdAt: string
+	updatedAt: string
 }
 
 export interface ProgressChartData {
-  date: string;
-  weight: number;
-  waist: number;
-  hips: number;
-  chest?: number;
-  arm?: number;
-  leg?: number;
+	date: string
+	weight: number
+	waist: number
+	hips: number
+	chest?: number
+	arm?: number
+	leg?: number
 }
 
 export const progressApi = createApi({
-  reducerPath: 'progressApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:3000/api/user',
-    credentials: 'include',
-    prepareHeaders: (headers, { endpoint }) => {
-      // ДОБАВЛЕНО: берем токен из localStorage как в user.api.ts
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      
-      // Для мутации с файлами не устанавливаем Content-Type
-      if (endpoint !== 'addProgressReport') {
-        headers.set('Content-Type', 'application/json');
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['Progress'],
-  endpoints: (builder) => ({
-    // Получение всех отчетов прогресса для графика
-    getProgressChartData: builder.query<ProgressChartData[], void>({
-      query: () => '/progress',
-      providesTags: ['Progress'],
-      transformResponse: (response: { progress: ProgressReport[] }) => {
-        // Преобразуем данные для графика
-        return response.progress.map(item => ({
-          date: item.date.split('T')[0], // Берем только дату
-          weight: item.weight,
-          waist: item.waist,
-          hips: item.hips,
-          chest: item.chest || 0,
-          arm: item.arm || 0,
-          leg: item.leg || 0,
-        }));
-      },
-    }),
+	reducerPath: 'progressApi',
+	baseQuery: fetchBaseQuery({
+		baseUrl: API_ENDPOINTS.base,
+		credentials: 'include',
+		prepareHeaders: (headers, { endpoint }) => {
+			const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+			if (token) {
+				headers.set('authorization', `Bearer ${token}`)
+			}
 
-    // Получение всех отчетов с полной информацией
-    getProgressReports: builder.query<ProgressReport[], void>({
-      query: () => '/progress',
-      providesTags: ['Progress'],
-      transformResponse: (response: { progress: ProgressReport[] }) => response.progress,
-    }),
+			// Для мутации с файлами не устанавливаем Content-Type
+			if (endpoint !== 'addProgressReport') {
+				headers.set('Content-Type', 'application/json')
+			}
+			return headers
+		},
+	}),
+	tagTypes: ['Progress'],
+	endpoints: (builder) => ({
+		// Получение всех отчетов прогресса для графика
+		getProgressChartData: builder.query<ProgressChartData[], void>({
+			query: () => '/progress',
+			providesTags: ['Progress'],
+			transformResponse: (response: { progress: ProgressReport[] }) => {
+				return response.progress.map((item) => ({
+					date: item.date.split('T')[0],
+					weight: item.weight,
+					waist: item.waist,
+					hips: item.hips,
+					chest: item.chest || 0,
+					arm: item.arm || 0,
+					leg: item.leg || 0,
+				}))
+			},
+		}),
 
-    // Получение конкретного отчета по ID
-    getProgressReport: builder.query<ProgressReport, string>({
-      query: (id) => `/progress/${id}`,
-      providesTags: ['Progress'],
-      transformResponse: (response: { progress: ProgressReport }) => response.progress,
-    }),
+		// Получение всех отчетов с полной информацией
+		getProgressReports: builder.query<ProgressReport[], void>({
+			query: () => '/progress',
+			providesTags: ['Progress'],
+			transformResponse: (response: { progress: ProgressReport[] }) => response.progress,
+		}),
 
-    // Создание нового отчета
-    addProgressReport: builder.mutation<ProgressReport, FormData>({
-      query: (formData) => ({
-        url: '/progress/new-report',
-        method: 'PUT',
-        body: formData,
-      }),
-      invalidatesTags: ['Progress'],
-    }),
+		// Получение конкретного отчета по ID
+		getProgressReport: builder.query<ProgressReport, string>({
+			query: (id) => `/progress/${id}`,
+			providesTags: ['Progress'],
+			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+		}),
 
-    // Получение последнего отчета
-    getLatestProgress: builder.query<ProgressReport, void>({
-      query: () => '/progress/latest',
-      transformResponse: (response: { progress: ProgressReport }) => response.progress,
-    }),
-  }),
-});
+		// Создание нового отчета
+		addProgressReport: builder.mutation<ProgressReport, FormData>({
+			query: (formData) => ({
+				url: '/progress/new-report',
+				method: 'PUT',
+				body: formData,
+			}),
+			invalidatesTags: ['Progress'],
+		}),
+
+		// Получение последнего отчета
+		getLatestProgress: builder.query<ProgressReport, void>({
+			query: () => '/progress/latest',
+			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+		}),
+	}),
+})
 
 export const {
-  useGetProgressChartDataQuery,
-  useGetProgressReportsQuery,
-  useGetProgressReportQuery,
-  useAddProgressReportMutation,
-  useGetLatestProgressQuery,
-} = progressApi;
+	useGetProgressChartDataQuery,
+	useGetProgressReportsQuery,
+	useGetProgressReportQuery,
+	useAddProgressReportMutation,
+	useGetLatestProgressQuery,
+} = progressApi

@@ -1,14 +1,68 @@
 import type { FormProps } from 'antd'
-import { Button, Form, Input, Typography, Upload, message } from 'antd'
-import { MeasurementFields, FitnessFields } from '../../components/Forms'
-import { REGISTRATION_FIELDS } from '../../constants/accountFields'
+import { Button, Form, Input, InputNumber, Typography, Upload, Select, App } from 'antd'
+import { REGISTRATION_FIELDS, COMMON_FIELDS } from '../../constants/accountFields'
 import { Link, useNavigate } from 'react-router'
 import { useRegisterMutation } from '../../store/api/auth.api'
 import { useState } from 'react'
-import { UploadOutlined, CameraOutlined } from '@ant-design/icons'
+import { UploadOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 const { Dragger } = Upload
+
+// Regex из бэкенда для синхронизации валидации
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const phoneRegex = /^(?:\+7|8)\d{10}$/
+
+// Опции для Select полей
+const goalOptions = [
+	{ value: 'weight_loss', label: 'Похудение' },
+	{ value: 'muscle_gain', label: 'Набор мышечной массы' },
+	{ value: 'maintenance', label: 'Поддержание формы' },
+	{ value: 'endurance', label: 'Развитие выносливости' },
+	{ value: 'rehabilitation', label: 'Реабилитация' },
+	{ value: 'other', label: 'Другое' },
+]
+
+const experienceOptions = [
+	{ value: 'no_experience', label: 'Нет опыта' },
+	{ value: 'home_training', label: 'Тренируюсь дома' },
+	{ value: 'gym_less_year', label: 'В зале меньше года' },
+	{ value: 'gym_more_year', label: 'В зале от 1 года' },
+	{ value: 'professional', label: 'Профессиональный спортсмен' },
+]
+
+const restrictionsOptions = [
+	{ value: 'none', label: 'Нет ограничений' },
+	{ value: 'back_problems', label: 'Проблемы со спиной' },
+	{ value: 'joint_problems', label: 'Проблемы с суставами' },
+	{ value: 'heart_problems', label: 'Сердечно-сосудистые заболевания' },
+	{ value: 'diabetes', label: 'Диабет' },
+	{ value: 'hypertension', label: 'Гипертония' },
+	{ value: 'other', label: 'Другое (укажу в комментарии)' },
+]
+
+const dietOptions = [
+	{ value: 'regular', label: 'Обычное питание' },
+	{ value: 'vegetarian', label: 'Вегетарианство' },
+	{ value: 'vegan', label: 'Веганство' },
+	{ value: 'keto', label: 'Кето-диета' },
+	{ value: 'low_carb', label: 'Низкоуглеводная диета' },
+	{ value: 'high_protein', label: 'Высокобелковая диета' },
+	{ value: 'other', label: 'Другое' },
+]
+
+// Лимиты для числовых полей (синхронизированы с бэкендом)
+const LIMITS = {
+	age: { min: 14, max: 100 },
+	weight: { min: 20, max: 300 },
+	height: { min: 100, max: 250 },
+	waist: { min: 40, max: 200 },
+	chest: { min: 50, max: 200 },
+	hips: { min: 50, max: 200 },
+	arm: { min: 15, max: 80 },
+	leg: { min: 30, max: 100 },
+	password: { min: 5, max: 10 },
+}
 
 type FieldType = {
 	name: string
@@ -32,12 +86,18 @@ type FieldType = {
 	photoBack?: File
 }
 
+const photoLabels = ['Спереди', 'Сбоку', 'Сзади'] as const
+const photoFields = ['photoFront', 'photoSide', 'photoBack'] as const
+
 export const Registration = () => {
 	const [register, { isLoading }] = useRegisterMutation()
 	const navigate = useNavigate()
 	const [photoPreviews, setPhotoPreviews] = useState<{ [key: string]: string }>({})
 	const [photoFiles, setPhotoFiles] = useState<{ [key: string]: File }>({})
 	const [form] = Form.useForm()
+	
+	// Используем App.useApp() для контекстного message (fix warning)
+	const { message } = App.useApp()
 
 	const handlePhotoUpload = (file: File, fieldName: string) => {
 		const reader = new FileReader()
@@ -59,7 +119,21 @@ export const Registration = () => {
 		return false
 	}
 
-	const onFinish = async (values: any) => {
+	const handlePhotoRemove = (fieldName: string) => {
+		setPhotoPreviews((prev) => {
+			const newPreviews = { ...prev }
+			delete newPreviews[fieldName]
+			return newPreviews
+		})
+		setPhotoFiles((prev) => {
+			const newFiles = { ...prev }
+			delete newFiles[fieldName]
+			return newFiles
+		})
+		form.setFieldValue(fieldName, undefined)
+	}
+
+	const onFinish = async (values: FieldType) => {
 		try {
 			if (!photoFiles.photoFront || !photoFiles.photoSide || !photoFiles.photoBack) {
 				message.error('Пожалуйста, загрузите все три фотографии')
@@ -94,15 +168,12 @@ export const Registration = () => {
 			formData.append('photoSide', photoFiles.photoSide)
 			formData.append('photoBack', photoFiles.photoBack)
 
-			console.log('Sending registration data...')
-
 			const registerData = {
 				data: formData,
 				role: 'CLIENT' as const,
 			}
 
 			const result = await register(registerData).unwrap()
-			console.log('Registration successful:', result)
 			message.success('Регистрация прошла успешно!')
 
 			// Сохраняем токен
@@ -110,38 +181,23 @@ export const Registration = () => {
 				localStorage.setItem('token', result.token.accessToken)
 			}
 
-			// Перенаправляем на главную страницу или страницу профиля
+			// Перенаправляем на главную страницу
 			navigate('/')
 		} catch (error: any) {
 			console.error('Registration failed:', error)
 
-			// Более детальная обработка ошибок
-			if (error.data) {
-				if (error.data.message) {
-					message.error(`Ошибка регистрации: ${error.data.message}`)
-				} else if (error.data.error) {
-					message.error(`Ошибка регистрации: ${error.data.error}`)
-				} else {
-					message.error('Ошибка при регистрации. Проверьте введенные данные.')
-				}
-			} else if (error.status) {
-				switch (error.status) {
-					case 400:
-						message.error(
-							'Неверные данные для регистрации. Проверьте все обязательные поля.',
-						)
-						break
-					case 409:
-						message.error('Пользователь с таким email/телефоном уже существует')
-						break
-					case 500:
-						message.error('Ошибка сервера. Попробуйте позже.')
-						break
-					default:
-						message.error('Ошибка при регистрации')
-				}
+			if (error.data?.message) {
+				message.error(`Ошибка регистрации: ${error.data.message}`)
+			} else if (error.data?.error) {
+				message.error(`Ошибка регистрации: ${error.data.error}`)
+			} else if (error.status === 400) {
+				message.error('Неверные данные для регистрации. Проверьте все поля.')
+			} else if (error.status === 409) {
+				message.error('Пользователь с таким email/телефоном уже существует')
+			} else if (error.status === 500) {
+				message.error('Ошибка сервера. Попробуйте позже.')
 			} else {
-				message.error('Ошибка сети. Проверьте подключение к интернету.')
+				message.error('Ошибка при регистрации. Проверьте подключение к интернету.')
 			}
 		}
 	}
@@ -150,6 +206,17 @@ export const Registration = () => {
 		console.log('Failed:', errorInfo)
 		const errorFields = errorInfo.errorFields.map((field) => field.name[0]).join(', ')
 		message.error(`Заполните обязательные поля: ${errorFields}`)
+	}
+
+	// Валидатор для email или телефона
+	const validateEmailOrPhone = (_: any, value: string) => {
+		if (!value) {
+			return Promise.reject('Введите email или телефон')
+		}
+		if (emailRegex.test(value) || phoneRegex.test(value)) {
+			return Promise.resolve()
+		}
+		return Promise.reject('Введите корректный email или телефон (+7XXXXXXXXXX)')
 	}
 
 	return (
@@ -183,7 +250,7 @@ export const Registration = () => {
 						</Text>
 
 						<div className='photo-upload-grid'>
-							{['photoFront', 'photoSide', 'photoBack'].map((photoType, index) => (
+							{photoFields.map((photoType, index) => (
 								<div key={photoType} className='upload-area'>
 									<Form.Item
 										name={photoType}
@@ -192,41 +259,58 @@ export const Registration = () => {
 										rules={[
 											{
 												required: true,
-												message: `Загрузите фото ${['спереди', 'сбоку', 'сзади'][index]}`,
+												message: `Загрузите фото ${photoLabels[index].toLowerCase()}`,
 											},
 										]}
 									>
-										<Dragger
-											name={photoType}
-											multiple={false}
-											beforeUpload={(file) => handlePhotoUpload(file, photoType)}
-											showUploadList={false}
-											accept='image/*'
-											className={photoPreviews[photoType] ? 'has-preview' : ''}
-										>
-											{photoPreviews[photoType] ? (
-												<div>
-													<img
-														src={photoPreviews[photoType]}
-														alt={`Preview ${photoType}`}
-														className='upload-preview'
-													/>
-													<Text className='block mt-2'>
-														{['Спереди', 'Сбоку', 'Сзади'][index]}
+										{photoPreviews[photoType] ? (
+											<div className='photo-preview-container'>
+												<img
+													src={photoPreviews[photoType]}
+													alt={`Preview ${photoType}`}
+													className='upload-preview'
+													style={{
+														width: '100%',
+														height: '200px',
+														objectFit: 'cover',
+														borderRadius: '8px',
+													}}
+												/>
+												<div className='photo-preview-overlay'>
+													<Text className='block text-white font-medium'>
+														{photoLabels[index]}
 													</Text>
+													<Button
+														type='primary'
+														danger
+														icon={<DeleteOutlined />}
+														size='small'
+														onClick={() => handlePhotoRemove(photoType)}
+														style={{ marginTop: '8px' }}
+													>
+														Удалить
+													</Button>
 												</div>
-											) : (
+											</div>
+										) : (
+											<Dragger
+												name={photoType}
+												multiple={false}
+												beforeUpload={(file) => handlePhotoUpload(file, photoType)}
+												showUploadList={false}
+												accept='image/*'
+											>
 												<div className='py-4'>
-													<UploadOutlined className='mb-2' />
-													<Text className='block'>
-														{['Спереди', 'Сбоку', 'Сзади'][index]}
+													<UploadOutlined className='text-2xl mb-2' />
+													<Text className='block font-medium'>
+														{photoLabels[index]}
 													</Text>
 													<Text type='secondary' className='text-sm'>
 														Нажмите или перетащите
 													</Text>
 												</div>
-											)}
-										</Dragger>
+											</Dragger>
+										)}
 									</Form.Item>
 								</div>
 							))}
@@ -239,21 +323,27 @@ export const Registration = () => {
 							👤 Личная информация
 						</Title>
 
-						{/* Заменим PersonalInfoFields на конкретные поля */}
 						<Form.Item
 							name='name'
 							label='Имя'
-							rules={[{ required: true, message: 'Введите имя' }]}
+							rules={[
+								{ required: true, message: 'Введите имя' },
+								{ min: 2, message: 'Имя должно содержать минимум 2 символа' },
+								{ max: 50, message: 'Имя не должно превышать 50 символов' },
+							]}
 						>
-							<Input placeholder='Введите ваше имя' className='rounded-lg' />
+							<Input placeholder={COMMON_FIELDS.name} className='rounded-lg' />
 						</Form.Item>
 
 						<Form.Item
 							name='emailOrPhone'
 							label='Email или телефон'
-							rules={[{ required: true, message: 'Введите email или телефон' }]}
+							rules={[{ required: true, validator: validateEmailOrPhone }]}
 						>
-							<Input placeholder='example@mail.ru или +7XXX' className='rounded-lg' />
+							<Input
+								placeholder='example@mail.ru или +79991234567'
+								className='rounded-lg'
+							/>
 						</Form.Item>
 
 						<Form.Item
@@ -261,80 +351,176 @@ export const Registration = () => {
 							label='Возраст'
 							rules={[{ required: true, message: 'Введите возраст' }]}
 						>
-							<Input
-								type='number'
+							<InputNumber
 								placeholder='Введите ваш возраст'
 								className='rounded-lg'
-							/>
-						</Form.Item>
-
-						<Form.Item
-							name='weight'
-							label='Вес (кг)'
-							rules={[{ required: true, message: 'Введите вес' }]}
-						>
-							<Input type='number' placeholder='Введите ваш вес' className='rounded-lg' />
-						</Form.Item>
-
-						<Form.Item
-							name='height'
-							label='Рост (см)'
-							rules={[{ required: true, message: 'Введите рост' }]}
-						>
-							<Input
-								type='number'
-								placeholder={REGISTRATION_FIELDS.height}
-								className='rounded-lg'
+								style={{ width: '100%' }}
+								min={LIMITS.age.min}
+								max={LIMITS.age.max}
 							/>
 						</Form.Item>
 					</div>
 
-					{/* Замеры - оставляем как есть, но проверяем имена полей */}
+					{/* Физические параметры */}
 					<div className='form-section'>
 						<Title level={4} className='section-title'>
-							📏 Замеры тела
+							📏 Физические параметры
 						</Title>
-						<MeasurementFields />
+
+						<div className='grid grid-cols-2 gap-4'>
+							<Form.Item
+								name='weight'
+								label='Вес, кг'
+								rules={[{ required: true, message: 'Введите вес' }]}
+							>
+								<InputNumber
+									placeholder='Вес'
+									style={{ width: '100%' }}
+									min={LIMITS.weight.min}
+									max={LIMITS.weight.max}
+								/>
+							</Form.Item>
+
+							<Form.Item
+								name='height'
+								label='Рост, см'
+								rules={[{ required: true, message: 'Введите рост' }]}
+							>
+								<InputNumber
+									placeholder='Рост'
+									style={{ width: '100%' }}
+									min={LIMITS.height.min}
+									max={LIMITS.height.max}
+								/>
+							</Form.Item>
+						</div>
 					</div>
 
-					{/* Фитнес цели - оставляем как есть */}
+					{/* Замеры тела */}
 					<div className='form-section'>
 						<Title level={4} className='section-title'>
-							🎯 Фитнес цели
+							📐 Замеры тела (см)
 						</Title>
-						<FitnessFields />
+
+						<div className='grid grid-cols-2 gap-4'>
+							<Form.Item
+								name='chest'
+								label='Обхват груди'
+								rules={[{ required: true, message: 'Введите обхват груди' }]}
+							>
+								<InputNumber
+									placeholder='Обхват груди'
+									style={{ width: '100%' }}
+									min={LIMITS.chest.min}
+									max={LIMITS.chest.max}
+								/>
+							</Form.Item>
+
+							<Form.Item
+								name='waist'
+								label='Обхват талии'
+								rules={[{ required: true, message: 'Введите обхват талии' }]}
+							>
+								<InputNumber
+									placeholder='Обхват талии'
+									style={{ width: '100%' }}
+									min={LIMITS.waist.min}
+									max={LIMITS.waist.max}
+								/>
+							</Form.Item>
+
+							<Form.Item
+								name='hips'
+								label='Обхват бёдер'
+								rules={[{ required: true, message: 'Введите обхват бёдер' }]}
+							>
+								<InputNumber
+									placeholder='Обхват бёдер'
+									style={{ width: '100%' }}
+									min={LIMITS.hips.min}
+									max={LIMITS.hips.max}
+								/>
+							</Form.Item>
+
+							<Form.Item
+								name='arm'
+								label='Обхват руки'
+								rules={[{ required: true, message: 'Введите обхват руки' }]}
+							>
+								<InputNumber
+									placeholder='Обхват руки'
+									style={{ width: '100%' }}
+									min={LIMITS.arm.min}
+									max={LIMITS.arm.max}
+								/>
+							</Form.Item>
+
+							<Form.Item
+								name='leg'
+								label='Обхват ноги'
+								rules={[{ required: true, message: 'Введите обхват ноги' }]}
+							>
+								<InputNumber
+									placeholder='Обхват ноги'
+									style={{ width: '100%' }}
+									min={LIMITS.leg.min}
+									max={LIMITS.leg.max}
+								/>
+							</Form.Item>
+						</div>
 					</div>
 
-					{/* Медицинская информация - заменяем medicalInfo на restrictions */}
+					{/* Фитнес цели */}
 					<div className='form-section'>
 						<Title level={4} className='section-title'>
-							🏥 Медицинская информация
+							🎯 Фитнес информация
 						</Title>
 
-						{/* Заменим MedicalFields на конкретные поля */}
+						<Form.Item
+							name='goal'
+							label='Цель тренировок'
+							rules={[{ required: true, message: 'Выберите цель' }]}
+						>
+							<Select
+								placeholder={COMMON_FIELDS.goal}
+								options={goalOptions}
+								size='large'
+							/>
+						</Form.Item>
+
+						<Form.Item
+							name='experience'
+							label='Опыт тренировок'
+							rules={[{ required: true, message: 'Выберите уровень опыта' }]}
+						>
+							<Select
+								placeholder={COMMON_FIELDS.experience}
+								options={experienceOptions}
+								size='large'
+							/>
+						</Form.Item>
+
 						<Form.Item
 							name='restrictions'
-							label='Противопоказания, заболевания и ограничения'
-							rules={[
-								{ required: true, message: 'Введите информацию о противопоказаниях' },
-							]}
+							label='Ограничения по здоровью'
+							rules={[{ required: true, message: 'Выберите ограничения' }]}
 						>
-							<Input.TextArea
-								placeholder='Опишите противопоказания, заболевания и ограничения'
-								className='rounded-lg'
-								rows={4}
+							<Select
+								placeholder='Выберите ограничения'
+								options={restrictionsOptions}
+								size='large'
 							/>
 						</Form.Item>
 
 						<Form.Item
 							name='diet'
-							label='Текущий рацион питания'
-							rules={[{ required: true, message: 'Введите информацию о рационе' }]}
+							label='Тип питания'
+							rules={[{ required: true, message: 'Выберите тип питания' }]}
 						>
-							<Input.TextArea
-								placeholder='Опишите ваш текущий рацион питания'
-								className='rounded-lg'
-								rows={4}
+							<Select
+								placeholder={COMMON_FIELDS.diet}
+								options={dietOptions}
+								size='large'
 							/>
 						</Form.Item>
 					</div>
@@ -348,8 +534,15 @@ export const Registration = () => {
 							name='password'
 							label='Пароль'
 							rules={[
-								{ required: true, message: 'Введите пароль!' },
-								{ min: 6, message: 'Пароль должен быть не менее 6 символов' },
+								{ required: true, message: 'Введите пароль' },
+								{
+									min: LIMITS.password.min,
+									message: `Пароль должен быть минимум ${LIMITS.password.min} символов`,
+								},
+								{
+									max: LIMITS.password.max,
+									message: `Пароль не должен превышать ${LIMITS.password.max} символов`,
+								},
 							]}
 						>
 							<Input.Password
@@ -362,13 +555,13 @@ export const Registration = () => {
 							label='Подтверждение пароля'
 							dependencies={['password']}
 							rules={[
-								{ required: true, message: 'Повторите пароль!' },
+								{ required: true, message: 'Повторите пароль' },
 								({ getFieldValue }) => ({
 									validator(_, value) {
 										if (!value || getFieldValue('password') === value) {
 											return Promise.resolve()
 										}
-										return Promise.reject(new Error('Пароли не совпадают!'))
+										return Promise.reject(new Error('Пароли не совпадают'))
 									},
 								}),
 							]}
@@ -396,14 +589,28 @@ export const Registration = () => {
 
 				<div className='text-center mt-6'>
 					<Text type='secondary'>Уже есть аккаунт? </Text>
-					<Link
-						to='/login'
-						className='font-semibold transition-colors'
-					>
+					<Link to='/login' className='font-semibold transition-colors'>
 						Войти
 					</Link>
 				</div>
 			</div>
+
+			<style>{`
+				.photo-preview-container {
+					position: relative;
+					border-radius: 8px;
+					overflow: hidden;
+				}
+				.photo-preview-overlay {
+					position: absolute;
+					bottom: 0;
+					left: 0;
+					right: 0;
+					background: linear-gradient(transparent, rgba(0,0,0,0.7));
+					padding: 16px;
+					text-align: center;
+				}
+			`}</style>
 		</div>
 	)
 }

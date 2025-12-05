@@ -1,4 +1,4 @@
-import { ConfigProvider, Layout } from 'antd'
+import { ConfigProvider, Layout, App as AntApp } from 'antd'
 import { AppRouter } from './router/AppRouter'
 import { Header } from './components/Common/Header.tsx'
 import type { UserRole } from './components/index.ts'
@@ -12,10 +12,12 @@ const mockData = {
 function App() {
 	return (
 		<ConfigProvider theme={customTheme}>
-			<Layout className='min-h-screen flex flex-col'>
-				<Header role={mockData.role} hasUnreadMessages={mockData.hasUnreadMessages} />
+			<AntApp>
+				<Layout className='min-h-screen flex flex-col'>
+					<Header role={mockData.role} hasUnreadMessages={mockData.hasUnreadMessages} />
 					<AppRouter />
-			</Layout>
+				</Layout>
+			</AntApp>
 		</ConfigProvider>
 	)
 }

@@ -11,9 +11,10 @@ import type {
 	UpdateTrainerProfileRequest,
 } from '../types/user.types'
 import type { AuthUser } from '../types/auth.types'
+import { API_ENDPOINTS } from '../../config/api.config'
 
 const rawBaseQuery = fetchBaseQuery({
-	baseUrl: 'http://localhost:3000/api/user',
+	baseUrl: API_ENDPOINTS.user,
 	credentials: 'include',
 	prepareHeaders: (headers, { endpoint, type }) => {
 		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -32,9 +33,9 @@ const rawBaseQuery = fetchBaseQuery({
 })
 
 export const baseQueryWithReauth: BaseQueryFn<
-	string | FetchArgs, // аргументы: url либо объект запроса
-	unknown, // тип data (конкретизируется в endpoints)
-	FetchBaseQueryError // тип ошибки
+	string | FetchArgs,
+	unknown,
+	FetchBaseQueryError
 > = async (args, api, extraOptions) => {
 	let result = await rawBaseQuery(args, api, extraOptions)
 
@@ -96,7 +97,6 @@ export const userApi = createApi({
 			invalidatesTags: ['User'],
 		}),
 
-		// ✅ FormData мутации для фото (используют существующие роуты)
 		updateClientProfileWithPhoto: builder.mutation<UpdateProfileResponse, FormData>({
 			query: (formData) => ({
 				url: '/client/profile',

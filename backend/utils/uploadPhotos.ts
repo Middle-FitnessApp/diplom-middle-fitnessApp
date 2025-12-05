@@ -2,6 +2,8 @@ import { FastifyRequest } from 'fastify'
 import { ApiError } from './ApiError.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import { supabase, PHOTOS_BUCKET } from './supabase.js'
+import fs from 'fs'
+import path from 'path'
 
 interface UploadResult {
 	body: Record<string, string>
@@ -9,7 +11,20 @@ interface UploadResult {
 }
 
 /**
- * Обрабатывает multipart/form-data запрос и загружает фото в Supabase Storage
+ * Определяем режим хранения по NODE_ENV:
+ * - development (npm run dev) → локальное хранение в uploads/photos
+ * - production (npm run build/start) → Supabase Storage
+ */
+const isDevelopment = process.env.NODE_ENV !== 'production'
+const isLocalStorage = isDevelopment || !supabase
+
+// Логируем режим при старте
+console.log(`📦 Storage mode: ${isLocalStorage ? 'LOCAL (uploads/photos)' : 'SUPABASE'}`)
+
+/**
+ * Обрабатывает multipart/form-data запрос и загружает фото
+ * В development режиме сохраняет в папку uploads/photos
+ * В production режиме загружает в Supabase Storage
  * @param req - Fastify request объект
  * @param allowedFileFields - массив допустимых имён полей для файлов
  * @param maxFileSize - максимальный размер файла в байтах (по умолчанию 500KB)
@@ -22,12 +37,6 @@ export async function uploadPhotos(
 ): Promise<UploadResult> {
 	if (!req.isMultipart()) {
 		throw ApiError.badRequest('Ожидается multipart/form-data')
-	}
-
-	if (!supabase) {
-		throw ApiError.internal(
-			'Supabase Storage не настроен. Проверьте переменные окружения.',
-		)
 	}
 
 	const body: Record<string, string> = {}
@@ -63,33 +72,51 @@ export async function uploadPhotos(
 					continue
 				}
 
-				// Загрузка в Supabase Storage
 				const buffer = Buffer.concat(chunks)
 				const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}-${
 					part.filename
 				}`
-				const filePath = `${filename}`
 
-				const { data, error } = await supabase.storage
-					.from(PHOTOS_BUCKET)
-					.upload(filePath, buffer, {
-						contentType: part.mimetype,
-						upsert: false,
-					})
+				if (isLocalStorage) {
+					// Локальное хранение (development)
+					const uploadsDir = path.join(process.cwd(), 'uploads', 'photos')
+					
+					// Создаём директорию если не существует
+					if (!fs.existsSync(uploadsDir)) {
+						fs.mkdirSync(uploadsDir, { recursive: true })
+					}
 
-				if (error) {
-					throw ApiError.internal(
-						`Ошибка загрузки файла "${part.fieldname}": ${error.message}`,
-					)
+					const filePath = path.join(uploadsDir, filename)
+					fs.writeFileSync(filePath, buffer)
+
+					// Возвращаем относительный URL для доступа через static
+					files[part.fieldname] = `/uploads/photos/${filename}`
+					uploadedPaths.push(filePath)
+				} else {
+					// Supabase Storage (production)
+					const filePath = `${filename}`
+
+					const { data, error } = await supabase!.storage
+						.from(PHOTOS_BUCKET)
+						.upload(filePath, buffer, {
+							contentType: part.mimetype,
+							upsert: false,
+						})
+
+					if (error) {
+						throw ApiError.internal(
+							`Ошибка загрузки файла "${part.fieldname}": ${error.message}`,
+						)
+					}
+
+					// Получаем публичный URL
+					const {
+						data: { publicUrl },
+					} = supabase!.storage.from(PHOTOS_BUCKET).getPublicUrl(data.path)
+
+					files[part.fieldname] = publicUrl
+					uploadedPaths.push(data.path)
 				}
-
-				// Получаем публичный URL
-				const {
-					data: { publicUrl },
-				} = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(data.path)
-
-				files[part.fieldname] = publicUrl
-				uploadedPaths.push(data.path)
 			} else {
 				// Текстовое поле
 				body[part.fieldname] = String(part.value)
@@ -100,37 +127,62 @@ export async function uploadPhotos(
 	} catch (error) {
 		// Откатываем загруженные файлы при ошибке
 		if (uploadedPaths.length > 0) {
-			await supabase.storage.from(PHOTOS_BUCKET).remove(uploadedPaths)
+			if (isLocalStorage) {
+				// Удаляем локальные файлы
+				for (const filePath of uploadedPaths) {
+					try {
+						if (fs.existsSync(filePath)) {
+							fs.unlinkSync(filePath)
+						}
+					} catch (e) {
+						console.error(`Не удалось удалить файл: ${filePath}`, e)
+					}
+				}
+			} else {
+				// Удаляем из Supabase
+				await supabase!.storage.from(PHOTOS_BUCKET).remove(uploadedPaths)
+			}
 		}
 		throw error
 	}
 }
 
 /**
- * Удаляет фото из Supabase Storage по URL
- * @param photoUrl - публичный URL фото из Supabase
+ * Удаляет фото по URL (локально или из Supabase)
+ * @param photoUrl - URL фото
  */
 export async function deletePhoto(photoUrl: string): Promise<void> {
 	try {
-		if (!supabase) {
-			console.error('Supabase Storage не настроен')
-			return
-		}
+		if (isLocalStorage) {
+			// Локальное удаление
+			// URL format: /uploads/photos/filename.jpg
+			if (photoUrl.startsWith('/uploads/')) {
+				const filePath = path.join(process.cwd(), photoUrl)
+				if (fs.existsSync(filePath)) {
+					fs.unlinkSync(filePath)
+				}
+			}
+		} else {
+			if (!supabase) {
+				console.error('Supabase Storage не настроен')
+				return
+			}
 
-		// Извлекаем путь файла из публичного URL
-		// URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-		const urlParts = photoUrl.split(`/object/public/${PHOTOS_BUCKET}/`)
-		if (urlParts.length !== 2) {
-			console.error(`Неверный формат URL: ${photoUrl}`)
-			return
-		}
+			// Извлекаем путь файла из публичного URL
+			// URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+			const urlParts = photoUrl.split(`/object/public/${PHOTOS_BUCKET}/`)
+			if (urlParts.length !== 2) {
+				console.error(`Неверный формат URL: ${photoUrl}`)
+				return
+			}
 
-		const filePath = urlParts[1]
+			const filePath = urlParts[1]
 
-		const { error } = await supabase.storage.from(PHOTOS_BUCKET).remove([filePath])
+			const { error } = await supabase.storage.from(PHOTOS_BUCKET).remove([filePath])
 
-		if (error) {
-			console.error(`Не удалось удалить фото из Supabase: ${photoUrl}`, error)
+			if (error) {
+				console.error(`Не удалось удалить фото из Supabase: ${photoUrl}`, error)
+			}
 		}
 	} catch (error) {
 		console.error(`Ошибка при удалении фото: ${photoUrl}`, error)
