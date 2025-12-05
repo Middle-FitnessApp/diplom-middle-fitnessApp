@@ -85,15 +85,17 @@ async function main() {
 		create: {
 			name: 'Тестовая программа',
 			trainerId: trainer1.id,
+			description: 'Базовая тестовая категория планов питания',
 		},
 	})
 
-	// Программа
-	const nutritionProgram = await prisma.nutritionProgram.upsert({
+	// Подкатегория (бывшая программа)
+	const subcategory = await prisma.nutritionSubcategory.upsert({
 		where: { name: '30-дневный план питания' },
 		update: {},
 		create: {
 			name: '30-дневный план питания',
+			description: 'Тестовый 30-дневный план питания для клиентов',
 			categoryId: nutritionCategory.id,
 		},
 	})
@@ -143,12 +145,12 @@ async function main() {
 		},
 	]
 
-	// Создаём 30 дней
-	const programDays: string[] = []
+	// Создаём 30 дней NutritionDay
+	const dayIds: string[] = []
 	for (let dayNum = 1; dayNum <= 30; dayNum++) {
-		const day = await prisma.programDay.create({
+		const day = await prisma.nutritionDay.create({
 			data: {
-				programId: nutritionProgram.id,
+				subcatId: subcategory.id,
 				dayTitle: `День ${dayNum}`,
 				dayOrder: dayNum,
 				meals: {
@@ -158,27 +160,25 @@ async function main() {
 				},
 			},
 		})
-		programDays.push(day.id)
+		dayIds.push(day.id)
 	}
 
-	console.log(
-		`✅ Создана программа "${nutritionProgram.name}" с ${programDays.length} днями`,
-	)
+	console.log(`✅ Создана подкатегория "${subcategory.name}" с ${dayIds.length} днями`)
 
-	// Назначаем план клиентам (все 30 дней)
-	await prisma.assignedNutritionPlan.create({
+	// Назначаем план клиентам (все 30 дней) через ClientNutritionPlan
+	await prisma.clientNutritionPlan.create({
 		data: {
 			clientId: client1.id,
-			programId: nutritionProgram.id,
-			dayIds: programDays,
+			subcatId: subcategory.id,
+			dayIds,
 		},
 	})
 
-	await prisma.assignedNutritionPlan.create({
+	await prisma.clientNutritionPlan.create({
 		data: {
 			clientId: client2.id,
-			programId: nutritionProgram.id,
-			dayIds: programDays,
+			subcatId: subcategory.id,
+			dayIds,
 		},
 	})
 
@@ -272,9 +272,8 @@ async function main() {
 		},
 	]
 
-	const client1ProgressRecords = []
 	for (const progress of client1Progress) {
-		const record = await prisma.progress.create({
+		await prisma.progress.create({
 			data: {
 				userId: client1.id,
 				height: 180,
@@ -284,8 +283,9 @@ async function main() {
 				...progress,
 			},
 		})
-		client1ProgressRecords.push(record)
 	}
+
+	// Создаём отчеты прогресса для client2 (7 штук)
 	const client2Progress = [
 		{
 			date: new Date('2024-06-01'),
@@ -352,9 +352,8 @@ async function main() {
 		},
 	]
 
-	const client2ProgressRecords = []
 	for (const progress of client2Progress) {
-		const record = await prisma.progress.create({
+		await prisma.progress.create({
 			data: {
 				userId: client2.id,
 				height: 165,
@@ -364,7 +363,6 @@ async function main() {
 				...progress,
 			},
 		})
-		client2ProgressRecords.push(record)
 	}
 
 	console.log('✅ База данных успешно заполнена!')

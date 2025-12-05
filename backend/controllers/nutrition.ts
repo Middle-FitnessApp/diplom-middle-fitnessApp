@@ -1,20 +1,27 @@
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../prisma.js'
+import { ApiError } from 'utils/ApiError.js'
 
-export async function getClientNutritionPlan(clientId: string) {
-	// Находим последнее назначение плана для клиента
-	const assignment = await prisma.assignedNutritionPlan.findFirst({
+// =============================================
+//  Личный назначенный план питания клиента
+// =============================================
+
+export async function getClientNutritionPlan(req: FastifyRequest, reply: FastifyReply) {
+	const clientId = req.user.id
+
+	const assignment = await prisma.clientNutritionPlan.findFirst({
 		where: { clientId },
 		orderBy: { createdAt: 'desc' },
 	})
 
 	if (!assignment) {
-		return []
+		return reply.status(200).send([])
 	}
 
-	const { programId, dayIds } = assignment
+	const { subcatId, dayIds } = assignment
 
-	const days = await prisma.programDay.findMany({
-		where: dayIds.length ? { id: { in: dayIds } } : { programId },
+	const days = await prisma.nutritionDay.findMany({
+		where: dayIds.length ? { id: { in: dayIds } } : { subcatId },
 		orderBy: { dayOrder: 'asc' },
 		include: {
 			meals: {
@@ -23,5 +30,222 @@ export async function getClientNutritionPlan(clientId: string) {
 		},
 	})
 
-	return days
+	return reply.status(200).send(days)
+}
+
+// =============================================
+//  Категории
+// =============================================
+
+export async function createNutritionCategory(req: FastifyRequest, reply: FastifyReply) {
+	const { name, description } = req.body as { name: string; description?: string }
+
+	const existing = await prisma.nutritionCategory.findUnique({
+		where: { name },
+	})
+
+	if (existing) {
+		throw ApiError.badRequest('Категория с таким названием уже существует')
+	}
+
+	const category = await prisma.nutritionCategory.create({
+		data: {
+			name,
+			description,
+			trainerId: req.user.id,
+		},
+	})
+
+	return reply.status(201).send(category)
+}
+
+export async function getTrainerNutritionCategories(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const categories = await prisma.nutritionCategory.findMany({
+		where: { trainerId: req.user.id },
+		include: {
+			subcategories: true,
+		},
+	})
+
+	return reply.status(200).send(categories)
+}
+
+export async function updateNutritionCategory(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string }
+	const { name, description } = req.body as Partial<{ name: string; description: string }>
+
+	const category = await prisma.nutritionCategory.findFirst({
+		where: {
+			id,
+			trainerId: req.user.id,
+		},
+	})
+
+	if (!category) {
+		throw ApiError.notFound('Категория не найдена или нет прав доступа')
+	}
+
+	if (name) {
+		const existing = await prisma.nutritionCategory.findUnique({
+			where: { name },
+		})
+
+		if (existing && existing.id !== id) {
+			throw ApiError.badRequest('Категория с таким названием уже существует')
+		}
+	}
+
+	const updated = await prisma.nutritionCategory.update({
+		where: { id },
+		data: { name, description },
+	})
+
+	return reply.status(200).send(updated)
+}
+
+export async function deleteNutritionCategory(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string }
+
+	const category = await prisma.nutritionCategory.findFirst({
+		where: {
+			id,
+			trainerId: req.user.id,
+		},
+	})
+
+	if (!category) {
+		throw ApiError.notFound('Категория не найдена или нет прав доступа')
+	}
+
+	await prisma.nutritionCategory.delete({
+		where: { id },
+	})
+
+	return reply.status(204).send()
+}
+
+// =============================================
+//  Подкатегории
+// =============================================
+
+export async function createNutritionSubcategory(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const { id: categoryId } = req.params as { id: string }
+	const { name, description } = req.body as { name: string; description?: string }
+
+	// Проверяем, что категория существует и принадлежит тренеру
+	const category = await prisma.nutritionCategory.findFirst({
+		where: {
+			id: categoryId,
+			trainerId: req.user.id,
+		},
+	})
+
+	if (!category) {
+		throw ApiError.notFound('Категория не найдена или нет прав доступа')
+	}
+
+	const existing = await prisma.nutritionSubcategory.findUnique({
+		where: { name },
+	})
+
+	if (existing) {
+		throw ApiError.badRequest('Подкатегория с таким названием уже существует')
+	}
+
+	const subcategory = await prisma.nutritionSubcategory.create({
+		data: {
+			name,
+			description,
+			categoryId,
+		},
+	})
+
+	return reply.status(201).send(subcategory)
+}
+
+export async function getNutritionSubcategories(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const { id: categoryId } = req.params as { id: string }
+
+	const category = await prisma.nutritionCategory.findFirst({
+		where: {
+			id: categoryId,
+			trainerId: req.user.id,
+		},
+	})
+
+	if (!category) {
+		throw ApiError.notFound('Категория не найдена или нет прав доступа')
+	}
+
+	const subcategories = await prisma.nutritionSubcategory.findMany({
+		where: { categoryId },
+		orderBy: { createdAt: 'asc' },
+	})
+
+	return reply.status(200).send(subcategories)
+}
+
+export async function updateNutritionSubcategory(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const { id } = req.params as { id: string }
+	const { name, description } = req.body as Partial<{ name: string; description: string }>
+
+	// Проверяем права доступа через категорию
+	const subcategory = await prisma.nutritionSubcategory.findUnique({
+		where: { id },
+		include: { category: true },
+	})
+
+	if (!subcategory || subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('Подкатегория не найдена или нет прав доступа')
+	}
+
+	if (name) {
+		const existing = await prisma.nutritionSubcategory.findUnique({
+			where: { name },
+		})
+
+		if (existing && existing.id !== id) {
+			throw ApiError.badRequest('Подкатегория с таким названием уже существует')
+		}
+	}
+
+	const updated = await prisma.nutritionSubcategory.update({
+		where: { id },
+		data: { name, description },
+	})
+
+	return reply.status(200).send(updated)
+}
+
+export async function deleteNutritionSubcategory(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const { id } = req.params as { id: string }
+
+	// Проверяем права доступа через категорию
+	const subcategory = await prisma.nutritionSubcategory.findUnique({
+		where: { id },
+		include: { category: true },
+	})
+
+	if (!subcategory || subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('Подкатегория не найдена или нет прав доступа')
+	}
+
+	await prisma.nutritionSubcategory.delete({ where: { id } })
+
+	return reply.status(204).send()
 }
