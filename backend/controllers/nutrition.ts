@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../prisma.js'
-import { ApiError } from 'utils/ApiError.js'
+import { ApiError } from '../utils/ApiError.js'
 
 // =============================================
 //  Личный назначенный план питания клиента
