@@ -2,6 +2,7 @@ import { prisma } from '../prisma.js'
 import { CreateProgressDTO } from '../validation/zod/progress/progress.dto.js'
 import { CreateCommentDTO } from '../validation/zod/progress/comment.dto.js'
 import { GetProgressCommentsQueryDTO } from '../validation/zod/progress/get-comments.dto.js'
+import { GetAllProgressQueryDTO } from '../validation/zod/progress/get-all-progress.dto.js'
 import { parseDateString, getDayRange } from '../services/date.service.js'
 import { ApiError } from '../utils/ApiError.js'
 import type { ChartDataPoint, MetricData, MetricComparison } from '../types/progress.js'
@@ -133,14 +134,46 @@ export async function getProgressById(
 }
 
 /**
- * Получает все отчеты о прогрессе пользователя
+ * Получает все отчеты о прогрессе пользователя с пагинацией и фильтрацией
  * @param userId - ID пользователя
- * @returns Список всех отчетов о прогрессе
+ * @param params - Параметры пагинации и фильтрации
+ * @returns Список отчетов с метаданными пагинации
  */
-export async function getAllProgress(userId: string) {
+export async function getAllProgress(userId: string, params: GetAllProgressQueryDTO) {
+	const { page, limit, startDate, endDate } = params
+
+	// Формируем условие фильтрации по датам
+	const dateFilter: { gte?: Date; lte?: Date } = {}
+	if (startDate) {
+		const start = parseDateString(startDate)
+		start.setHours(0, 0, 0, 0)
+		dateFilter.gte = start
+	}
+	if (endDate) {
+		const end = parseDateString(endDate)
+		end.setHours(23, 59, 59, 999)
+		dateFilter.lte = end
+	}
+
+	// Формируем where условие
+	const where = {
+		userId,
+		...(Object.keys(dateFilter).length > 0 && { date: dateFilter }),
+	}
+
+	// Получаем общее количество записей
+	const total = await prisma.progress.count({ where })
+
+	// Вычисляем пагинацию
+	const skip = (page - 1) * limit
+	const totalPages = Math.ceil(total / limit)
+
+	// Получаем отчеты с пагинацией
 	const progress = await prisma.progress.findMany({
-		where: { userId },
+		where,
 		orderBy: { date: 'desc' },
+		skip,
+		take: limit,
 		select: {
 			id: true,
 			date: true,
@@ -151,9 +184,7 @@ export async function getAllProgress(userId: string) {
 			hips: true,
 			arm: true,
 			leg: true,
-			photoFront: true,
-			photoSide: true,
-			photoBack: true,
+			photoFront: true, // Возвращаем только первое фото
 			createdAt: true,
 			updatedAt: true,
 			comments: {
@@ -172,7 +203,16 @@ export async function getAllProgress(userId: string) {
 			},
 		},
 	})
-	return progress || []
+
+	return {
+		data: progress,
+		meta: {
+			page,
+			limit,
+			total,
+			totalPages,
+		},
+	}
 }
 
 /**
