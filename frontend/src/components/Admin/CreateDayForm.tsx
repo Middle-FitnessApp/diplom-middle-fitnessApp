@@ -1,62 +1,85 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Form, Input, Button, Card, Space, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
-import type { Meal, ProgramDay } from '../../types/nutritions'
+import type { NutritionMeal, NutritionDay, MealType } from '../../types/nutritions'
 import { mealTypes } from '../../constants/mealTypes'
 
-
 interface CreateDayFormProps {
-	day?: ProgramDay | null
-	programDays?: ProgramDay[]
-	onSubmit: (dayData: ProgramDay) => void
+	day?: NutritionDay | null
+	existingDays?: NutritionDay[]
+	onSubmit: (
+		dayData:
+			| Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'>
+			| NutritionDay,
+	) => void
 	onCancel: () => void
 }
 
 export const CreateDayForm = ({
 	day,
-	programDays = [],
+	existingDays = [],
 	onSubmit,
 	onCancel,
 }: CreateDayFormProps) => {
 	const [form] = Form.useForm()
-	const { subcategory } = useParams()
-	const [meals, setMeals] = useState<Meal[]>(
-		day?.meals || [
-			{
-				id: 'meal-1',
-				day_id: day?.id || '',
-				type: 'breakfast',
+	const { subcategoryId } = useParams() // переименовал
+	const [meals, setMeals] = useState<NutritionMeal[]>([])
+
+	// Инициализация meals при монтировании или изменении day
+	useEffect(() => {
+		if (day?.meals && day.meals.length > 0) {
+			setMeals(day.meals)
+		} else {
+			// Создаем завтрак по умолчанию
+			const defaultMeal: NutritionMeal = {
+				id: `meal_temp_${Date.now()}`,
+				dayId: day?.id || '',
+				type: 'BREAKFAST',
 				name: 'Завтрак',
-				meal_order: 1,
-				items: [],
-			},
-		],
-	)
+				mealOrder: 1,
+				items: [''],
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			}
+			setMeals([defaultMeal])
+		}
+	}, [day])
 
 	// Вычисляем порядковый номер дня
 	const calculateDayOrder = () => {
-		if (day) return day.day_order
-		return programDays.length > 0
-			? Math.max(...programDays.map((d) => d.day_order)) + 1
-			: 1
+		if (day) return day.dayOrder
+
+		if (existingDays.length > 0) {
+			return Math.max(...existingDays.map((d) => d.dayOrder)) + 1
+		}
+
+		return 1
 	}
 
 	const handleAddMeal = () => {
-		const newMeal: Meal = {
-			id: `meal-${Date.now()}`,
-			day_id: day?.id || '',
-			type: 'snack',
+		const newMeal: NutritionMeal = {
+			id: `meal_temp_${Date.now()}_${meals.length}`,
+			dayId: day?.id || '',
+			type: 'SNACK',
 			name: 'Перекус',
-			meal_order: meals.length + 1,
-			items: [],
+			mealOrder: meals.length + 1,
+			items: [''],
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
 		}
 		setMeals([...meals, newMeal])
 	}
 
 	const handleRemoveMeal = (mealId: string) => {
 		if (meals.length > 1) {
-			setMeals(meals.filter((meal) => meal.id !== mealId))
+			const updatedMeals = meals
+				.filter((meal) => meal.id !== mealId)
+				.map((meal, index) => ({
+					...meal,
+					mealOrder: index + 1,
+				}))
+			setMeals(updatedMeals)
 		}
 	}
 
@@ -74,7 +97,7 @@ export const CreateDayForm = ({
 				meal.id === mealId
 					? {
 							...meal,
-							items: meal.items.filter((_, index: number) => index !== itemIndex),
+							items: meal.items.filter((_, index) => index !== itemIndex),
 					  }
 					: meal,
 			),
@@ -87,7 +110,7 @@ export const CreateDayForm = ({
 				meal.id === mealId
 					? {
 							...meal,
-							items: meal.items.map((item: string, index: number) =>
+							items: meal.items.map((item, index) =>
 								index === itemIndex ? value : item,
 							),
 					  }
@@ -96,14 +119,14 @@ export const CreateDayForm = ({
 		)
 	}
 
-	const handleMealTypeChange = (mealId: string, value: string) => {
+	const handleMealTypeChange = (mealId: string, value: MealType) => {
 		const mealType = mealTypes.find((type) => type.value === value)
 		setMeals(
 			meals.map((meal) =>
 				meal.id === mealId
 					? {
 							...meal,
-							type: value as 'breakfast' | 'snack' | 'lunch' | 'dinner',
+							type: value,
 							name: mealType?.label || value,
 					  }
 					: meal,
@@ -111,19 +134,32 @@ export const CreateDayForm = ({
 		)
 	}
 
-	const handleSubmit = (values: { day_title: string }) => {
-		const dayData: ProgramDay = {
-			id: day?.id || `day-${Date.now()}`,
-			program_id: subcategory || day?.program_id || '',
-			day_title: values.day_title,
-			day_order: calculateDayOrder(),
+	const handleSubmit = (values: { dayTitle: string }) => {
+		// Подготавливаем данные дня
+		const dayData = {
+			dayTitle: values.dayTitle,
+			dayOrder: calculateDayOrder(),
 			meals: meals.map((meal, index) => ({
 				...meal,
-				meal_order: index + 1,
-				day_id: day?.id || `day-${Date.now()}`,
+				mealOrder: index + 1,
+				dayId: day?.id || '',
+				items: meal.items.filter((item) => item.trim() !== ''), // убираем пустые строки
 			})),
 		}
-		onSubmit(dayData)
+
+		if (day) {
+			// Редактирование существующего дня
+			const updatedDay: NutritionDay = {
+				...day,
+				...dayData,
+				meals: dayData.meals,
+				updatedAt: new Date().toISOString(),
+			}
+			onSubmit(updatedDay)
+		} else {
+			// Создание нового дня
+			onSubmit(dayData)
+		}
 	}
 
 	return (
@@ -131,10 +167,10 @@ export const CreateDayForm = ({
 			form={form}
 			layout='vertical'
 			onFinish={handleSubmit}
-			initialValues={{ day_title: day?.day_title }}
+			initialValues={{ dayTitle: day?.dayTitle || `День ${calculateDayOrder()}` }}
 		>
 			<Form.Item
-				name='day_title'
+				name='dayTitle'
 				label='Название дня'
 				rules={[{ required: true, message: 'Введите название дня' }]}
 			>
@@ -142,7 +178,7 @@ export const CreateDayForm = ({
 			</Form.Item>
 
 			<div className='space-y-4'>
-				{meals.map((meal, index) => (
+				{meals.map((meal) => (
 					<Card
 						key={meal.id}
 						size='small'
@@ -150,11 +186,11 @@ export const CreateDayForm = ({
 							<div className='flex items-center gap-2'>
 								<Select
 									value={meal.type}
-									onChange={(value) => handleMealTypeChange(meal.id, value)}
+									onChange={(value) => handleMealTypeChange(meal.id, value as MealType)}
 									options={mealTypes}
 									className='w-32'
 								/>
-								<span className='text-gray-500'>#{index + 1}</span>
+								<span className='text-gray-500'>#{meal.mealOrder}</span>
 							</div>
 						}
 						extra={
@@ -169,7 +205,7 @@ export const CreateDayForm = ({
 						}
 					>
 						<div className='space-y-2'>
-							{meal.items.map((item: string, itemIndex: number) => (
+							{meal.items.map((item, itemIndex) => (
 								<div key={itemIndex} className='flex gap-2 items-start'>
 									<Input
 										placeholder='Описание блюда/продукта'

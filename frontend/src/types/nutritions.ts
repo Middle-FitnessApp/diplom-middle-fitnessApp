@@ -1,32 +1,42 @@
 export interface NutritionCategory {
 	id: string
-	trainer_id: string
+	trainerId: string
 	name: string
 	description?: string
-	programs: NutritionProgram[] // массив подкатегорий
+	subcategories: NutritionSubcategory[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface NutritionProgram {
+export interface NutritionSubcategory {
 	id: string
-	category_id: string
+	categoryId: string
 	name: string
 	description?: string
-	days_count: number // вычисляемое поле для UI
+	days: NutritionDay[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface ProgramDay {
+export interface NutritionDay {
 	id: string
-	program_id: string
-	day_title: string
-	day_order: number
-	meals: Meal[]
+	subcatId: string
+	dayTitle: string
+	dayOrder: number
+	meals: NutritionMeal[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface Meal {
+export interface NutritionMeal {
 	id: string
-	day_id: string
-	type: 'breakfast' | 'snack' | 'lunch' | 'dinner'
+	dayId: string
+	type: MealType
 	name: string
-	meal_order: number
+	mealOrder: number
 	items: string[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
+
+export type MealType = 'BREAKFAST' | 'SNACK' | 'LUNCH' | 'DINNER'

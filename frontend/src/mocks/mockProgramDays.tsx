@@ -1,52 +1,76 @@
-import type { ProgramDay } from '../types/nutritions'
+import type { NutritionDay } from '../types/nutritions'
 
-export const mockProgramDays: ProgramDay[] = [
+export const mockNutritionDays: NutritionDay[] = [
+	// Дни для subcat_1_1
 	{
 		id: 'day_1',
-		program_id: '1-1', // ссылка на программу
-		day_title: 'День 1',
-		day_order: 1,
+		subcatId: 'subcat_1_1',
+		dayTitle: 'День 1',
+		dayOrder: 1,
 		meals: [
 			{
-				id: 'meal_1',
-				day_id: 'day_1',
-				type: 'breakfast',
+				id: 'meal_1_1',
+				dayId: 'day_1',
+				type: 'BREAKFAST',
 				name: 'Завтрак',
-				meal_order: 1,
-				items: ['яичница из двух яиц', 'огурец свежий и болгарский перец'],
+				mealOrder: 1,
+				items: ['Яичница из двух яиц', 'Огурец свежий', 'Болгарский перец'],
+				createdAt: '2024-01-10T08:00:00.000Z',
+				updatedAt: '2024-01-10T08:00:00.000Z',
 			},
 			{
-				id: 'meal_2',
-				day_id: 'day_1',
-				type: 'lunch',
+				id: 'meal_1_2',
+				dayId: 'day_1',
+				type: 'LUNCH',
 				name: 'Обед',
-				meal_order: 2,
-				items: ['куриная грудка на гриле'],
+				mealOrder: 2,
+				items: ['Куриная грудка на гриле'],
+				createdAt: '2024-01-10T08:00:00.000Z',
+				updatedAt: '2024-01-10T08:00:00.000Z',
 			},
 		],
+		createdAt: '2024-01-10T08:00:00.000Z',
+		updatedAt: '2024-01-10T08:00:00.000Z',
 	},
 	{
 		id: 'day_2',
-		program_id: '1-1',
-		day_title: 'День 2',
-		day_order: 2,
+		subcatId: 'subcat_1_1',
+		dayTitle: 'День 2',
+		dayOrder: 2,
 		meals: [
 			{
-				id: 'meal_1',
-				day_id: 'day_1',
-				type: 'breakfast',
+				id: 'meal_2_1',
+				dayId: 'day_2',
+				type: 'BREAKFAST',
 				name: 'Завтрак',
-				meal_order: 1,
-				items: ['яичница из двух яиц', 'огурец свежий и болгарский перец'],
-			},
-			{
-				id: 'meal_2',
-				day_id: 'day_1',
-				type: 'lunch',
-				name: 'Обед',
-				meal_order: 2,
-				items: ['куриная грудка на гриле'],
+				mealOrder: 1,
+				items: ['Овсянка на воде'],
+				createdAt: '2024-01-10T08:00:00.000Z',
+				updatedAt: '2024-01-10T08:00:00.000Z',
 			},
 		],
+		createdAt: '2024-01-10T08:00:00.000Z',
+		updatedAt: '2024-01-10T08:00:00.000Z',
+	},
+	// День для subcat_2_1
+	{
+		id: 'day_3',
+		subcatId: 'subcat_2_1',
+		dayTitle: 'День 1 - Набор',
+		dayOrder: 1,
+		meals: [
+			{
+				id: 'meal_3_1',
+				dayId: 'day_3',
+				type: 'BREAKFAST',
+				name: 'Завтрак',
+				mealOrder: 1,
+				items: ['Омлет из 4 яиц', 'Бананы'],
+				createdAt: '2024-01-20T09:15:00.000Z',
+				updatedAt: '2024-01-20T09:15:00.000Z',
+			},
+		],
+		createdAt: '2024-01-20T09:15:00.000Z',
+		updatedAt: '2024-01-20T09:15:00.000Z',
 	},
 ]
