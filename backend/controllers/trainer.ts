@@ -580,7 +580,12 @@ export async function assignMealPlanToClient(
 		throw ApiError.notFound('Подкатегория не найдена или не принадлежит вам')
 	}
 
-	// 3. Если указаны конкретные дни - проверяем их существование
+	// 3. Проверяем, что план не содержит более 31 дня
+	if (subcategory.days.length > 31) {
+		throw ApiError.badRequest('План питания не может содержать более 31 дня')
+	}
+
+	// 4. Если указаны конкретные дни - проверяем их существование
 	if (dayIds && dayIds.length > 0) {
 		const existingDayIds = subcategory.days.map((day) => day.id)
 		const invalidDays = dayIds.filter((id) => !existingDayIds.includes(id))
@@ -592,7 +597,7 @@ export async function assignMealPlanToClient(
 		}
 	}
 
-	// 4. Проверяем, не назначен ли уже этот план
+	// 5. Проверяем, не назначен ли уже этот план
 	const existingPlan = await prisma.clientNutritionPlan.findFirst({
 		where: {
 			clientId,
@@ -604,7 +609,7 @@ export async function assignMealPlanToClient(
 		throw ApiError.badRequest('Этот план питания уже назначен данному клиенту')
 	}
 
-	// 5. Создаём назначение плана
+	// 6. Создаём назначение плана
 	const assignedPlan = await prisma.clientNutritionPlan.create({
 		data: {
 			clientId,

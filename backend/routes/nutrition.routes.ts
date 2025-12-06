@@ -12,12 +12,18 @@ import {
 	updateNutritionSubcategory,
 	deleteNutritionSubcategory,
 } from '../controllers/nutrition.js'
+import { GetClientNutritionPlanQuerySchema } from '../validation/zod/nutrition/get-client-plan.dto.js'
 
 export default async function nutritionRoutes(app: FastifyInstance) {
 	// План питания для текущего клиента (CLIENT)
 	app.get(
 		'/client/plan',
-		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		{
+			preHandler: [authGuard, hasRole(['CLIENT'])],
+			schema: {
+				querystring: GetClientNutritionPlanQuerySchema,
+			},
+		},
 		getClientNutritionPlan,
 	)
 

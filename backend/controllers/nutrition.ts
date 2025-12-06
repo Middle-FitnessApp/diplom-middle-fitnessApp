@@ -1,6 +1,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../prisma.js'
 import { ApiError } from '../utils/ApiError.js'
+import { calculateCycleDays } from '../utils/nutritionCycle.js'
+import { GetClientNutritionPlanQuerySchema } from '../validation/zod/nutrition/get-client-plan.dto.js'
 
 // =============================================
 //  Личный назначенный план питания клиента
@@ -9,17 +11,45 @@ import { ApiError } from '../utils/ApiError.js'
 export async function getClientNutritionPlan(req: FastifyRequest, reply: FastifyReply) {
 	const clientId = req.user.id
 
+	// Валидация query параметров
+	const queryValidation = GetClientNutritionPlanQuerySchema.safeParse(req.query)
+	if (!queryValidation.success) {
+		throw ApiError.badRequest(queryValidation.error.issues[0].message)
+	}
+
+	const { period = 'day', date } = queryValidation.data
+
+	// Целевая дата (или сегодня)
+	const targetDate = date ? new Date(date) : new Date()
+
+	// Получаем активный план клиента
 	const assignment = await prisma.clientNutritionPlan.findFirst({
-		where: { clientId },
+		where: {
+			clientId,
+			isActive: true,
+		},
 		orderBy: { createdAt: 'desc' },
+		include: {
+			subcategory: {
+				select: {
+					id: true,
+					name: true,
+					description: true,
+				},
+			},
+		},
 	})
 
 	if (!assignment) {
-		return reply.status(200).send([])
+		return reply.status(200).send({
+			plan: null,
+			days: [],
+		})
 	}
 
-	const { subcatId, dayIds } = assignment
+	const { subcatId, dayIds, startDate } = assignment
 
+	// Получаем дни плана
 	const days = await prisma.nutritionDay.findMany({
 		where: dayIds.length ? { id: { in: dayIds } } : { subcatId },
 		orderBy: { dayOrder: 'asc' },
@@ -30,7 +60,18 @@ export async function getClientNutritionPlan(req: FastifyRequest, reply: Fastify
 		},
 	})
 
-	return reply.status(200).send(days)
+	// Вычисляем циклические дни с датами
+	const cycleDays = calculateCycleDays(startDate, days, period, targetDate)
+
+	return reply.status(200).send({
+		plan: {
+			id: assignment.id,
+			subcategory: assignment.subcategory,
+			startDate: assignment.startDate.toISOString().split('T')[0],
+			assignedAt: assignment.createdAt.toISOString(),
+		},
+		days: cycleDays,
+	})
 }
 
 // =============================================
