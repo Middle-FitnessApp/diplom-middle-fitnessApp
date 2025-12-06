@@ -7,6 +7,7 @@ import { hasRole } from '../middleware/hasRole.js'
 import { CreateProgressSchema } from '../validation/zod/progress/progress.dto.js'
 import { CreateCommentSchema } from '../validation/zod/progress/comment.dto.js'
 import { GetProgressCommentsQuerySchema } from '../validation/zod/progress/get-comments.dto.js'
+import { GetAllProgressQuerySchema } from '../validation/zod/progress/get-all-progress.dto.js'
 import { GetAnalyticsQuerySchema } from '../validation/zod/progress/analytics.dto.js'
 import { GetComparisonQuerySchema } from '../validation/zod/progress/compare.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
@@ -193,11 +194,20 @@ export default async function progressRoutes(app: FastifyInstance) {
 		},
 	)
 
-	// Получение ВСЕХ отчетов прогресса пользователя
+	// Получение ВСЕХ отчетов прогресса пользователя с пагинацией и фильтрацией
 	app.get('/', { preHandler: [authGuard, hasRole(['CLIENT'])] }, async (req, reply) => {
 		const { getAllProgress } = await import('../controllers/progress.js')
-		const progress = await getAllProgress(req.user.id)
-		return reply.status(200).send({ progress })
+		const { ApiError } = await import('../utils/ApiError.js')
+
+		// Валидация query параметров
+		const validation = GetAllProgressQuerySchema.safeParse(req.query)
+		if (!validation.success) {
+			const firstError = validation.error.issues[0]
+			throw ApiError.badRequest(firstError.message)
+		}
+
+		const result = await getAllProgress(req.user.id, validation.data)
+		return reply.status(200).send(result)
 	})
 
 	// Получение комментариев к отчету о прогрессе
