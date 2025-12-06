@@ -1,7 +1,13 @@
-import { Button, Card, Empty } from 'antd'
+import { Button, Card, Empty, Tag, message } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import type { NutritionCategory, NutritionSubcategory } from '../../types/nutritions'
-import { DownOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons'
+import {
+	DownOutlined,
+	PlusOutlined,
+	RightOutlined,
+	DeleteOutlined,
+} from '@ant-design/icons'
+import { useDeleteCategoryMutation } from '../../store/api/nutrition.api'
 
 interface NutritionCategoryCardProps {
 	category: NutritionCategory
@@ -15,6 +21,8 @@ export const NutritionCategoryCard = ({
 	onCategoryClick,
 }: NutritionCategoryCardProps) => {
 	const navigate = useNavigate()
+	const hasSubcategories = category.subcategories && category.subcategories.length > 0
+	const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation()
 
 	const { Meta } = Card
 
@@ -22,18 +30,34 @@ export const NutritionCategoryCard = ({
 		return openedCategoryId === categoryId ? <DownOutlined /> : <RightOutlined />
 	}
 
-	const handleAddProgramClick = (category: NutritionCategory, e: React.MouseEvent) => {
+	const handleAddSubcategoryClick = (
+		category: NutritionCategory,
+		e: React.MouseEvent,
+	) => {
 		e.stopPropagation()
 		navigate(`/admin/nutrition/${category.id}/create`)
 	}
 
-	const handleProgramClick = (
+	const handleSubcategoryClick = (
 		category: NutritionCategory,
-		program: NutritionSubcategory,
+		subcategory: NutritionSubcategory,
 		e: React.MouseEvent,
 	) => {
 		e.stopPropagation()
-		navigate(`/admin/nutrition/${category.id}/${program.id}`)
+		navigate(`/admin/nutrition/${category.id}/${subcategory.id}`)
+	}
+
+	const handleDeleteClick = async (e: React.MouseEvent) => {
+		e.stopPropagation()
+		e.preventDefault()
+		console.log('delete')
+		try {
+			await deleteCategory(category.id).unwrap()
+			message.success('Категория удалена')
+		} catch (error: any) {
+			console.error('Ошибка при удалении категории:', error)
+			message.error(error?.data?.message || 'Ошибка при удалении категории')
+		}
 	}
 
 	const handleCardClick = () => {
@@ -43,11 +67,26 @@ export const NutritionCategoryCard = ({
 	return (
 		<Card
 			hoverable
-			className={`nutrition-category-card border-muted hover:shadow-lg transition-all duration-300 background-light ${
+			className={`nutrition-category-card border-muted hover:shadow-lg transition-all duration-300 background-light relative ${
 				openedCategoryId === category.id ? 'expanded' : ''
 			}`}
 			onClick={handleCardClick}
 		>
+			<Button
+				type='text'
+				danger
+				size='small'
+				loading={isDeleting}
+				onClick={handleDeleteClick}
+				className='mb-2'
+				disabled={hasSubcategories}
+				title={
+					hasSubcategories ? 'Нельзя удалить не пустую категорию' : 'Удалить категорию'
+				}
+			>
+				<DeleteOutlined />
+			</Button>
+
 			<Meta
 				title={
 					<div className='flex justify-between items-center'>
@@ -58,7 +97,7 @@ export const NutritionCategoryCard = ({
 							</span>
 						</div>
 						<span className='text-xs text-muted bg-gray-100 px-2 py-1 rounded-full'>
-							{category.subcategories.length} программ
+							{category.subcategories?.length || 0} подкатегорий
 						</span>
 					</div>
 				}
@@ -70,20 +109,25 @@ export const NutritionCategoryCard = ({
 
 						{openedCategoryId === category.id && (
 							<div className='mt-4 space-y-3'>
-								{category.subcategories.length > 0 ? (
+								{category.subcategories && category.subcategories.length > 0 ? (
 									<>
-										{category.subcategories.map((program) => (
+										{category.subcategories.map((subcategory) => (
 											<div
-												key={program.id}
+												key={subcategory.id}
 												className='p-3 border border-muted rounded-lg hover:border-primary transition-colors cursor-pointer bg-white'
-												onClick={(e) => handleProgramClick(category, program, e)}
+												onClick={(e) => handleSubcategoryClick(category, subcategory, e)}
 											>
 												<div className='flex justify-between items-start mb-2'>
 													<span className='font-medium text-custom text-sm'>
-														{program.name}
+														{subcategory.name}
 													</span>
+													<Tag color='blue' className='text-xs'>
+														{subcategory.days?.length || 0} дней
+													</Tag>
 												</div>
-												<p className='text-muted text-xs mb-2'>{program.description}</p>
+												<p className='text-muted text-xs mb-2'>
+													{subcategory.description || 'Нет описания'}
+												</p>
 												<div className='text-xs text-primary hover:text-info transition-colors'>
 													Перейти к дням →
 												</div>
@@ -93,24 +137,24 @@ export const NutritionCategoryCard = ({
 											type='dashed'
 											icon={<PlusOutlined />}
 											className='w-full mt-2'
-											onClick={(e) => handleAddProgramClick(category, e)}
+											onClick={(e) => handleAddSubcategoryClick(category, e)}
 										>
-											Добавить программу
+											Добавить подкатегорию
 										</Button>
 									</>
 								) : (
 									<div className='text-center py-4'>
 										<Empty
-											description='Нет программ'
+											description='Нет подкатегорий'
 											image={Empty.PRESENTED_IMAGE_SIMPLE}
 											className='mb-3'
 										/>
 										<Button
 											type='dashed'
 											icon={<PlusOutlined />}
-											onClick={(e) => handleAddProgramClick(category, e)}
+											onClick={(e) => handleAddSubcategoryClick(category, e)}
 										>
-											Создать первую программу
+											Создать первую подкатегорию
 										</Button>
 									</div>
 								)}
