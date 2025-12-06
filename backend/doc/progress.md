@@ -15,6 +15,7 @@ API для управления отчетами о прогрессе и ком
 - [Получение комментариев к отчету](#получение-комментариев-к-отчету)
 - [Добавление комментария](#добавление-комментария)
 - [Получение аналитики прогресса](#получение-аналитики-прогресса)
+- [Сравнение параметров прогресса](#сравнение-параметров-прогресса)
 
 ---
 
@@ -552,6 +553,196 @@ GET /api/progress/analytics?period=custom&startDate=01/01/2025&endDate=31/03/202
 - **400 Bad Request** - Для периода "custom" необходимо указать startDate и endDate
 - **400 Bad Request** - Дата окончания должна быть позже или равна дате начала
 - **400 Bad Request** - Тренер должен указать clientId в query параметрах
+- **401 Unauthorized** - Не авторизован
+- **403 Forbidden** - Недостаточно прав доступа
+
+---
+
+## Сравнение параметров прогресса
+
+Сравнивает начальные и текущие параметры с расчетом изменений в абсолютных значениях и процентах.
+
+**Endpoint:** `GET /api/progress/compare`
+
+**Права доступа:** `CLIENT`, `TRAINER`
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+### Параметры запроса (Query)
+
+| Параметр      | Тип    | Обязательное     | Описание                                                 |
+| ------------- | ------ | ---------------- | -------------------------------------------------------- |
+| startReportId | string | ❌               | ID начального отчета (если не указан - берется первый)   |
+| endReportId   | string | ❌               | ID конечного отчета (если не указан - берется последний) |
+| clientId      | string | ❌ (для TRAINER) | ID клиента (только для тренеров)                         |
+
+### Примеры запросов
+
+**Клиент сравнивает первый и последний отчеты:**
+
+```
+GET /api/progress/compare
+```
+
+**Клиент сравнивает конкретные отчеты:**
+
+```
+GET /api/progress/compare?startReportId=cm4report1&endReportId=cm4report2
+```
+
+**Тренер сравнивает данные клиента:**
+
+```
+GET /api/progress/compare?clientId=cm4client123
+```
+
+### Успешный ответ (200 OK)
+
+```json
+{
+	"startReport": {
+		"id": "cm4report1",
+		"date": "2025-09-01",
+		"photoFront": "/uploads/photos/front-1.jpg",
+		"photoSide": "/uploads/photos/side-1.jpg",
+		"photoBack": "/uploads/photos/back-1.jpg"
+	},
+	"endReport": {
+		"id": "cm4report20",
+		"date": "2025-12-06",
+		"photoFront": "/uploads/photos/front-20.jpg",
+		"photoSide": "/uploads/photos/side-20.jpg",
+		"photoBack": "/uploads/photos/back-20.jpg"
+	},
+	"daysBetween": 96,
+	"comparisons": [
+		{
+			"metric": "weight",
+			"start": 85.0,
+			"end": 78.5,
+			"change": {
+				"absolute": -6.5,
+				"percentage": -7.6
+			},
+			"improved": true
+		},
+		{
+			"metric": "height",
+			"start": 180,
+			"end": 180,
+			"change": {
+				"absolute": 0,
+				"percentage": 0
+			},
+			"improved": null
+		},
+		{
+			"metric": "chest",
+			"start": 105,
+			"end": 102,
+			"change": {
+				"absolute": -3,
+				"percentage": -2.9
+			},
+			"improved": true
+		},
+		{
+			"metric": "waist",
+			"start": 95,
+			"end": 82,
+			"change": {
+				"absolute": -13,
+				"percentage": -13.7
+			},
+			"improved": true
+		},
+		{
+			"metric": "hips",
+			"start": 105,
+			"end": 98,
+			"change": {
+				"absolute": -7,
+				"percentage": -6.7
+			},
+			"improved": true
+		},
+		{
+			"metric": "arm",
+			"start": 38,
+			"end": 36,
+			"change": {
+				"absolute": -2,
+				"percentage": -5.3
+			},
+			"improved": true
+		},
+		{
+			"metric": "leg",
+			"start": 62,
+			"end": 58,
+			"change": {
+				"absolute": -4,
+				"percentage": -6.5
+			},
+			"improved": true
+		}
+	],
+	"summary": {
+		"totalMetricsChanged": 6,
+		"improvedMetrics": 6,
+		"worsenedMetrics": 0,
+		"unchangedMetrics": 1
+	}
+}
+```
+
+### Описание полей ответа
+
+**startReport / endReport:**
+
+- **id** - ID отчета
+- **date** - дата отчета (YYYY-MM-DD)
+- **photoFront/Side/Back** - пути к фотографиям
+
+**daysBetween** - количество дней между отчетами
+
+**comparisons** - массив сравнений по каждой метрике:
+
+- **metric** - название метрики (weight, height, chest, waist, hips, arm, leg)
+- **start** - начальное значение
+- **end** - конечное значение
+- **change**:
+  - **absolute** - абсолютное изменение (округлено до 1 знака)
+  - **percentage** - изменение в процентах (округлено до 1 знака)
+- **improved** - оценка изменения:
+  - `true` - улучшение (уменьшение веса/обхватов)
+  - `false` - ухудшение (увеличение)
+  - `null` - не оценивается (рост) или без изменений
+
+**summary** - сводная статистика:
+
+- **totalMetricsChanged** - количество метрик с изменениями
+- **improvedMetrics** - количество улучшенных метрик
+- **worsenedMetrics** - количество ухудшенных метрик
+- **unchangedMetrics** - количество метрик без изменений
+
+### Логика оценки улучшений
+
+- **Вес, обхваты (waist, hips, chest, arm, leg)**: уменьшение = улучшение ✅
+- **Рост (height)**: не оценивается как улучшение/ухудшение
+- Если значение не изменилось или отсутствует: `improved = null`
+
+### Ошибки
+
+- **400 Bad Request** - Некорректный ID отчета
+- **400 Bad Request** - Нельзя сравнивать отчет с самим собой
+- **400 Bad Request** - Тренер должен указать clientId в query параметрах
+- **404 Not Found** - Начальный или конечный отчет не найден
+- **404 Not Found** - Недостаточно данных для сравнения
 - **401 Unauthorized** - Не авторизован
 - **403 Forbidden** - Недостаточно прав доступа
 
