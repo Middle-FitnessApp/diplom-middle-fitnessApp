@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Typography, Button, Select, Card, message } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockCategories } from '../../mocks/mockNutritionCategories'
-import { mockProgramDays } from '../../mocks/mockProgramDays'
+import { mockNutritionDays } from '../../mocks/mockProgramDays'
 import type { NutritionCategory } from '../../types/nutritions'
-import type { ProgramDay } from '../../types/nutritions'
+import type { NutritionDay } from '../../types/nutritions'
 
 const { Title } = Typography
 const { Option } = Select
@@ -18,18 +18,18 @@ export const AddNutritionTrainer = () => {
 	const [selectedDay, setSelectedDay] = useState<string>('')
 
 	// Фильтруем программы по выбранной категории
-	const programs: NutritionCategory['programs'] =
+	const programs: NutritionCategory['subcategories'] =
 		mockCategories.find((cat: NutritionCategory) => cat.id === selectedCategory)
-			?.programs || []
+			?.subcategories || []
 
 	// Фильтруем дни по выбранной программе
-	const days: ProgramDay[] = mockProgramDays
-		.filter((day: ProgramDay) => day.program_id === selectedProgram)
-		.sort((a: ProgramDay, b: ProgramDay) => a.day_order - b.day_order)
+	const days: NutritionDay[] = mockNutritionDays
+		.filter((day: NutritionDay) => day.subcatId === selectedProgram)
+		.sort((a: NutritionDay, b: NutritionDay) => a.dayOrder - b.dayOrder)
 
 	// Получаем данные выбранного дня для предпросмотра
-	const selectedDayData: ProgramDay | undefined = days.find(
-		(day: ProgramDay) => day.id === selectedDay,
+	const selectedDayData: NutritionDay | undefined = days.find(
+		(day: NutritionDay) => day.id === selectedDay,
 	)
 
 	const handlePublish = (): void => {
@@ -122,9 +122,9 @@ export const AddNutritionTrainer = () => {
 									disabled={!selectedProgram}
 									className='w-full'
 								>
-									{days.map((day: ProgramDay) => (
+									{days.map((day: NutritionDay) => (
 										<Option key={day.id} value={day.id}>
-											{day.day_title}
+											{day.dayTitle}
 										</Option>
 									))}
 								</Select>
@@ -136,7 +136,7 @@ export const AddNutritionTrainer = () => {
 						<Card title='Предпросмотр плана' className='card-hover'>
 							<div className='space-y-4'>
 								<Title level={4} className='text-center'>
-									{selectedDayData.day_title}
+									{selectedDayData.dayTitle}
 								</Title>
 
 								{selectedDayData.meals.map((meal) => (
