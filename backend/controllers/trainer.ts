@@ -666,3 +666,176 @@ export async function assignMealPlanToClient(
 		assignedAt: assignedPlan.createdAt,
 	}
 }
+
+/**
+ * Отмена плана питания для клиента
+ */
+export async function cancelNutritionPlan(
+	trainerId: string,
+	clientId: string,
+	planId: string,
+) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// 1. Проверяем связь между тренером и клиентом
+	const relationship = await prisma.trainerClient.findUnique({
+		where: {
+			clientId_trainerId: {
+				clientId,
+				trainerId,
+			},
+		},
+	})
+
+	if (!relationship || relationship.status !== 'ACCEPTED') {
+		throw ApiError.forbidden('Вы не работаете с этим клиентом')
+	}
+
+	// 2. Проверяем, что план принадлежит клиенту и активен
+	const plan = await prisma.clientNutritionPlan.findFirst({
+		where: {
+			id: planId,
+			clientId,
+			isActive: true,
+		},
+	})
+
+	if (!plan) {
+		throw ApiError.notFound('Активный план питания не найден')
+	}
+
+	// 3. Деактивируем план
+	await prisma.clientNutritionPlan.update({
+		where: {
+			id: planId,
+		},
+		data: {
+			isActive: false,
+		},
+	})
+
+	return {
+		message: 'План питания отменён',
+	}
+}
+
+/**
+ * Редактирование плана питания для клиента
+ */
+export async function updateNutritionPlan(
+	trainerId: string,
+	clientId: string,
+	planId: string,
+	updates: {
+		dayIds?: string[]
+		startDate?: string
+	},
+) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// 1. Проверяем связь между тренером и клиентом
+	const relationship = await prisma.trainerClient.findUnique({
+		where: {
+			clientId_trainerId: {
+				clientId,
+				trainerId,
+			},
+		},
+	})
+
+	if (!relationship || relationship.status !== 'ACCEPTED') {
+		throw ApiError.forbidden('Вы не работаете с этим клиентом')
+	}
+
+	// 2. Проверяем, что план принадлежит клиенту и активен
+	const plan = await prisma.clientNutritionPlan.findFirst({
+		where: {
+			id: planId,
+			clientId,
+			isActive: true,
+		},
+		include: {
+			subcategory: {
+				include: {
+					days: {
+						select: {
+							id: true,
+						},
+					},
+				},
+			},
+		},
+	})
+
+	if (!plan) {
+		throw ApiError.notFound('Активный план питания не найден')
+	}
+
+	// 3. Если указаны dayIds - проверяем их существование в подкатегории
+	if (updates.dayIds && updates.dayIds.length > 0) {
+		const existingDayIds = plan.subcategory.days.map((day) => day.id)
+		const invalidDays = updates.dayIds.filter((id) => !existingDayIds.includes(id))
+
+		if (invalidDays.length > 0) {
+			throw ApiError.badRequest(
+				`Дни с ID ${invalidDays.join(', ')} не найдены в данной подкатегории`,
+			)
+		}
+	}
+
+	// 4. Формируем данные для обновления
+	const updateData: {
+		dayIds?: string[]
+		startDate?: Date
+	} = {}
+
+	if (updates.dayIds !== undefined) {
+		updateData.dayIds = updates.dayIds
+	}
+
+	if (updates.startDate) {
+		updateData.startDate = new Date(updates.startDate)
+	}
+
+	// 5. Обновляем план
+	const updatedPlan = await prisma.clientNutritionPlan.update({
+		where: {
+			id: planId,
+		},
+		data: updateData,
+		include: {
+			subcategory: {
+				include: {
+					category: {
+						select: {
+							name: true,
+						},
+					},
+				},
+			},
+			client: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					phone: true,
+				},
+			},
+		},
+	})
+
+	return {
+		id: updatedPlan.id,
+		client: updatedPlan.client,
+		category: updatedPlan.subcategory.category.name,
+		subcategory: {
+			id: updatedPlan.subcategory.id,
+			name: updatedPlan.subcategory.name,
+			description: updatedPlan.subcategory.description,
+		},
+		assignedDays: updatedPlan.dayIds,
+		startDate: updatedPlan.startDate.toISOString(),
+		assignedAt: updatedPlan.createdAt,
+		updatedAt: updatedPlan.updatedAt,
+	}
+}
