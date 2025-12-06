@@ -36,9 +36,7 @@ export async function getAllTrainers(clientId?: string) {
 	})
 
 	// Создаём карту статусов по trainerId
-	const inviteStatusMap = new Map(
-		clientInvites.map((inv) => [inv.trainerId, inv.status])
-	)
+	const inviteStatusMap = new Map(clientInvites.map((inv) => [inv.trainerId, inv.status]))
 
 	// Добавляем статусы к каждому тренеру
 	return trainers.map((trainer) => ({
@@ -521,5 +519,129 @@ export async function getClientProfileForTrainer(trainerId: string, clientId: st
 			assignedDays: plan.dayIds,
 			assignedAt: plan.createdAt,
 		})),
+	}
+}
+
+/**
+ * Назначение плана питания клиенту
+ * @param trainerId - ID тренера
+ * @param clientId - ID клиента
+ * @param subcategoryId - ID подкатегории плана питания
+ * @param dayIds - Массив ID конкретных дней (опционально)
+ * @returns Назначенный план питания
+ */
+export async function assignMealPlanToClient(
+	trainerId: string,
+	clientId: string,
+	subcategoryId: string,
+	dayIds?: string[],
+) {
+	const { ApiError } = await import('../utils/ApiError.js')
+
+	// 1. Проверяем связь между тренером и клиентом
+	const relationship = await prisma.trainerClient.findUnique({
+		where: {
+			clientId_trainerId: {
+				clientId,
+				trainerId,
+			},
+		},
+	})
+
+	if (!relationship || relationship.status !== 'ACCEPTED') {
+		throw ApiError.forbidden('Вы не работаете с этим клиентом')
+	}
+
+	// 2. Проверяем существование подкатегории и принадлежность тренеру
+	const subcategory = await prisma.nutritionSubcategory.findFirst({
+		where: {
+			id: subcategoryId,
+			category: {
+				trainerId,
+			},
+		},
+		include: {
+			category: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+			days: {
+				select: {
+					id: true,
+					dayTitle: true,
+				},
+			},
+		},
+	})
+
+	if (!subcategory) {
+		throw ApiError.notFound('Подкатегория не найдена или не принадлежит вам')
+	}
+
+	// 3. Если указаны конкретные дни - проверяем их существование
+	if (dayIds && dayIds.length > 0) {
+		const existingDayIds = subcategory.days.map((day) => day.id)
+		const invalidDays = dayIds.filter((id) => !existingDayIds.includes(id))
+
+		if (invalidDays.length > 0) {
+			throw ApiError.badRequest(
+				`Дни с ID ${invalidDays.join(', ')} не найдены в данной подкатегории`,
+			)
+		}
+	}
+
+	// 4. Проверяем, не назначен ли уже этот план
+	const existingPlan = await prisma.clientNutritionPlan.findFirst({
+		where: {
+			clientId,
+			subcatId: subcategoryId,
+		},
+	})
+
+	if (existingPlan) {
+		throw ApiError.badRequest('Этот план питания уже назначен данному клиенту')
+	}
+
+	// 5. Создаём назначение плана
+	const assignedPlan = await prisma.clientNutritionPlan.create({
+		data: {
+			clientId,
+			subcatId: subcategoryId,
+			dayIds: dayIds || [],
+		},
+		include: {
+			subcategory: {
+				include: {
+					category: {
+						select: {
+							name: true,
+						},
+					},
+				},
+			},
+			client: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					phone: true,
+				},
+			},
+		},
+	})
+
+	return {
+		id: assignedPlan.id,
+		client: assignedPlan.client,
+		category: assignedPlan.subcategory.category.name,
+		subcategory: {
+			id: assignedPlan.subcategory.id,
+			name: assignedPlan.subcategory.name,
+			description: assignedPlan.subcategory.description,
+		},
+		assignedDays: assignedPlan.dayIds,
+		assignedAt: assignedPlan.createdAt,
 	}
 }

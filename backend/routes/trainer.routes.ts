@@ -10,6 +10,7 @@ import {
 	acceptInvite,
 	rejectInvite,
 	getClientProfileForTrainer,
+	assignMealPlanToClient,
 } from '../controllers/trainer.js'
 import { ApiError } from '../utils/ApiError.js'
 import { GetInvitesSchema } from '../validation/zod/trainer/get-invites.dto.js'
@@ -18,6 +19,10 @@ import { AcceptInviteParamsSchema } from '../validation/zod/trainer/accept-invit
 import { RejectInviteParamsSchema } from '../validation/zod/trainer/reject-invite.dto.js'
 import { GetClientProfileParamsSchema } from '../validation/zod/trainer/get-client-profile.dto.js'
 import { ToggleFavoriteParamsSchema } from '../validation/zod/trainer/toggle-favorite.dto.js'
+import {
+	AssignMealPlanBodySchema,
+	AssignMealPlanParamsSchema,
+} from '../validation/zod/trainer/assign-meal-plan.dto.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт с опциональной авторизацией - просмотр всех тренеров
@@ -38,7 +43,7 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			const clientId = req.user?.role === 'CLIENT' ? req.user.id : undefined
 			const trainers = await getAllTrainers(clientId)
 			return reply.status(200).send({ trainers })
-		}
+		},
 	)
 
 	// Получение приглашений для тренера (должен быть ДО /:id чтобы не конфликтовать)
@@ -154,6 +159,28 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			const result = await toggleClientFavorite(req.user.id, id)
 
 			return reply.status(200).send(result)
+		},
+	)
+
+	// Назначение плана питания клиенту
+	app.post(
+		'/clients/:id/nutrition',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { id } = AssignMealPlanParamsSchema.parse(req.params)
+			const { subcategoryId, dayIds } = AssignMealPlanBodySchema.parse(req.body)
+
+			const assignedPlan = await assignMealPlanToClient(
+				req.user.id,
+				id,
+				subcategoryId,
+				dayIds,
+			)
+
+			return reply.status(201).send({
+				message: 'План питания успешно назначен клиенту',
+				plan: assignedPlan,
+			})
 		},
 	)
 }
