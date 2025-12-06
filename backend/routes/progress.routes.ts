@@ -8,6 +8,7 @@ import { CreateProgressSchema } from '../validation/zod/progress/progress.dto.js
 import { CreateCommentSchema } from '../validation/zod/progress/comment.dto.js'
 import { GetProgressCommentsQuerySchema } from '../validation/zod/progress/get-comments.dto.js'
 import { GetAnalyticsQuerySchema } from '../validation/zod/progress/analytics.dto.js'
+import { GetComparisonQuerySchema } from '../validation/zod/progress/compare.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
 
@@ -133,6 +134,41 @@ export default async function progressRoutes(app: FastifyInstance) {
 			)
 
 			return reply.status(200).send(analytics)
+		},
+	)
+
+	// Сравнение параметров прогресса (начальные vs текущие)
+	app.get(
+		'/compare',
+		{ preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])] },
+		async (req, reply) => {
+			const { getProgressComparison } = await import('../controllers/progress.js')
+			const { ApiError } = await import('../utils/ApiError.js')
+
+			// Валидация query параметров
+			const validation = GetComparisonQuerySchema.safeParse(req.query)
+
+			if (!validation.success) {
+				const firstError = validation.error.issues[0]
+				throw ApiError.badRequest(firstError.message)
+			}
+
+			const { startReportId, endReportId } = validation.data
+
+			// Для клиента - сравниваем его данные, для тренера - нужно указать clientId
+			let userId = req.user.id
+			if (req.user.role === 'TRAINER') {
+				const { clientId } = req.query as { clientId?: string }
+				if (!clientId) {
+					throw ApiError.badRequest('Тренер должен указать clientId в query параметрах')
+				}
+				userId = clientId
+			}
+
+			// Получение сравнения
+			const comparison = await getProgressComparison(userId, startReportId, endReportId)
+
+			return reply.status(200).send(comparison)
 		},
 	)
 
