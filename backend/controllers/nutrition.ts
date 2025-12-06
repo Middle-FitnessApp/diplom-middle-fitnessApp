@@ -75,6 +75,75 @@ export async function getClientNutritionPlan(req: FastifyRequest, reply: Fastify
 }
 
 // =============================================
+//  История планов питания клиента
+// =============================================
+
+export async function getClientNutritionHistory(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const clientId = req.user.id
+	const query = req.query as { page?: string; limit?: string }
+
+	// Парсинг и валидация параметров пагинации
+	const page = Math.max(1, parseInt(query.page || '1', 10))
+	const limit = Math.min(100, Math.max(1, parseInt(query.limit || '10', 10)))
+	const skip = (page - 1) * limit
+
+	// Получаем неактивные планы (история)
+	const [history, total] = await Promise.all([
+		prisma.clientNutritionPlan.findMany({
+			where: {
+				clientId,
+				isActive: false,
+			},
+			orderBy: {
+				createdAt: 'desc',
+			},
+			skip,
+			take: limit,
+			include: {
+				subcategory: {
+					include: {
+						category: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
+			},
+		}),
+		prisma.clientNutritionPlan.count({
+			where: {
+				clientId,
+				isActive: false,
+			},
+		}),
+	])
+
+	// Форматируем ответ
+	const formattedHistory = history.map((plan) => ({
+		id: plan.id,
+		categoryName: plan.subcategory.category.name,
+		subcategoryName: plan.subcategory.name,
+		startDate: plan.startDate.toISOString(),
+		assignedAt: plan.createdAt.toISOString(),
+		replacedAt: plan.updatedAt.toISOString(),
+	}))
+
+	return reply.status(200).send({
+		history: formattedHistory,
+		pagination: {
+			page,
+			limit,
+			total,
+			totalPages: Math.ceil(total / limit),
+		},
+	})
+}
+
+// =============================================
 //  Категории
 // =============================================
 

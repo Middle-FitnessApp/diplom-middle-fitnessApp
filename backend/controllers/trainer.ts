@@ -597,11 +597,12 @@ export async function assignMealPlanToClient(
 		}
 	}
 
-	// 5. Проверяем, не назначен ли уже этот план
+	// 5. Проверяем, не назначен ли уже этот план (активный)
 	const existingPlan = await prisma.clientNutritionPlan.findFirst({
 		where: {
 			clientId,
 			subcatId: subcategoryId,
+			isActive: true,
 		},
 	})
 
@@ -609,32 +610,47 @@ export async function assignMealPlanToClient(
 		throw ApiError.badRequest('Этот план питания уже назначен данному клиенту')
 	}
 
-	// 6. Создаём назначение плана
-	const assignedPlan = await prisma.clientNutritionPlan.create({
-		data: {
-			clientId,
-			subcatId: subcategoryId,
-			dayIds: dayIds || [],
-		},
-		include: {
-			subcategory: {
-				include: {
-					category: {
-						select: {
-							name: true,
+	// 6. Деактивируем все активные планы клиента и создаём новое назначение (транзакция)
+	const assignedPlan = await prisma.$transaction(async (tx) => {
+		// Деактивируем старые активные планы
+		await tx.clientNutritionPlan.updateMany({
+			where: {
+				clientId,
+				isActive: true,
+			},
+			data: {
+				isActive: false,
+			},
+		})
+
+		// Создаём новое назначение
+		return await tx.clientNutritionPlan.create({
+			data: {
+				clientId,
+				subcatId: subcategoryId,
+				dayIds: dayIds || [],
+				isActive: true,
+			},
+			include: {
+				subcategory: {
+					include: {
+						category: {
+							select: {
+								name: true,
+							},
 						},
 					},
 				},
-			},
-			client: {
-				select: {
-					id: true,
-					name: true,
-					email: true,
-					phone: true,
+				client: {
+					select: {
+						id: true,
+						name: true,
+						email: true,
+						phone: true,
+					},
 				},
 			},
-		},
+		})
 	})
 
 	return {

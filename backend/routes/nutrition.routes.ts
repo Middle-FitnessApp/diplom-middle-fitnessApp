@@ -3,6 +3,7 @@ import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
 import {
 	getClientNutritionPlan,
+	getClientNutritionHistory,
 	createNutritionCategory,
 	getTrainerNutritionCategories,
 	updateNutritionCategory,
@@ -13,6 +14,7 @@ import {
 	deleteNutritionSubcategory,
 } from '../controllers/nutrition.js'
 import { GetClientNutritionPlanQuerySchema } from '../validation/zod/nutrition/get-client-plan.dto.js'
+import { GetNutritionHistoryQuerySchema } from '../validation/zod/nutrition/get-history.dto.js'
 
 export default async function nutritionRoutes(app: FastifyInstance) {
 	// План питания для текущего клиента (CLIENT)
@@ -25,6 +27,18 @@ export default async function nutritionRoutes(app: FastifyInstance) {
 			},
 		},
 		getClientNutritionPlan,
+	)
+
+	// История планов питания клиента (CLIENT)
+	app.get(
+		'/client/history',
+		{
+			preHandler: [authGuard, hasRole(['CLIENT'])],
+			schema: {
+				querystring: GetNutritionHistoryQuerySchema,
+			},
+		},
+		getClientNutritionHistory,
 	)
 
 	// CRUD КАТЕГОРИЙ (TRAINER)
