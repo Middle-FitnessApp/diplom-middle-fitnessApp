@@ -11,6 +11,8 @@ import {
 	rejectInvite,
 	getClientProfileForTrainer,
 	assignMealPlanToClient,
+	cancelNutritionPlan,
+	updateNutritionPlan,
 } from '../controllers/trainer.js'
 import { ApiError } from '../utils/ApiError.js'
 import { GetInvitesSchema } from '../validation/zod/trainer/get-invites.dto.js'
@@ -23,6 +25,11 @@ import {
 	AssignMealPlanBodySchema,
 	AssignMealPlanParamsSchema,
 } from '../validation/zod/trainer/assign-meal-plan.dto.js'
+import {
+	CancelNutritionPlanParamsSchema,
+	UpdateNutritionPlanParamsSchema,
+	UpdateNutritionPlanBodySchema,
+} from '../validation/zod/trainer/nutrition-plan.dto.js'
 
 export default async function trainerRoutes(app: FastifyInstance) {
 	// Публичный эндпоинт с опциональной авторизацией - просмотр всех тренеров
@@ -180,6 +187,41 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			return reply.status(201).send({
 				message: 'План питания успешно назначен клиенту',
 				plan: assignedPlan,
+			})
+		},
+	)
+
+	// Отмена плана питания клиента
+	app.delete(
+		'/clients/:clientId/nutrition/:planId',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { clientId, planId } = CancelNutritionPlanParamsSchema.parse(req.params)
+
+			const result = await cancelNutritionPlan(req.user.id, clientId, planId)
+
+			return reply.status(200).send(result)
+		},
+	)
+
+	// Редактирование плана питания клиента
+	app.put(
+		'/clients/:clientId/nutrition/:planId',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { clientId, planId } = UpdateNutritionPlanParamsSchema.parse(req.params)
+			const updates = UpdateNutritionPlanBodySchema.parse(req.body)
+
+			const updatedPlan = await updateNutritionPlan(
+				req.user.id,
+				clientId,
+				planId,
+				updates,
+			)
+
+			return reply.status(200).send({
+				message: 'План питания успешно обновлён',
+				plan: updatedPlan,
 			})
 		},
 	)
