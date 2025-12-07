@@ -1,59 +1,75 @@
-import { useState, useMemo } from 'react'
-import { Card, Space } from 'antd'
-import { FileTextOutlined } from '@ant-design/icons'
+import { useState } from 'react'
 import { AddCommentForm } from './AddCommentForm'
 import { CommentsList } from './CommentsList'
-
-export interface Comment {
-	id: string
-	author: string
-	content: string
-	date: string
-}
+import {
+	useAddProgressCommentMutation,
+	useGetProgressCommentsQuery,
+} from '../../store/api/progress.api'
+import { LoadingState } from '../Client'
 
 interface CommentsSectionProps {
-	comments: Comment[]
+	progressId: string
+	isTrainer?: boolean
 }
 
-export const CommentsSection = ({ comments }: CommentsSectionProps) => {
-	const [commentText, setCommentText] = useState('')
-	const [currentPage, setCurrentPage] = useState(1)
+export const CommentsSection = ({
+	progressId,
+	isTrainer = false,
+}: CommentsSectionProps) => {
+	const [page, setPage] = useState(1)
 	const pageSize = 5
 
-	const paginated = useMemo(() => {
-		const start = (currentPage - 1) * pageSize
-		return comments.slice(start, start + pageSize)
-	}, [currentPage, comments])
+	const {
+		data: commentsData,
+		isLoading,
+		isFetching,
+	} = useGetProgressCommentsQuery({
+		progressId,
+		page,
+		limit: pageSize,
+	})
 
-	const handleAddComment = () => {
-		if (commentText.trim()) {
-			console.log('Комментарий добавлен:', commentText)
-			setCommentText('')
+	const [addComment, { isLoading: isAddingComment }] = useAddProgressCommentMutation()
+
+	const handleAddComment = async (text: string) => {
+		try {
+			await addComment({ progressId, text }).unwrap()
+		} catch (error) {
+			console.error('Ошибка добавления комментария:', error)
+			throw error
 		}
 	}
 
+	const handleLoadMore = () => {
+		if (
+			commentsData?.pagination.page &&
+			commentsData.pagination.page < commentsData.pagination.totalPages
+		) {
+			setPage((p) => p + 1)
+		}
+	}
+
+	const allComments = commentsData?.comments || []
+	const hasMore = commentsData?.pagination.totalPages
+		? page < commentsData.pagination.totalPages
+		: false
+
+	if (isLoading) {
+		return <LoadingState message='Загрузка...' />
+	}
+
 	return (
-		<Card
-			title={
-				<Space>
-					<FileTextOutlined />
-					<span>Комментарии к отчету</span>
-				</Space>
-			}
-		>
-			<AddCommentForm
-				value={commentText}
-				onChange={setCommentText}
-				onSubmit={handleAddComment}
-			/>
+		<>
+			{isTrainer && (
+				<AddCommentForm onSubmit={handleAddComment} isLoading={isAddingComment} />
+			)}
 
 			<CommentsList
-				comments={paginated}
-				total={comments.length}
-				page={currentPage}
-				pageSize={pageSize}
-				onPageChange={setCurrentPage}
+				comments={allComments}
+				isLoading={isFetching}
+				hasMore={hasMore}
+				onLoadMore={handleLoadMore}
 			/>
-		</Card>
+		</>
 	)
 }
