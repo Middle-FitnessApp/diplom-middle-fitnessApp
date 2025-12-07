@@ -30,6 +30,31 @@ export interface ProgressChartData {
 	leg?: number
 }
 
+// Типы для пагинации (согласно документации API)
+export interface PaginationMeta {
+	page: number
+	limit: number
+	total: number
+	totalPages: number
+}
+
+// Ответ от API с пагинацией
+export interface ProgressReportsResponse {
+	data: ProgressReport[]
+	meta: PaginationMeta
+}
+
+// Ответ от API для одного отчёта
+export interface ProgressReportResponse {
+	progress: ProgressReport
+}
+
+// Ответ от API при создании отчёта
+export interface CreateProgressResponse {
+	message: string
+	progress: ProgressReport
+}
+
 export const progressApi = createApi({
 	reducerPath: 'progressApi',
 	baseQuery: fetchBaseQuery({
@@ -41,10 +66,15 @@ export const progressApi = createApi({
 				headers.set('authorization', `Bearer ${token}`)
 			}
 
-			// Для мутации с файлами не устанавливаем Content-Type
-			if (endpoint !== 'addProgressReport') {
-				headers.set('Content-Type', 'application/json')
+			// Content-Type устанавливаем ТОЛЬКО для мутаций (POST/PUT/PATCH)
+			// НЕ устанавливаем для GET запросов и для мутаций с файлами
+			if (endpoint === 'addProgressReport') {
+				// Для FormData не устанавливаем Content-Type - браузер сам добавит с boundary
+				return headers
 			}
+
+			// Для остальных мутаций (не GET) устанавливаем JSON
+			// GET запросы автоматически не получат этот header
 			return headers
 		},
 	}),
@@ -54,7 +84,7 @@ export const progressApi = createApi({
 		getProgressChartData: builder.query<ProgressChartData[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { data: ProgressReport[]; meta: any }) => {
+			transformResponse: (response: ProgressReportsResponse) => {
 				return response.data.map((item) => ({
 					date: item.date.split('T')[0],
 					weight: item.weight,
@@ -71,14 +101,14 @@ export const progressApi = createApi({
 		getProgressReports: builder.query<ProgressReport[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { data: ProgressReport[]; meta: any }) => response.data,
+			transformResponse: (response: ProgressReportsResponse) => response.data,
 		}),
 
 		// Получение конкретного отчета по ID
 		getProgressReport: builder.query<ProgressReport, string>({
 			query: (id) => `/progress/${id}`,
 			providesTags: ['Progress'],
-			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+			transformResponse: (response: ProgressReportResponse) => response.progress,
 		}),
 
 		// Создание нового отчета
@@ -87,14 +117,16 @@ export const progressApi = createApi({
 				url: '/progress/new-report',
 				method: 'PUT',
 				body: formData,
+				// Для FormData НЕ устанавливаем Content-Type
 			}),
 			invalidatesTags: ['Progress'],
+			transformResponse: (response: CreateProgressResponse) => response.progress,
 		}),
 
 		// Получение последнего отчета
 		getLatestProgress: builder.query<ProgressReport, void>({
 			query: () => '/progress/latest',
-			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+			transformResponse: (response: ProgressReportResponse) => response.progress,
 		}),
 	}),
 })
