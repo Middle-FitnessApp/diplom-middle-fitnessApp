@@ -3,6 +3,7 @@ import type {
 	NutritionSubcategory,
 	NutritionDay,
 	AssignedNutritionPlan,
+	ClientNutritionPlanResponse,
 } from '../types/nutrition.types'
 import {
 	createApi,
@@ -73,8 +74,11 @@ export const nutritionApi = createApi({
 	tagTypes: ['Category', 'Subcategory', 'Day', 'AssignedPlan'],
 	endpoints: (builder) => ({
 		// План питания текущего клиента
-		getClientNutritionPlan: builder.query<NutritionDay[], void>({
-			query: () => '/nutrition/client/plan',
+		getClientNutritionPlan: builder.query<ClientNutritionPlanResponse, { period?: 'day' | 'week' | 'month'; date?: string } | void>({
+			query: (params) => ({
+				url: '/nutrition/client/plan',
+				params: params || undefined,
+			}),
 			providesTags: ['AssignedPlan', 'Day'],
 		}),
 

@@ -48,3 +48,27 @@ export interface AssignedNutritionPlan {
 	dayIds: string[]
 	createdAt: string | Date
 }
+
+// Тип для дня плана питания с дополнительными полями от API
+export interface NutritionDayWithDate extends NutritionDay {
+	date: string
+	isToday: boolean
+}
+
+// Информация о плане питания
+export interface NutritionPlanInfo {
+	id: string
+	subcategory: {
+		id: string
+		name: string
+		description?: string
+	}
+	startDate: string
+	assignedAt: string
+}
+
+// Ответ API для плана питания клиента
+export interface ClientNutritionPlanResponse {
+	plan: NutritionPlanInfo | null
+	days: NutritionDayWithDate[]
+}
