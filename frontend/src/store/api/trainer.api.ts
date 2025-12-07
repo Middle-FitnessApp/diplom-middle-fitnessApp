@@ -1,6 +1,5 @@
 import type { UserProfile } from '../types/user.types'
 import type { ProgressReport } from '../types/progress.types'
-import type { AuthUser } from '../types/auth.types'
 import {
 	createApi,
 	fetchBaseQuery,
@@ -38,6 +37,105 @@ export interface AcceptInviteResponse {
 
 export interface RejectInviteResponse {
 	message: string
+}
+
+// Типы для детального профиля клиента
+export interface ClientDetailedProfile {
+	client: {
+		id: string
+		name: string
+		email: string | null
+		phone: string | null
+		photo: string | null
+		age: number
+		goal: string | null
+		restrictions: string | null
+		experience: string | null
+		diet: string | null
+		createdAt: string
+	}
+	lastProgress: {
+		id: string
+		date: string
+		weight: number
+		waist: number
+		hips: number
+		height: number | null
+		chest: number | null
+		arm: number | null
+		leg: number | null
+		photoFront: string | null
+		photoSide: string | null
+		photoBack: string | null
+		createdAt: string
+	} | null
+	statistics: {
+		totalReports: number
+		dynamics: {
+			weightChange: number
+			waistChange: number
+			hipsChange: number
+			periodDays: number
+		} | null
+	}
+	nutritionPlans: Array<{
+		id: string
+		categoryName: string
+		subcategoryName: string
+		subcategoryDescription: string | null
+		assignedDays: string[]
+		assignedAt: string
+	}>
+}
+
+// Тип для расширенного списка клиентов
+export interface ExtendedClient {
+	id: string
+	email: string | null
+	name: string
+	age: number
+	phone: string | null
+	photo: string | null
+	role: string
+	isFavorite: boolean
+}
+
+// Тип для клиента из списка всех клиентов системы
+export interface AllSystemClient {
+	id: string
+	email: string | null
+	name: string
+	age: number
+	phone: string | null
+	photo: string | null
+	goal: string | null
+	createdAt: string
+	relationshipStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED' | null
+	isFavorite: boolean
+}
+
+// Тип для пагинации
+export interface Pagination {
+	page: number
+	limit: number
+	total: number
+	totalPages: number
+}
+
+// Тип для ответа со всеми клиентами
+export interface AllClientsResponse {
+	clients: AllSystemClient[]
+	pagination: Pagination
+}
+
+// Тип для статистики тренера
+export interface TrainerStats {
+	nutritionCategories: number
+	nutritionPlans: number
+	activeNutritionPlans: number
+	acceptedClients: number
+	pendingInvites: number
+	favoriteClients: number
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -97,14 +195,14 @@ export const trainerApi = createApi({
 				isFavorite: boolean
 				unreadMessages: number
 				hasNewReport: boolean
+				email?: string | null
+				phone?: string | null
+				age?: number
 			}>,
 			void
 		>({
 			query: () => '/clients',
-			transformResponse: (resp: { clients: AuthUser[] } | AuthUser[]) => {
-				// Логируем для отладки
-				console.log('getClients response:', resp)
-				
+			transformResponse: (resp: { clients: ExtendedClient[] } | ExtendedClient[]) => {
 				// Обрабатываем разные форматы ответа
 				const clients = Array.isArray(resp) ? resp : (resp?.clients || [])
 				
@@ -120,6 +218,9 @@ export const trainerApi = createApi({
 					isFavorite: Boolean(client.isFavorite),
 					unreadMessages: 0,
 					hasNewReport: false,
+					email: client.email,
+					phone: client.phone,
+					age: client.age,
 				}))
 			},
 			providesTags: ['Clients'],
@@ -136,6 +237,7 @@ export const trainerApi = createApi({
 			query: ({ inviteId }) => ({
 				url: `/invites/${inviteId}/accept`,
 				method: 'POST',
+				body: {},
 			}),
 			invalidatesTags: ['Invites', 'Clients'],
 		}),
@@ -145,6 +247,7 @@ export const trainerApi = createApi({
 			query: ({ inviteId }) => ({
 				url: `/invites/${inviteId}/reject`,
 				method: 'POST',
+				body: {},
 			}),
 			invalidatesTags: ['Invites'],
 		}),
@@ -205,6 +308,33 @@ export const trainerApi = createApi({
 			}),
 			invalidatesTags: ['Client'],
 		}),
+
+		// Получить детальный профиль клиента для тренера
+		getClientDetailedProfile: builder.query<ClientDetailedProfile, { clientId: string }>({
+			query: ({ clientId }) => `/clients/${clientId}`,
+			providesTags: ['Client'],
+		}),
+
+		// Получить всех клиентов системы с пагинацией
+		getAllClients: builder.query<
+			AllClientsResponse,
+			{ search?: string; page?: number; limit?: number }
+		>({
+			query: ({ search, page = 1, limit = 12 }) => {
+				const params = new URLSearchParams()
+				if (search) params.append('search', search)
+				params.append('page', page.toString())
+				params.append('limit', limit.toString())
+				return `/all-clients?${params.toString()}`
+			},
+			providesTags: ['Clients'],
+		}),
+
+		// Получить статистику тренера
+		getTrainerStats: builder.query<TrainerStats, void>({
+			query: () => '/stats',
+			providesTags: ['Clients', 'Invites'],
+		}),
 	}),
 })
 
@@ -218,4 +348,7 @@ export const {
 	useGetClientProgressQuery,
 	useUpdateClientProfileMutation,
 	useAddCommentToClientProgressMutation,
+	useGetClientDetailedProfileQuery,
+	useGetAllClientsQuery,
+	useGetTrainerStatsQuery,
 } = trainerApi

@@ -5,6 +5,8 @@ import {
 	getAllTrainers,
 	getTrainerById,
 	getClientsForTrainer,
+	getAllClientsForTrainer,
+	getTrainerStats,
 	toggleClientFavorite,
 	getTrainerInvites,
 	acceptInvite,
@@ -50,6 +52,38 @@ export default async function trainerRoutes(app: FastifyInstance) {
 			const clientId = req.user?.role === 'CLIENT' ? req.user.id : undefined
 			const trainers = await getAllTrainers(clientId)
 			return reply.status(200).send({ trainers })
+		},
+	)
+
+	// Получение статистики тренера
+	app.get(
+		'/stats',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const stats = await getTrainerStats(req.user.id)
+			return reply.status(200).send(stats)
+		},
+	)
+
+	// Получение всех клиентов системы с пагинацией
+	app.get(
+		'/all-clients',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		async (req, reply) => {
+			const { search, page, limit } = req.query as {
+				search?: string
+				page?: string
+				limit?: string
+			}
+
+			const result = await getAllClientsForTrainer(
+				req.user.id,
+				search,
+				page ? parseInt(page, 10) : 1,
+				limit ? parseInt(limit, 10) : 12,
+			)
+
+			return reply.status(200).send(result)
 		},
 	)
 

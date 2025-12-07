@@ -12,11 +12,16 @@ import {
  * Query параметры: favorites, search, page, limit
  */
 export const GetClientsSchema = z.object({
+	// favorites - если не передан, будет undefined (показать всех клиентов)
+	// если передан 'true' - показать только избранных
+	// если передан 'false' - показать только НЕ избранных
 	favorites: z
 		.string()
 		.optional()
-		.transform((val) => val === 'true')
-		.pipe(z.boolean()),
+		.transform((val) => {
+			if (val === undefined) return undefined
+			return val === 'true'
+		}),
 	search: z
 		.string({ message: 'Поисковый запрос должен быть строкой' })
 		.min(1, { message: 'Поисковый запрос не может быть пустым' })

@@ -1,6 +1,159 @@
 import { prisma } from '../prisma.js'
 
 /**
+ * Получение всех клиентов системы для тренера с пагинацией
+ * @param trainerId - ID тренера (для определения статуса связи)
+ * @param search - Поиск по имени (опционально)
+ * @param page - Номер страницы
+ * @param limit - Количество элементов на странице
+ * @returns Список всех клиентов с информацией о связи с тренером
+ */
+export async function getAllClientsForTrainer(
+	trainerId: string,
+	search?: string,
+	page: number = 1,
+	limit: number = 12,
+) {
+	const skip = (page - 1) * limit
+
+	// Строим фильтр для клиентов
+	const whereClause: any = {
+		role: 'CLIENT',
+	}
+
+	// Добавляем поиск по имени если указан
+	if (search) {
+		whereClause.name = {
+			contains: search,
+			mode: 'insensitive',
+		}
+	}
+
+	// Получаем общее количество клиентов
+	const total = await prisma.user.count({
+		where: whereClause,
+	})
+
+	// Получаем клиентов с пагинацией
+	const clients = await prisma.user.findMany({
+		where: whereClause,
+		select: {
+			id: true,
+			email: true,
+			name: true,
+			age: true,
+			phone: true,
+			photo: true,
+			goal: true,
+			createdAt: true,
+			asClientOf: {
+				where: {
+					trainerId,
+				},
+				select: {
+					status: true,
+					isFavorite: true,
+				},
+			},
+		},
+		orderBy: { createdAt: 'desc' },
+		skip,
+		take: limit,
+	})
+
+	return {
+		clients: clients.map((client) => {
+			const relationship = client.asClientOf[0]
+			return {
+				id: client.id,
+				email: client.email,
+				name: client.name,
+				age: client.age,
+				phone: client.phone,
+				photo: client.photo,
+				goal: client.goal,
+				createdAt: client.createdAt,
+				relationshipStatus: relationship?.status || null,
+				isFavorite: relationship?.isFavorite || false,
+			}
+		}),
+		pagination: {
+			page,
+			limit,
+			total,
+			totalPages: Math.ceil(total / limit),
+		},
+	}
+}
+
+/**
+ * Получение статистики тренера (количество планов питания и т.д.)
+ * @param trainerId - ID тренера
+ * @returns Статистика тренера
+ */
+export async function getTrainerStats(trainerId: string) {
+	// Количество категорий питания
+	const nutritionCategoriesCount = await prisma.nutritionCategory.count({
+		where: { trainerId },
+	})
+
+	// Количество подкатегорий (планов) питания
+	const nutritionSubcategoriesCount = await prisma.nutritionSubcategory.count({
+		where: {
+			category: {
+				trainerId,
+			},
+		},
+	})
+
+	// Количество активных назначений планов клиентам
+	const activeNutritionPlansCount = await prisma.clientNutritionPlan.count({
+		where: {
+			isActive: true,
+			subcategory: {
+				category: {
+					trainerId,
+				},
+			},
+		},
+	})
+
+	// Количество клиентов в работе
+	const acceptedClientsCount = await prisma.trainerClient.count({
+		where: {
+			trainerId,
+			status: 'ACCEPTED',
+		},
+	})
+
+	// Количество ожидающих заявок
+	const pendingInvitesCount = await prisma.trainerClient.count({
+		where: {
+			trainerId,
+			status: 'PENDING',
+		},
+	})
+
+	// Количество избранных клиентов
+	const favoriteClientsCount = await prisma.trainerClient.count({
+		where: {
+			trainerId,
+			status: 'ACCEPTED',
+			isFavorite: true,
+		},
+	})
+
+	return {
+		nutritionCategories: nutritionCategoriesCount,
+		nutritionPlans: nutritionSubcategoriesCount,
+		activeNutritionPlans: activeNutritionPlansCount,
+		acceptedClients: acceptedClientsCount,
+		pendingInvites: pendingInvitesCount,
+		favoriteClients: favoriteClientsCount,
+	}
+}
+
+/**
  * Получение всех тренеров для публичного просмотра
  * Если передан clientId - возвращает также статусы приглашений
  * @param clientId - ID клиента (опционально, для получения статусов приглашений)
@@ -64,8 +217,10 @@ export async function getClientsForTrainer(
 	const skip = (page - 1) * limit
 
 	// Строим фильтр для клиентов
+	// asClientOf - это связь когда User является КЛИЕНТОМ в связи с тренером
 	const whereClause: any = {
-		trainerClients: {
+		role: 'CLIENT',
+		asClientOf: {
 			some: {
 				trainerId,
 				status: 'ACCEPTED',
@@ -92,7 +247,7 @@ export async function getClientsForTrainer(
 			phone: true,
 			photo: true,
 			role: true,
-			trainerClients: {
+			asClientOf: {
 				where: {
 					trainerId,
 					status: 'ACCEPTED',
@@ -115,7 +270,7 @@ export async function getClientsForTrainer(
 		phone: client.phone,
 		photo: client.photo,
 		role: client.role,
-		isFavorite: client.trainerClients[0]?.isFavorite ?? false,
+		isFavorite: client.asClientOf[0]?.isFavorite ?? false,
 	}))
 }
 
