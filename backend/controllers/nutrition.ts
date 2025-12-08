@@ -393,3 +393,230 @@ export async function getSubcategoryDays(
 
 	return reply.status(200).send(days)
 }
+
+// =============================================
+//  CRUD для дней (NutritionDay)
+// =============================================
+
+interface MealInput {
+	type: 'BREAKFAST' | 'SNACK' | 'LUNCH' | 'DINNER'
+	name: string
+	mealOrder: number
+	items: string[]
+}
+
+interface CreateDayInput {
+	subcatId: string
+	dayTitle: string
+	dayOrder: number
+	meals: MealInput[]
+}
+
+export async function createNutritionDay(req: FastifyRequest, reply: FastifyReply) {
+	const { subcatId, dayTitle, dayOrder, meals } = req.body as CreateDayInput
+
+	// Проверяем права доступа через категорию
+	const subcategory = await prisma.nutritionSubcategory.findUnique({
+		where: { id: subcatId },
+		include: { category: true },
+	})
+
+	if (!subcategory || subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('Подкатегория не найдена или нет прав доступа')
+	}
+
+	// Создаем день с приемами пищи
+	const day = await prisma.nutritionDay.create({
+		data: {
+			subcatId,
+			dayTitle,
+			dayOrder,
+			meals: {
+				create: meals.map((meal, index) => ({
+					type: meal.type,
+					name: meal.name,
+					mealOrder: meal.mealOrder || index + 1,
+					items: meal.items,
+				})),
+			},
+		},
+		include: {
+			meals: {
+				orderBy: { mealOrder: 'asc' },
+			},
+		},
+	})
+
+	return reply.status(201).send(day)
+}
+
+export async function getNutritionDay(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string }
+
+	const day = await prisma.nutritionDay.findUnique({
+		where: { id },
+		include: {
+			subcategory: {
+				include: { category: true },
+			},
+			meals: {
+				orderBy: { mealOrder: 'asc' },
+			},
+		},
+	})
+
+	if (!day || day.subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('День не найден или нет прав доступа')
+	}
+
+	return reply.status(200).send(day)
+}
+
+export async function updateNutritionDay(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string }
+	const { dayTitle, dayOrder, meals } = req.body as Partial<CreateDayInput>
+
+	// Проверяем права доступа
+	const existingDay = await prisma.nutritionDay.findUnique({
+		where: { id },
+		include: {
+			subcategory: {
+				include: { category: true },
+			},
+		},
+	})
+
+	if (!existingDay || existingDay.subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('День не найден или нет прав доступа')
+	}
+
+	// Обновляем день и meals в транзакции
+	const updatedDay = await prisma.$transaction(async (tx) => {
+		// Если есть новые meals - удаляем старые и создаём новые
+		if (meals) {
+			await tx.nutritionMeal.deleteMany({
+				where: { dayId: id },
+			})
+		}
+
+		return tx.nutritionDay.update({
+			where: { id },
+			data: {
+				...(dayTitle && { dayTitle }),
+				...(dayOrder !== undefined && { dayOrder }),
+				...(meals && {
+					meals: {
+						create: meals.map((meal, index) => ({
+							type: meal.type,
+							name: meal.name,
+							mealOrder: meal.mealOrder || index + 1,
+							items: meal.items,
+						})),
+					},
+				}),
+			},
+			include: {
+				meals: {
+					orderBy: { mealOrder: 'asc' },
+				},
+			},
+		})
+	})
+
+	return reply.status(200).send(updatedDay)
+}
+
+export async function deleteNutritionDay(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string }
+
+	// Проверяем права доступа
+	const day = await prisma.nutritionDay.findUnique({
+		where: { id },
+		include: {
+			subcategory: {
+				include: { category: true },
+			},
+		},
+	})
+
+	if (!day || day.subcategory.category.trainerId !== req.user.id) {
+		throw ApiError.notFound('День не найден или нет прав доступа')
+	}
+
+	await prisma.nutritionDay.delete({
+		where: { id },
+	})
+
+	return reply.status(204).send()
+}
+
+// =============================================
+//  Создание подкатегории с днями (полная форма)
+// =============================================
+
+interface CreateSubcategoryWithDaysInput {
+	name: string
+	description?: string
+	days: CreateDayInput[]
+}
+
+export async function createSubcategoryWithDays(req: FastifyRequest, reply: FastifyReply) {
+	const { id: categoryId } = req.params as { id: string }
+	const { name, description, days } = req.body as CreateSubcategoryWithDaysInput
+
+	// Проверяем, что категория существует и принадлежит тренеру
+	const category = await prisma.nutritionCategory.findFirst({
+		where: {
+			id: categoryId,
+			trainerId: req.user.id,
+		},
+	})
+
+	if (!category) {
+		throw ApiError.notFound('Категория не найдена или нет прав доступа')
+	}
+
+	// Проверяем уникальность имени подкатегории
+	const existing = await prisma.nutritionSubcategory.findUnique({
+		where: { name },
+	})
+
+	if (existing) {
+		throw ApiError.badRequest('Подкатегория с таким названием уже существует')
+	}
+
+	// Создаем подкатегорию с днями и meals в одной транзакции
+	const subcategory = await prisma.nutritionSubcategory.create({
+		data: {
+			name,
+			description,
+			categoryId,
+			days: {
+				create: days.map((day, dayIndex) => ({
+					dayTitle: day.dayTitle,
+					dayOrder: day.dayOrder || dayIndex + 1,
+					meals: {
+						create: day.meals.map((meal, mealIndex) => ({
+							type: meal.type,
+							name: meal.name,
+							mealOrder: meal.mealOrder || mealIndex + 1,
+							items: meal.items,
+						})),
+					},
+				})),
+			},
+		},
+		include: {
+			days: {
+				orderBy: { dayOrder: 'asc' },
+				include: {
+					meals: {
+						orderBy: { mealOrder: 'asc' },
+					},
+				},
+			},
+		},
+	})
+
+	return reply.status(201).send(subcategory)
+}
