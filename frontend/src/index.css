@@ -554,3 +554,106 @@ a:hover {
 .ant-message-info .ant-message-notice-content {
 	border-left: 4px solid #3b82f6 !important;
 }
+
+/* === FIX: Alert компонент для Ant Design v5 === */
+.ant-alert {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	border-radius: 8px !important;
+}
+
+.ant-alert-error {
+	background: #fff2f0 !important;
+	background-color: #fff2f0 !important;
+	border: 1px solid #ffccc7 !important;
+}
+
+.ant-alert-error .ant-alert-message {
+	color: #a8071a !important;
+}
+
+.ant-alert-error .ant-alert-description {
+	color: #cf1322 !important;
+}
+
+.ant-alert-error .ant-alert-icon {
+	color: #ff4d4f !important;
+}
+
+.ant-alert-warning {
+	background: #fffbe6 !important;
+	background-color: #fffbe6 !important;
+	border: 1px solid #ffe58f !important;
+}
+
+.ant-alert-warning .ant-alert-message {
+	color: #ad6800 !important;
+}
+
+.ant-alert-success {
+	background: #f6ffed !important;
+	background-color: #f6ffed !important;
+	border: 1px solid #b7eb8f !important;
+}
+
+.ant-alert-success .ant-alert-message {
+	color: #389e0d !important;
+}
+
+.ant-alert-info {
+	background: #e6f4ff !important;
+	background-color: #e6f4ff !important;
+	border: 1px solid #91caff !important;
+}
+
+.ant-alert-info .ant-alert-message {
+	color: #0958d9 !important;
+}
+
+.ant-alert-close-icon {
+	color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-alert-close-icon:hover {
+	color: rgba(0, 0, 0, 0.88) !important;
+}
+
+/* === FIX: Notification wrapper для Ant Design v5 === */
+.ant-notification {
+	z-index: 9999 !important;
+}
+
+.ant-notification-notice-wrapper {
+	background: transparent !important;
+}
+
+/* Принудительные стили для notification в Ant Design v5 */
+div[class*="ant-notification"] .ant-notification-notice {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	border: 1px solid #e5e7eb !important;
+	border-radius: 12px !important;
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+div[class*="ant-notification"] .ant-notification-notice-message {
+	color: #1f2937 !important;
+	font-weight: 600 !important;
+}
+
+div[class*="ant-notification"] .ant-notification-notice-description {
+	color: #4b5563 !important;
+}
+
+div[class*="ant-notification"] .ant-notification-notice-icon {
+	color: #f59e0b !important;
+}
+
+div[class*="ant-notification"] .ant-notification-notice-close {
+	color: #6b7280 !important;
+}
+
+div[class*="ant-notification"] .ant-notification-notice-close:hover {
+	color: #1f2937 !important;
+	background: #f3f4f6 !important;
+}

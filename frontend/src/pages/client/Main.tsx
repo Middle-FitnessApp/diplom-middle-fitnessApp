@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { Button, Typography, message, Modal, Spin } from 'antd'
+import { Button, Typography, message, Modal, Spin, Pagination, Divider } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { ExclamationCircleOutlined } from '@ant-design/icons'
+import { ExclamationCircleOutlined, TeamOutlined } from '@ant-design/icons'
 import { TrainerCard, TrainersList } from '../../components/Client'
 import { useAppSelector } from '../../store/hooks'
 import {
@@ -13,9 +13,13 @@ import {
 
 const { Title, Paragraph } = Typography
 
+// Константа для пагинации
+const TRAINERS_PER_PAGE = 8
+
 export const Main: React.FC = () => {
 	const navigate = useNavigate()
 	const [selectingTrainerId, setSelectingTrainerId] = useState<string | null>(null)
+	const [currentPage, setCurrentPage] = useState(1)
 
 	// Проверяем наличие токена в Redux
 	const token = useAppSelector((state) => state.auth.token)
@@ -51,6 +55,26 @@ export const Main: React.FC = () => {
 		})
 		return statuses
 	}, [trainers])
+
+	// Фильтруем тренеров (исключаем текущего тренера клиента)
+	const availableTrainers = useMemo(() => {
+		if (hasTrainer && user?.trainer) {
+			return trainers.filter((t) => t.id !== user.trainer?.id)
+		}
+		return trainers
+	}, [trainers, hasTrainer, user?.trainer])
+
+	// Пагинация
+	const paginatedTrainers = useMemo(() => {
+		const startIndex = (currentPage - 1) * TRAINERS_PER_PAGE
+		return availableTrainers.slice(startIndex, startIndex + TRAINERS_PER_PAGE)
+	}, [availableTrainers, currentPage])
+
+	const handlePageChange = (page: number) => {
+		setCurrentPage(page)
+		// Прокрутка к началу списка тренеров
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
 
 	// Обработчик выбора тренера
 	const handleSelectTrainer = async (trainerId: string) => {
@@ -216,12 +240,49 @@ export const Main: React.FC = () => {
 						onUnlink={handleUnlinkTrainer}
 						loading={isCanceling}
 					/>
+
+					{/* Список других тренеров */}
+					{availableTrainers.length > 0 && (
+						<>
+							<Divider />
+							<div className="section-header">
+								<Title level={3} className="!mb-2 !flex !items-center !justify-center !gap-2">
+									<TeamOutlined /> Другие тренеры
+								</Title>
+								<Paragraph className="!text-gray-600 !mb-0">
+									Вы можете отправить заявку другим тренерам
+								</Paragraph>
+							</div>
+
+							<TrainersList
+								trainers={paginatedTrainers}
+								loading={isLoadingTrainers}
+								onSelectTrainer={handleSelectTrainer}
+								onCancelInvite={handleCancelInvite}
+								selectingTrainerId={selectingTrainerId}
+								inviteStatuses={inviteStatuses}
+							/>
+
+							{availableTrainers.length > TRAINERS_PER_PAGE && (
+								<div className="flex justify-center mt-8">
+									<Pagination
+										current={currentPage}
+										total={availableTrainers.length}
+										pageSize={TRAINERS_PER_PAGE}
+										onChange={handlePageChange}
+										showSizeChanger={false}
+										showTotal={(total) => `Всего ${total} тренеров`}
+									/>
+								</div>
+							)}
+						</>
+					)}
 				</div>
 			</div>
 		)
 	}
 
-	// Клиент без тренера - показываем список тренеров
+	// Клиент без тренера - показываем список тренеров с пагинацией
 	return (
 		<div className="page-container gradient-bg">
 			<div className="page-card">
@@ -235,13 +296,26 @@ export const Main: React.FC = () => {
 				</div>
 
 				<TrainersList
-					trainers={trainers}
+					trainers={paginatedTrainers}
 					loading={isLoadingTrainers}
 					onSelectTrainer={handleSelectTrainer}
 					onCancelInvite={handleCancelInvite}
 					selectingTrainerId={selectingTrainerId}
 					inviteStatuses={inviteStatuses}
 				/>
+
+				{availableTrainers.length > TRAINERS_PER_PAGE && (
+					<div className="flex justify-center mt-8">
+						<Pagination
+							current={currentPage}
+							total={availableTrainers.length}
+							pageSize={TRAINERS_PER_PAGE}
+							onChange={handlePageChange}
+							showSizeChanger={false}
+							showTotal={(total) => `Всего ${total} тренеров`}
+						/>
+					</div>
+				)}
 			</div>
 		</div>
 	)
