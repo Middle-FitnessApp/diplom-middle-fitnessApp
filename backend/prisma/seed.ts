@@ -840,22 +840,26 @@ async function main() {
 				status = 'PENDING'
 			}
 
-			await prisma.trainerClient.upsert({
-				where: {
-					clientId_trainerId: {
-						clientId: client.id,
-						trainerId: trainer.id,
-					},
-				},
-				update: {},
-				create: {
-					trainerId: trainer.id,
+		await prisma.trainerClient.upsert({
+			where: {
+				clientId_trainerId: {
 					clientId: client.id,
-					status,
-					isFavorite,
-					acceptedAt,
+					trainerId: trainer.id,
 				},
-			})
+			},
+			update: {
+				status,
+				isFavorite,
+				acceptedAt,
+			},
+			create: {
+				trainerId: trainer.id,
+				clientId: client.id,
+				status,
+				isFavorite,
+				acceptedAt,
+			},
+		})
 		}
 	}
 
