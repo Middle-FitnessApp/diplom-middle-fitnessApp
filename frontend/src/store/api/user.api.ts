@@ -137,7 +137,8 @@ export const userApi = createApi({
 				url: '/client/trainer',
 				method: 'DELETE',
 			}),
-			invalidatesTags: ['User'],
+			// Инвалидируем и User и Trainers, чтобы обновить статусы приглашений
+			invalidatesTags: ['User', 'Trainers'],
 		}),
 
 		updateClientProfile: builder.mutation<
