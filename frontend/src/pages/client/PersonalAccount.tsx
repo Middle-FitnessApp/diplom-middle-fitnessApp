@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Form, Input, Button, Card, Typography, Row, Col, Statistic, Divider } from 'antd'
-import { EditOutlined, LogoutOutlined, SaveOutlined, TrophyOutlined, FireOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Card, Typography, Row, Col, Statistic, Avatar, Tag } from 'antd'
+import { EditOutlined, LogoutOutlined, SaveOutlined, TrophyOutlined, FireOutlined, CalendarOutlined, UserOutlined, PhoneOutlined, MailOutlined, MessageOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { ACCOUNT_FIELDS } from '../../constants/accountFields'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { LoadingState, AvatarUploader, ProgressChart } from '../../components'
 import { useAppDispatch, useAuth } from '../../store/hooks'
@@ -15,10 +14,93 @@ import {
 } from '../../store/api/user.api'
 import { useGetProgressChartDataQuery, useGetLatestProgressQuery } from '../../store/api/progress.api'
 import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
-import type { ApiError } from '../../store/types/auth.types'
+import type { ApiError, TrainerInfo } from '../../store/types/auth.types'
 import { ErrorState, UnauthorizedState } from '../../components/errors'
 
 const { Title, Text } = Typography
+
+// Компонент карточки тренера
+const TrainerCard = ({ trainer }: { trainer: TrainerInfo }) => {
+	const navigate = useNavigate()
+	
+	return (
+		<Card 
+			className='mt-4' 
+			size='small'
+			style={{ 
+				background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+				border: 'none',
+			}}
+		>
+			<div className='flex items-center gap-4'>
+				<Avatar 
+					size={56} 
+					src={trainer.photo} 
+					icon={<UserOutlined />}
+					style={{ 
+						border: '2px solid rgba(255,255,255,0.3)',
+						flexShrink: 0
+					}}
+				/>
+				<div className='flex-1 min-w-0'>
+					<Text className='!text-white/70 text-xs block'>Ваш тренер</Text>
+					<Text strong className='!text-white text-base block truncate'>
+						{trainer.name}
+					</Text>
+					{trainer.bio && (
+						<Text className='!text-white/80 text-xs block truncate'>
+							{trainer.bio}
+						</Text>
+					)}
+				</div>
+				<Button
+					type='primary'
+					ghost
+					icon={<MessageOutlined />}
+					onClick={() => navigate('/trainer')}
+					style={{ 
+						borderColor: 'rgba(255,255,255,0.5)',
+						color: 'white'
+					}}
+				>
+					Чат
+				</Button>
+			</div>
+			{/* Социальные сети тренера */}
+			{(trainer.telegram || trainer.whatsapp || trainer.instagram) && (
+				<div className='flex gap-2 mt-3 pt-3 border-t border-white/20'>
+					{trainer.telegram && (
+						<Tag 
+							color='blue' 
+							className='!m-0 cursor-pointer'
+							onClick={() => window.open(`https://t.me/${trainer.telegram?.replace('@', '')}`, '_blank')}
+						>
+							Telegram
+						</Tag>
+					)}
+					{trainer.whatsapp && (
+						<Tag 
+							color='green' 
+							className='!m-0 cursor-pointer'
+							onClick={() => window.open(`https://wa.me/${trainer.whatsapp?.replace(/\D/g, '')}`, '_blank')}
+						>
+							WhatsApp
+						</Tag>
+					)}
+					{trainer.instagram && (
+						<Tag 
+							color='magenta' 
+							className='!m-0 cursor-pointer'
+							onClick={() => window.open(`https://instagram.com/${trainer.instagram?.replace('@', '')}`, '_blank')}
+						>
+							Instagram
+						</Tag>
+					)}
+				</div>
+			)}
+		</Card>
+	)
+}
 
 export const PersonalAccount = () => {
 	const dispatch = useAppDispatch()
@@ -47,7 +129,8 @@ export const PersonalAccount = () => {
 		}),
 		[user?.name, user?.email, user?.phone],
 	)
-	const loginRegex = /^(?:[^\s@]+@[^\s@]+\.[^\s@]+|\+?[\d\s-]{10,})$/
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+	const phoneRegex = /^\+?[\d\s-]{10,}$/
 
 	const [formData, setFormData] = useState(initialFormData)
 	const [formError, setFormError] = useState<string | null>(null)
@@ -105,13 +188,19 @@ export const PersonalAccount = () => {
 			setFormError('Введите имя')
 			return
 		}
-		const loginValue = formData.email || formData.phone || ''
-		if (!loginValue.trim()) {
+		// Валидация: должен быть хотя бы email или телефон
+		const hasEmail = formData.email?.trim()
+		const hasPhone = formData.phone?.trim()
+		if (!hasEmail && !hasPhone) {
 			setFormError('Введите email или телефон')
 			return
 		}
-		if (!loginRegex.test(loginValue)) {
-			setFormError('Введите корректный email или телефон')
+		if (hasEmail && !emailRegex.test(formData.email)) {
+			setFormError('Введите корректный email')
+			return
+		}
+		if (hasPhone && !phoneRegex.test(formData.phone)) {
+			setFormError('Введите корректный телефон')
 			return
 		}
 
@@ -294,23 +383,33 @@ export const PersonalAccount = () => {
 									/>
 								</Form.Item>
 
-								<Form.Item label={ACCOUNT_FIELDS.login || 'Email или телефон'}>
-									<Input
-										disabled={!isEditing}
-										className={`rounded-lg ${disabledInputClass}`}
-										value={formData.email || formData.phone}
-										onChange={(e) => {
-											const value = e.target.value
-											if (value.includes('@')) {
-												handleInputChange('email', value)
-												handleInputChange('phone', '')
-											} else {
-												handleInputChange('phone', value)
-												handleInputChange('email', '')
-											}
-										}}
-									/>
-								</Form.Item>
+								{/* Email поле - показываем если есть или в режиме редактирования */}
+								{(user.email || isEditing) && (
+									<Form.Item label='Email'>
+										<Input
+											disabled={!isEditing}
+											className={`rounded-lg ${disabledInputClass}`}
+											prefix={<MailOutlined className='text-gray-400' />}
+											placeholder='example@mail.com'
+											value={formData.email}
+											onChange={(e) => handleInputChange('email', e.target.value)}
+										/>
+									</Form.Item>
+								)}
+
+								{/* Телефон поле - показываем если есть или в режиме редактирования */}
+								{(user.phone || isEditing) && (
+									<Form.Item label='Телефон'>
+										<Input
+											disabled={!isEditing}
+											className={`rounded-lg ${disabledInputClass}`}
+											prefix={<PhoneOutlined className='text-gray-400' />}
+											placeholder='+7 999 123 45 67'
+											value={formData.phone}
+											onChange={(e) => handleInputChange('phone', e.target.value)}
+										/>
+									</Form.Item>
+								)}
 
 								{formError && (
 									<Text type='danger' className='block mb-4'>
@@ -355,6 +454,7 @@ export const PersonalAccount = () => {
 											value={lastWeight || '-'}
 											suffix='кг'
 											prefix={<FireOutlined />}
+											valueStyle={{ whiteSpace: 'nowrap' }}
 										/>
 									</Col>
 									<Col span={8}>
@@ -364,12 +464,18 @@ export const PersonalAccount = () => {
 											suffix='кг'
 											prefix={<TrophyOutlined />}
 											valueStyle={{
-												color: weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined
+												color: weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined,
+												whiteSpace: 'nowrap'
 											}}
 										/>
 									</Col>
 								</Row>
 							</Card>
+						)}
+
+						{/* Карточка тренера */}
+						{user.trainer && (
+							<TrainerCard trainer={user.trainer} />
 						)}
 					</Col>
 

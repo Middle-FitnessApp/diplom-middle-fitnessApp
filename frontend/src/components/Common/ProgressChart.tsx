@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Col, Row, Empty, Typography, Radio, Checkbox, Space } from 'antd'
+import { Card, Col, Row, Empty, Typography, Radio, Checkbox, Space, Tag } from 'antd'
 import type { RadioChangeEvent, CheckboxProps } from 'antd'
 import {
 	LineChart,
@@ -14,6 +14,75 @@ import {
 import type { ProgressMetric } from '../../constants/progressMetrics'
 
 const { Text } = Typography
+
+// Функция для генерации интерполированных данных между точками
+const interpolateData = (
+	data: Array<Record<string, any>>,
+	period: 'month' | 'year' | 'all'
+): Array<Record<string, any>> => {
+	if (data.length < 2) return data
+
+	const result: Array<Record<string, any>> = []
+	const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+	
+	// Определяем интервал интерполяции в зависимости от периода
+	const intervalDays = period === 'month' ? 3 : period === 'year' ? 14 : 7
+	
+	for (let i = 0; i < sortedData.length - 1; i++) {
+		const current = sortedData[i]
+		const next = sortedData[i + 1]
+		
+		result.push(current)
+		
+		const currentDate = new Date(current.date)
+		const nextDate = new Date(next.date)
+		const daysDiff = Math.floor((nextDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24))
+		
+		// Если разница больше интервала, добавляем интерполированные точки
+		if (daysDiff > intervalDays * 2) {
+			const numPoints = Math.floor(daysDiff / intervalDays) - 1
+			
+			for (let j = 1; j <= Math.min(numPoints, 5); j++) {
+				const ratio = j / (numPoints + 1)
+				const interpolatedDate = new Date(currentDate.getTime() + (nextDate.getTime() - currentDate.getTime()) * ratio)
+				
+				const interpolatedPoint: Record<string, any> = {
+					date: interpolatedDate.toISOString().split('T')[0],
+					_interpolated: true, // Помечаем как интерполированную точку
+				}
+				
+				// Интерполируем числовые значения
+				Object.keys(current).forEach(key => {
+					if (key !== 'date' && typeof current[key] === 'number' && typeof next[key] === 'number') {
+						interpolatedPoint[key] = Number((current[key] + (next[key] - current[key]) * ratio).toFixed(1))
+					}
+				})
+				
+				result.push(interpolatedPoint)
+			}
+		}
+	}
+	
+	result.push(sortedData[sortedData.length - 1])
+	return result
+}
+
+// Функция для получения описания диапазона дат
+const getDateRangeDescription = (data: Array<Record<string, any>>): string => {
+	if (data.length === 0) return ''
+	if (data.length === 1) {
+		return new Date(data[0].date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+	}
+	
+	const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+	const firstDate = new Date(sortedData[0].date)
+	const lastDate = new Date(sortedData[sortedData.length - 1].date)
+	
+	const firstStr = firstDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+	const lastStr = lastDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+	
+	return `${firstStr} — ${lastStr}`
+}
 
 interface ProgressChartProps {
 	data: Array<Record<string, any>>
@@ -53,43 +122,66 @@ export const ProgressChart = ({
 	}
 
 	const filteredData = useMemo(() => {
-		if (period === 'all') return data
+		let filtered = data
 
-		const now = new Date()
-		const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+		if (period !== 'all') {
+			const now = new Date()
+			const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-		if (period === 'month') {
-			const oneMonthAgo = new Date(currentDate)
-			oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-			return data.filter((item) => {
-				const itemDate = new Date(item.date)
-				return itemDate >= oneMonthAgo && itemDate <= currentDate
-			})
+			if (period === 'month') {
+				const oneMonthAgo = new Date(currentDate)
+				oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+				filtered = data.filter((item) => {
+					const itemDate = new Date(item.date)
+					return itemDate >= oneMonthAgo && itemDate <= currentDate
+				})
+			}
+
+			if (period === 'year') {
+				const oneYearAgo = new Date(currentDate)
+				oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+				filtered = data.filter((item) => {
+					const itemDate = new Date(item.date)
+					return itemDate >= oneYearAgo && itemDate <= currentDate
+				})
+			}
 		}
 
-		if (period === 'year') {
-			const oneYearAgo = new Date(currentDate)
-			oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-			return data.filter((item) => {
-				const itemDate = new Date(item.date)
-				return itemDate >= oneYearAgo && itemDate <= currentDate
-			})
+		// Применяем интерполяцию если данных мало, но больше 1
+		if (filtered.length > 1 && filtered.length < 10) {
+			return interpolateData(filtered, period)
 		}
 
-		return data
+		return filtered
 	}, [period, data])
+
+	// Диапазон дат в отфильтрованных данных
+	const dateRange = useMemo(() => {
+		const realData = filteredData.filter(item => !item._interpolated)
+		return getDateRangeDescription(realData)
+	}, [filteredData])
+
+	// Количество реальных точек (без интерполяции)
+	const realDataCount = useMemo(() => {
+		return filteredData.filter(item => !item._interpolated).length
+	}, [filteredData])
 
 	// Компактный режим для страницы /me
 	if (compact) {
 		return (
 			<div className='w-full'>
-				{/* Период */}
-				<div className='flex justify-between items-center mb-4'>
+				{/* Период и диапазон дат */}
+				<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4'>
 					<Radio.Group value={period} onChange={handlePeriodChange} size='small'>
 						<Radio.Button value='month'>Месяц</Radio.Button>
 						<Radio.Button value='year'>Год</Radio.Button>
 						<Radio.Button value='all'>Всё время</Radio.Button>
 					</Radio.Group>
+					{dateRange && realDataCount > 0 && (
+						<Tag color='blue' className='!m-0'>
+							{dateRange} ({realDataCount} {realDataCount === 1 ? 'отчёт' : realDataCount < 5 ? 'отчёта' : 'отчётов'})
+						</Tag>
+					)}
 				</div>
 
 				{/* Метрики */}
@@ -167,8 +259,36 @@ export const ProgressChart = ({
 											dataKey={metric.nameMetric}
 											stroke={metric.color}
 											strokeWidth={2}
-											dot={{ r: 3, fill: metric.color }}
-											activeDot={{ r: 5 }}
+											dot={(props: any) => {
+												const { cx, cy, payload } = props
+												if (payload._interpolated) {
+													// Интерполированные точки - маленькие и прозрачные
+													return (
+														<circle
+															key={`${metric.nameMetric}-${cx}-${cy}`}
+															cx={cx}
+															cy={cy}
+															r={2}
+															fill={metric.color}
+															fillOpacity={0.3}
+															stroke='none'
+														/>
+													)
+												}
+												// Реальные точки - крупнее
+												return (
+													<circle
+														key={`${metric.nameMetric}-${cx}-${cy}`}
+														cx={cx}
+														cy={cy}
+														r={4}
+														fill={metric.color}
+														stroke='white'
+														strokeWidth={1}
+													/>
+												)
+											}}
+											activeDot={{ r: 6 }}
 										/>
 									) : null
 								)}
@@ -185,7 +305,14 @@ export const ProgressChart = ({
 		<div className='w-full'>
 			{/* Заголовок и выбор периода */}
 			<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4'>
-				<Text strong className='text-lg'>📈 Динамика измерений</Text>
+				<div className='flex flex-col'>
+					<Text strong className='text-lg'>📈 Динамика измерений</Text>
+					{dateRange && realDataCount > 0 && (
+						<Text type='secondary' className='text-sm'>
+							{dateRange} • {realDataCount} {realDataCount === 1 ? 'отчёт' : realDataCount < 5 ? 'отчёта' : 'отчётов'}
+						</Text>
+					)}
+				</div>
 				<Radio.Group value={period} onChange={handlePeriodChange}>
 					<Radio.Button value='month'>Месяц</Radio.Button>
 					<Radio.Button value='year'>Год</Radio.Button>
@@ -282,8 +409,34 @@ export const ProgressChart = ({
 													dataKey={metric.nameMetric}
 													stroke={metric.color}
 													strokeWidth={2.5}
-													dot={{ r: 4, fill: metric.color, strokeWidth: 0 }}
-													activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+													dot={(props: any) => {
+														const { cx, cy, payload } = props
+														if (payload._interpolated) {
+															return (
+																<circle
+																	key={`${metric.nameMetric}-${cx}-${cy}`}
+																	cx={cx}
+																	cy={cy}
+																	r={2}
+																	fill={metric.color}
+																	fillOpacity={0.3}
+																	stroke='none'
+																/>
+															)
+														}
+														return (
+															<circle
+																key={`${metric.nameMetric}-${cx}-${cy}`}
+																cx={cx}
+																cy={cy}
+																r={5}
+																fill={metric.color}
+																stroke='white'
+																strokeWidth={2}
+															/>
+														)
+													}}
+													activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }}
 												/>
 											) : null
 										)}
