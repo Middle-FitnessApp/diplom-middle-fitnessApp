@@ -26,11 +26,12 @@ export default async function authRoutes(app: FastifyInstance) {
 
 		// Для клиентов обрабатываем фото, для тренеров - только тело запроса
 		if (role === CLIENT) {
-			const uploadResult = await uploadPhotos(req, [
-				'photoFront',
-				'photoSide',
-				'photoBack',
-			])
+			const uploadResult = await uploadPhotos(
+				req,
+				['photoFront', 'photoSide', 'photoBack'],
+				undefined,
+				'progress', // Первые фото при регистрации - это прогресс
+			)
 			body = uploadResult.body
 			files = uploadResult.files
 

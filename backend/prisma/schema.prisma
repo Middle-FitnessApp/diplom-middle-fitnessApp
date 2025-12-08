@@ -55,8 +55,8 @@ model User {
   asClientOf     TrainerClient[] @relation("TrainerClientsAsClient")
 
   // 🔽 связи для питания
-  nutritionCategories   NutritionCategory[]     @relation("UserNutritionCategories")
-  assignedNutritionPlan AssignedNutritionPlan[]
+  nutritionCategories  NutritionCategory[]   @relation("UserNutritionCategories")
+  clientNutritionPlans ClientNutritionPlan[]
 }
 
 model RefreshToken {
@@ -150,7 +150,7 @@ model TrainerClient {
 // ======= Питание =======
 //
 
-// Категория программ питания
+// Глобальные категории
 model NutritionCategory {
   id          String  @id @default(cuid())
   trainerId   String
@@ -158,14 +158,14 @@ model NutritionCategory {
   name        String  @unique
   description String?
 
-  programs NutritionProgram[]
+  subcategories NutritionSubcategory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// Программа питания
-model NutritionProgram {
+// Подкатегории (бывшие программы)
+model NutritionSubcategory {
   id         String            @id @default(cuid())
   categoryId String
   category   NutritionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -173,33 +173,33 @@ model NutritionProgram {
   name        String  @unique
   description String?
 
-  days          ProgramDay[]
-  assignedPlans AssignedNutritionPlan[]
+  days        NutritionDay[]
+  clientPlans ClientNutritionPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// День программы
-model ProgramDay {
-  id        String           @id @default(cuid())
-  programId String
-  program   NutritionProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+// План питания на день
+model NutritionDay {
+  id          String               @id @default(cuid())
+  subcatId    String
+  subcategory NutritionSubcategory @relation(fields: [subcatId], references: [id], onDelete: Cascade)
 
   dayTitle String
   dayOrder Int
 
-  meals Meal[]
+  meals NutritionMeal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 // Приём пищи
-model Meal {
-  id    String     @id @default(cuid())
+model NutritionMeal {
+  id    String       @id @default(cuid())
   dayId String
-  day   ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  day   NutritionDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
   type      MealType
   name      String
@@ -212,16 +212,23 @@ model Meal {
 }
 
 // Назначенный клиенту план питания
-model AssignedNutritionPlan {
+model ClientNutritionPlan {
   id       String @id @default(cuid())
   clientId String
   client   User   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  programId String
-  program   NutritionProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  subcatId    String
+  subcategory NutritionSubcategory @relation(fields: [subcatId], references: [id], onDelete: Cascade)
 
   // Если нужно ограничить конкретными днями — массив ID
   dayIds String[]
 
+  // Дата начала плана (для расчета текущего дня цикла)
+  startDate DateTime @default(now())
+
+  // Активен ли план (для истории)
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

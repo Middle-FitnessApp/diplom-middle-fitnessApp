@@ -1,38 +1,74 @@
 export interface NutritionCategory {
 	id: string
-	trainer_id: string
+	trainerId: string
 	name: string
 	description?: string
-	programs: NutritionProgram[] // массив подкатегорий
+	subcategories: NutritionSubcategory[] // массив подкатегорий
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface NutritionProgram {
+export interface NutritionSubcategory {
 	id: string
-	category_id: string
+	categoryId: string
 	name: string
 	description?: string
-	days_count: number // вычисляемое поле для UI
+	days: NutritionDay[] // полный массив дней
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface ProgramDay {
+export interface NutritionDay {
 	id: string
-	program_id: string
-	day_title: string
-	day_order: number
-	meals: Meal[]
+	subcatId: string
+	dayTitle: string
+	dayOrder: number
+	meals: NutritionMeal[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
 
-export interface Meal {
+export interface NutritionMeal {
 	id: string
-	day_id: string
-	type: 'breakfast' | 'snack' | 'lunch' | 'dinner'
+	dayId: string
+	type: MealType
 	name: string
-	meal_order: number
+	mealOrder: number
 	items: string[]
+	createdAt: string | Date
+	updatedAt: string | Date
 }
+
+export type MealType = 'BREAKFAST' | 'SNACK' | 'LUNCH' | 'DINNER'
+
 export interface AssignedNutritionPlan {
 	id: string
 	clientId: string
-	programId: string
+	subcatId: string // изменил programId → subcatId
 	dayIds: string[]
+	createdAt: string | Date
+}
+
+// Тип для дня плана питания с дополнительными полями от API
+export interface NutritionDayWithDate extends NutritionDay {
+	date: string
+	isToday: boolean
+}
+
+// Информация о плане питания
+export interface NutritionPlanInfo {
+	id: string
+	subcategory: {
+		id: string
+		name: string
+		description?: string
+	}
+	startDate: string
+	assignedAt: string
+}
+
+// Ответ API для плана питания клиента
+export interface ClientNutritionPlanResponse {
+	plan: NutritionPlanInfo | null
+	days: NutritionDayWithDate[]
 }

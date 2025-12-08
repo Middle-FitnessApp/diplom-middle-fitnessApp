@@ -1,29 +1,73 @@
-import React, { useState } from 'react'
-import { Form } from 'antd'
+import React, { useState, useEffect } from 'react'
+import { Form, Typography } from 'antd'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import type { MessageType, ChatUploadFile } from '../../types'
 import { MessageList } from './MessageList'
 import { InputPanel } from './InputPanel'
 import { ImagePreviewModal } from './ImagePreviewModal'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { addMessage, markAsRead } from '../../store/slices/chat.slice'
 
-const initialMessages: MessageType[] = [
-	{ id: 1, text: 'Сообщение клиента', createdAt: '19:30', sender: 'client' },
-	{ id: 2, text: 'Сообщение тренера', createdAt: '19:35', sender: 'trainer' },
-	{ id: 3, text: 'Сообщение клиента', createdAt: '19:40', sender: 'client' },
-	{ id: 4, text: 'Сообщение тренера', createdAt: '19:40', sender: 'trainer' },
-]
+const { Text } = Typography
+
+// Демо сообщения для первого открытия
+const getInitialMessages = (role: 'client' | 'trainer'): MessageType[] => {
+	if (role === 'client') {
+		return [
+			{
+				id: 1,
+				text: 'Здравствуйте! Я ваш тренер. Готов помочь вам достичь ваших целей! 💪',
+				createdAt: '10:00',
+				sender: 'trainer',
+			},
+			{
+				id: 2,
+				text: 'Как прошла ваша тренировка на этой неделе?',
+				createdAt: '10:01',
+				sender: 'trainer',
+			},
+		]
+	}
+	return [
+		{
+			id: 1,
+			text: 'Здравствуйте! Я записался к вам на тренировки',
+			createdAt: '09:30',
+			sender: 'client',
+		},
+	]
+}
 
 type ChatProps = {
 	role: 'client' | 'trainer'
+	chatId?: string // Опциональный ID чата (для тренера - ID клиента)
+	partnerName?: string // Имя собеседника
 }
 
-export const Chat: React.FC<ChatProps> = ({ role }) => {
-	const [messages, setMessages] = useState<MessageType[]>(initialMessages)
+export const Chat: React.FC<ChatProps> = ({
+	role,
+	chatId: propChatId,
+	partnerName,
+}) => {
+	// Формируем chatId
+	const chatId = propChatId || (role === 'client' ? 'client_trainer' : 'trainer_client')
+
+	const dispatch = useAppDispatch()
+	const storedMessages = useAppSelector((state) => state.chat.messages[chatId])
+
 	const [form] = Form.useForm()
 	const [showEmoji, setShowEmoji] = useState(false)
 	const [fileList, setFileList] = useState<ChatUploadFile[]>([])
 	const [previewImage, setPreviewImage] = useState<string | undefined>()
 	const [inputValue, setInputValue] = useState('')
+
+	// Используем сохранённые сообщения или демо
+	const messages = storedMessages || getInitialMessages(role)
+
+	// Отмечаем сообщения как прочитанные при открытии чата
+	useEffect(() => {
+		dispatch(markAsRead(chatId))
+	}, [chatId, dispatch])
 
 	const insertEmoji = (emoji: string) => {
 		const text = form.getFieldValue('text') || ''
@@ -75,20 +119,33 @@ export const Chat: React.FC<ChatProps> = ({ role }) => {
 			return
 		}
 
-		setMessages([
-			...messages,
-			{
-				id: messages.length + 1,
-				text,
-				createdAt: new Date().toLocaleTimeString().slice(0, 5),
-				sender: role,
-				imageUrl,
-			},
-		])
+		const newMessage: MessageType = {
+			id: Date.now(),
+			text,
+			createdAt: new Date().toLocaleTimeString('ru-RU', {
+				hour: '2-digit',
+				minute: '2-digit',
+			}),
+			sender: role,
+			imageUrl,
+		}
+
+		// Добавляем в Redux (автоматически сохранится в localStorage)
+		dispatch(addMessage({ chatId, message: newMessage }))
+
 		form.resetFields()
 		setInputValue('')
 		setFileList([])
 	}
+
+	// Форматируем текущую дату
+	const today = new Date().toLocaleDateString('ru-RU', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	})
+
+	const title = role === 'client' ? 'Чат с тренером' : `Чат с клиентом${partnerName ? `: ${partnerName}` : ''}`
 
 	return (
 		<div
@@ -103,11 +160,17 @@ export const Chat: React.FC<ChatProps> = ({ role }) => {
 				marginTop: '1.5rem',
 			}}
 		>
+			{/* Заголовок чата */}
 			<div
-				className='py-2 text-center text-sm tracking-wide'
-				style={{ color: '#7a90a4', borderBottom: '1px solid #dbe4ee' }}
+				className='py-3 px-4 flex items-center justify-between'
+				style={{ borderBottom: '1px solid #dbe4ee' }}
 			>
-				1.04.2024
+				<Text strong className='text-base'>
+					{title}
+				</Text>
+				<Text type='secondary' className='text-sm'>
+					{today}
+				</Text>
 			</div>
 
 			<MessageList messages={messages} onPreview={handlePreview} role={role} />

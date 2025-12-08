@@ -1,6 +1,12 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { AuthState, AuthUser } from '../types/auth.types'
+import { authApi } from '../api/auth.api'
+import { userApi } from '../api/user.api'
+import { trainerApi } from '../api/trainer.api'
+import { progressApi } from '../api/progress.api'
+import { nutritionApi } from '../api/nutrition.api'
+import { resetAllChats } from './chat.slice'
 
 const initialState: AuthState = {
 	user: null,
@@ -8,6 +14,36 @@ const initialState: AuthState = {
 	isAuthenticated: !!localStorage.getItem('token'),
 	isLoading: false,
 }
+
+// Полный logout с очисткой всего
+export const performLogout = createAsyncThunk(
+	'auth/performLogout',
+	async (_, { dispatch }) => {
+		// 1. Пробуем вызвать API logout (удалит refresh token на сервере)
+		try {
+			await dispatch(authApi.endpoints.logout.initiate()).unwrap()
+		} catch (error) {
+			// Игнорируем ошибки - всё равно очищаем локально
+			console.log('Logout API error (ignored):', error)
+		}
+
+		// 2. Очищаем весь localStorage
+		localStorage.removeItem('token')
+		localStorage.removeItem('chat_state') // Очищаем данные чата
+
+		// 3. Сбрасываем кэш всех RTK Query API
+		dispatch(authApi.util.resetApiState())
+		dispatch(userApi.util.resetApiState())
+		dispatch(trainerApi.util.resetApiState())
+		dispatch(progressApi.util.resetApiState())
+		dispatch(nutritionApi.util.resetApiState())
+
+		// 4. Сбрасываем состояние чата
+		dispatch(resetAllChats())
+
+		return true
+	}
+)
 
 const authSlice = createSlice({
 	name: 'auth',
@@ -34,6 +70,7 @@ const authSlice = createSlice({
 				state.user = { ...state.user, ...action.payload }
 			}
 		},
+		// Простой logout (для внутреннего использования)
 		logout: (state) => {
 			state.user = null
 			state.token = null
@@ -43,12 +80,36 @@ const authSlice = createSlice({
 		setLoading: (state, action: PayloadAction<boolean>) => {
 			state.isLoading = action.payload
 		},
+		// Полный сброс состояния
+		resetAuth: (state) => {
+			state.user = null
+			state.token = null
+			state.isAuthenticated = false
+			state.isLoading = false
+		},
 	},
 	extraReducers: (builder) => {
-		// Можно добавить обработку экшенов из authApi если нужно
+		// Обработка performLogout
+		builder
+			.addCase(performLogout.pending, (state) => {
+				state.isLoading = true
+			})
+			.addCase(performLogout.fulfilled, (state) => {
+				state.user = null
+				state.token = null
+				state.isAuthenticated = false
+				state.isLoading = false
+			})
+			.addCase(performLogout.rejected, (state) => {
+				// Всё равно выходим даже при ошибке
+				state.user = null
+				state.token = null
+				state.isAuthenticated = false
+				state.isLoading = false
+			})
 	},
 })
 
-export const { setCredentials, setToken, setUser, updateUser, logout, setLoading } =
+export const { setCredentials, setToken, setUser, updateUser, logout, setLoading, resetAuth } =
 	authSlice.actions
 export default authSlice.reducer

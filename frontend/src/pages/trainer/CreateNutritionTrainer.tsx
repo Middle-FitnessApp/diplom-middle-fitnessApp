@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Typography, Button, Form, Input, message, Modal } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
 import { PlusOutlined } from '@ant-design/icons'
-import type { ProgramDay, NutritionProgram } from '../../types/nutritions'
+import type { NutritionDay, NutritionSubcategory } from '../../types/nutritions'
 import { CreateDayForm } from '../../components/Admin/CreateDayForm'
 
 const { Title } = Typography
@@ -14,38 +14,41 @@ interface ProgramFormData {
 }
 
 export const CreateNutritionTrainer = () => {
-	const { category } = useParams()
+	const { categoryId } = useParams()
 	const navigate = useNavigate()
 	const [form] = Form.useForm()
 	const [isDayFormVisible, setIsDayFormVisible] = useState(false)
-	const [days, setDays] = useState<ProgramDay[]>([])
+	const [days, setDays] = useState<NutritionDay[]>([])
 
 	const handleSubmit = async (values: ProgramFormData) => {
 		try {
-			// 1. Сначала создаем программу
-			const programData: NutritionProgram = {
-				id: '', // сервер сгенерирует
-				category_id: category || '',
+			// 1. Сначала создаем подкатегорию
+			const nutritionSubcategoryData: Omit<
+				NutritionSubcategory,
+				'id' | 'createdAt' | 'updatedAt'
+			> = {
+				categoryId: categoryId || '',
 				name: values.name,
 				description: values.description,
-				days_count: days.length,
+				days: [], // пока пустой массив
 			}
 
-			console.log('Создание программы:', programData)
-			// const program = await nutritionApi.createProgram(programData)
+			console.log('Создание подкатегории:', nutritionSubcategoryData)
+			const mockSubcategoryId = 'subcat_' + Date.now()
 
-			// 2. Потом создаем дни для этой программы
-			// for (const day of days) {
-			//   await nutritionApi.createDay({
-			//     ...day,
-			//     program_id: program.id // используем ID созданной программы
-			//   })
-			// }
+			// 2. Создаем дни
+			const daysWithSubcatId = days.map((day) => ({
+				...day,
+				subcatId: mockSubcategoryId,
+				id: 'day_' + Date.now() + '_' + Math.random(),
+			}))
 
-			message.success('Программа успешно создана')
+			console.log('Дни для создания:', daysWithSubcatId)
+
+			message.success('Подкатегория успешно создана')
 			navigate(`/admin/nutrition`)
 		} catch (error) {
-			message.error('Ошибка при создании программы')
+			message.error('Ошибка при создании подкатегории')
 			console.log(error)
 		}
 	}
@@ -62,17 +65,25 @@ export const CreateNutritionTrainer = () => {
 		setIsDayFormVisible(false)
 	}
 
-	const handleDayFormSubmit = (dayData: ProgramDay) => {
-		// Корректируем данные дня под нужную структуру
-		const correctedDay: ProgramDay = {
+	const handleDayFormSubmit = (
+		dayData: Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'>,
+	) => {
+		// Создаем день с временными ID
+		const correctedDay: NutritionDay = {
 			...dayData,
-			program_id: '', // будет установлен при создании программы
-			day_order: days.length + 1,
-			meals: dayData.meals.map((meal) => ({
+			id: 'day_temp_' + Date.now() + '_' + Math.random(),
+			subcatId: '',
+			dayOrder: days.length + 1,
+			meals: dayData.meals.map((meal, index) => ({
 				...meal,
-				day_id: dayData.id,
+				id: 'meal_temp_' + Date.now() + '_' + index,
+				dayId: 'day_temp_' + Date.now() + '_' + Math.random(),
 				items: meal.items.filter((item) => item.trim() !== ''),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})),
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
 		}
 
 		setDays((prev) => [...prev, correctedDay])
@@ -83,9 +94,10 @@ export const CreateNutritionTrainer = () => {
 	const handleRemoveDay = (dayId: string) => {
 		setDays((prev) => {
 			const filtered = prev.filter((day) => day.id !== dayId)
+			// Обновляем порядок дней
 			return filtered.map((day, index) => ({
 				...day,
-				day_order: index + 1,
+				dayOrder: index + 1,
 			}))
 		})
 	}
@@ -95,16 +107,17 @@ export const CreateNutritionTrainer = () => {
 			<div className='page-card max-w-4xl'>
 				<div className='section-header'>
 					<Title level={2} className='section-title'>
-						➕ Создание новой программы
+						➕ Создание новой подкатегории
 					</Title>
+					<p className='text-gray-600 mt-2'>Категория: {categoryId}</p>
 				</div>
 
 				<Form form={form} layout='vertical' onFinish={handleSubmit} className='mt-6'>
 					<Form.Item
 						name='name'
-						label='Название программы'
+						label='Название подкатегории'
 						rules={[
-							{ required: true, message: 'Введите название программы' },
+							{ required: true, message: 'Введите название подкатегории' },
 							{ min: 2, message: 'Название должно быть не менее 2 символов' },
 						]}
 					>
@@ -114,15 +127,15 @@ export const CreateNutritionTrainer = () => {
 						/>
 					</Form.Item>
 
-					<Form.Item name='description' label='Описание программы'>
-						<TextArea placeholder='Опишите программу питания...' rows={3} />
+					<Form.Item name='description' label='Описание подкатегории'>
+						<TextArea placeholder='Опишите подкатегорию питания...' rows={3} />
 					</Form.Item>
 
 					{/* Секция дней */}
 					<div className='mb-6'>
 						<div className='flex justify-between items-center mb-4'>
 							<Title level={4} className='m-0'>
-								Дни программы ({days.length})
+								Дни подкатегории ({days.length})
 							</Title>
 							<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
 								Добавить день
@@ -138,14 +151,20 @@ export const CreateNutritionTrainer = () => {
 									>
 										<div className='flex justify-between items-start'>
 											<div>
-												<div className='font-medium text-lg'>{day.day_title}</div>
+												<div className='font-medium text-lg'>{day.dayTitle}</div>
 												<div className='text-sm text-gray-600 mt-1'>
-													Приемов пищи: {day.meals.length} • Порядок: {day.day_order}
+													Приемов пищи: {day.meals.length} • Порядок: {day.dayOrder}
 												</div>
 												<div className='text-xs text-gray-500 mt-2'>
 													{day.meals.map((meal) => (
-														<div key={meal.id}>
-															{meal.name}: {meal.items.length} блюд
+														<div key={meal.id} className='mb-1'>
+															<span className='font-medium'>{meal.name}</span> (
+															{meal.type.toLowerCase()}):
+															{meal.items.map((item, idx) => (
+																<span key={idx} className='ml-2'>
+																	{item}
+																</span>
+															))}
 														</div>
 													))}
 												</div>
@@ -178,7 +197,7 @@ export const CreateNutritionTrainer = () => {
 								size='large'
 								disabled={days.length === 0}
 							>
-								Создать программу ({days.length} дней)
+								Создать подкатегорию ({days.length} дней)
 							</Button>
 						</div>
 					</Form.Item>
@@ -191,10 +210,11 @@ export const CreateNutritionTrainer = () => {
 					footer={null}
 					width={800}
 				>
+					{/* Исправленный пропс: programDays -> existingDays */}
 					<CreateDayForm
 						onSubmit={handleDayFormSubmit}
 						onCancel={handleDayFormCancel}
-						programDays={days}
+						existingDays={days}
 					/>
 				</Modal>
 			</div>

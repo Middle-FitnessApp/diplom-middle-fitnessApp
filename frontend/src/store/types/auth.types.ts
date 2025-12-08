@@ -57,6 +57,17 @@ export interface AuthResponse {
 	token: Token
 }
 
+// Информация о тренере для клиента
+export interface TrainerInfo {
+	id: string
+	name: string
+	photo: string | null
+	bio?: string
+	telegram?: string
+	whatsapp?: string
+	instagram?: string
+}
+
 export interface AuthUser {
 	id: string
 	name: string
@@ -73,6 +84,8 @@ export interface AuthUser {
 	telegram?: string
 	whatsapp?: string
 	instagram?: string
+	// Тренер клиента (только для CLIENT)
+	trainer?: TrainerInfo | null
 }
 
 export interface AuthState {

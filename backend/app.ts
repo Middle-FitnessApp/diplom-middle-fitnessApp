@@ -7,7 +7,7 @@ import path from 'path'
 import { errorHandler } from './middleware/globalErrorHandler.js'
 
 import authRoutes from './routes/auth.routes.js'
-import userRoutes from './routes/user.routers.js'
+import userRoutes from './routes/user.routes.js'
 import trainerRoutes from './routes/trainer.routes.js'
 import nutritionRoutes from './routes/nutrition.routes.js'
 import progressRoutes from './routes/progress.routes.js'

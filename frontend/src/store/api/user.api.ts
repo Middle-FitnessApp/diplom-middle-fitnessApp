@@ -10,8 +10,44 @@ import type {
 	UpdateProfileResponse,
 	UpdateTrainerProfileRequest,
 } from '../types/user.types'
-import type { AuthUser } from '../types/auth.types'
+import type { AuthUser, TrainerInfo } from '../types/auth.types'
 import { API_ENDPOINTS } from '../../config/api.config'
+
+// Тип для тренера в списке (с опциональным статусом приглашения)
+export interface TrainerListItem {
+	id: string
+	name: string
+	photo: string | null
+	bio: string | null
+	telegram: string | null
+	whatsapp: string | null
+	instagram: string | null
+	// Статус приглашения (только для авторизованного клиента)
+	inviteStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | null
+}
+
+// Тренер с информацией о статусе приглашения (для авторизованного клиента)
+export interface TrainerWithStatus extends TrainerListItem {
+	inviteStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED' | null
+	isMyTrainer: boolean
+}
+
+// Ответ на приглашение тренера
+export interface InviteTrainerResponse {
+	message: string
+	invite: {
+		id: string
+		trainerId: string
+		status: string
+		createdAt: string
+	}
+}
+
+// Ответ на отмену сотрудничества
+export interface CancelTrainerResponse {
+	message: string
+	deletedNutritionPlans: number
+}
 
 const rawBaseQuery = fetchBaseQuery({
 	baseUrl: API_ENDPOINTS.user,
@@ -66,11 +102,42 @@ export const baseQueryWithReauth: BaseQueryFn<
 export const userApi = createApi({
 	reducerPath: 'userApi',
 	baseQuery: baseQueryWithReauth,
-	tagTypes: ['User'],
+	tagTypes: ['User', 'Trainers'],
 	endpoints: (builder) => ({
 		getMe: builder.query<{ user: AuthUser }, void>({
 			query: () => '/me',
 			providesTags: ['User'],
+		}),
+
+		// Получить список всех тренеров
+		getAllTrainers: builder.query<{ trainers: TrainerListItem[] }, void>({
+			query: () => '/../trainer/all',
+			providesTags: ['Trainers'],
+		}),
+
+		// Получить тренера по ID (с информацией о статусе для клиента)
+		getTrainerById: builder.query<{ trainer: TrainerWithStatus }, string>({
+			query: (trainerId) => `/../trainer/${trainerId}`,
+			providesTags: ['User'],
+		}),
+
+		// Отправить приглашение тренеру (привязать тренера)
+		inviteTrainer: builder.mutation<InviteTrainerResponse, { trainerId: string }>({
+			query: ({ trainerId }) => ({
+				url: '/client/invite-trainer',
+				method: 'POST',
+				body: { trainerId },
+			}),
+			invalidatesTags: ['User', 'Trainers'],
+		}),
+
+		// Отвязать тренера
+		cancelTrainer: builder.mutation<CancelTrainerResponse, void>({
+			query: () => ({
+				url: '/client/trainer',
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['User'],
 		}),
 
 		updateClientProfile: builder.mutation<
@@ -119,6 +186,10 @@ export const userApi = createApi({
 
 export const {
 	useGetMeQuery,
+	useGetAllTrainersQuery,
+	useGetTrainerByIdQuery,
+	useInviteTrainerMutation,
+	useCancelTrainerMutation,
 	useUpdateClientProfileMutation,
 	useUpdateTrainerProfileMutation,
 	useUpdateClientProfileWithPhotoMutation,

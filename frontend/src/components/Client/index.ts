@@ -1,2 +1,4 @@
 export * from './AvatarUploader'
 export * from './LoadingState'
+export * from './TrainerCard'
+export * from './TrainersList'

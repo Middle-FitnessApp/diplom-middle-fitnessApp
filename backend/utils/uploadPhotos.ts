@@ -23,17 +23,30 @@ console.log(`📦 Storage mode: ${isLocalStorage ? 'LOCAL (uploads/photos)' : 'S
 
 /**
  * Обрабатывает multipart/form-data запрос и загружает фото
- * В development режиме сохраняет в папку uploads/photos
- * В production режиме загружает в Supabase Storage
+ * В development режиме сохраняет в папку uploads/photos/[subfolder]
+ * В production режиме загружает в Supabase Storage в bucket/[subfolder]
+ *
  * @param req - Fastify request объект
  * @param allowedFileFields - массив допустимых имён полей для файлов
  * @param maxFileSize - максимальный размер файла в байтах (по умолчанию 500KB)
+ * @param subfolder - подпапка для сохранения файлов (например, 'progress', 'users'). Если не указана, сохраняет в корень
  * @returns объект с текстовыми полями и URL загруженных файлов
+ *
+ * @example
+ * // Сохранение в корень (по умолчанию)
+ * const result = await uploadPhotos(req)
+ * // Файлы: /uploads/photos/filename.jpg
+ *
+ * @example
+ * // Сохранение в подпапку 'progress'
+ * const result = await uploadPhotos(req, ['photoFront', 'photoSide', 'photoBack'], MAX_PHOTO_SIZE, 'progress')
+ * // Файлы: /uploads/photos/progress/filename.jpg
  */
 export async function uploadPhotos(
 	req: FastifyRequest,
 	allowedFileFields: string[] = ['photoFront', 'photoSide', 'photoBack'],
 	maxFileSize: number = MAX_PHOTO_SIZE,
+	subfolder?: string,
 ): Promise<UploadResult> {
 	if (!req.isMultipart()) {
 		throw ApiError.badRequest('Ожидается multipart/form-data')
@@ -79,8 +92,10 @@ export async function uploadPhotos(
 
 				if (isLocalStorage) {
 					// Локальное хранение (development)
-					const uploadsDir = path.join(process.cwd(), 'uploads', 'photos')
-					
+					const uploadsDir = subfolder
+						? path.join(process.cwd(), 'uploads', 'photos', subfolder)
+						: path.join(process.cwd(), 'uploads', 'photos')
+
 					// Создаём директорию если не существует
 					if (!fs.existsSync(uploadsDir)) {
 						fs.mkdirSync(uploadsDir, { recursive: true })
@@ -90,11 +105,14 @@ export async function uploadPhotos(
 					fs.writeFileSync(filePath, buffer)
 
 					// Возвращаем относительный URL для доступа через static
-					files[part.fieldname] = `/uploads/photos/${filename}`
+					const urlPath = subfolder
+						? `/uploads/photos/${subfolder}/${filename}`
+						: `/uploads/photos/${filename}`
+					files[part.fieldname] = urlPath
 					uploadedPaths.push(filePath)
 				} else {
 					// Supabase Storage (production)
-					const filePath = `${filename}`
+					const filePath = subfolder ? `${subfolder}/${filename}` : `${filename}`
 
 					const { data, error } = await supabase!.storage
 						.from(PHOTOS_BUCKET)
@@ -149,13 +167,14 @@ export async function uploadPhotos(
 
 /**
  * Удаляет фото по URL (локально или из Supabase)
+ * Поддерживает подпапки (например, /uploads/photos/progress/file.jpg)
  * @param photoUrl - URL фото
  */
 export async function deletePhoto(photoUrl: string): Promise<void> {
 	try {
 		if (isLocalStorage) {
 			// Локальное удаление
-			// URL format: /uploads/photos/filename.jpg
+			// URL format: /uploads/photos/[subfolder]/filename.jpg или /uploads/photos/filename.jpg
 			if (photoUrl.startsWith('/uploads/')) {
 				const filePath = path.join(process.cwd(), photoUrl)
 				if (fs.existsSync(filePath)) {

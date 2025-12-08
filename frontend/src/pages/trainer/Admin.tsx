@@ -1,34 +1,69 @@
-// src/pages/Admin/Admin.tsx
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../../store'
-import { Layout, Button, Typography, Spin } from 'antd'
-import { MenuOutlined } from '@ant-design/icons'
-import { ClientList, TrainerInfo, TrainerSidebar } from '../../components/Admin'
+import { Layout, Button, Typography, Spin, message, Tabs, Row, Col } from 'antd'
+import { MenuOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+	ClientsGrid,
+	TrainerInfo,
+	TrainerSidebar,
+	InvitesList,
+	StatsOverview,
+	QuickActions,
+	RecentActivity,
+	AllClientsGrid,
+} from '../../components/Admin'
 import {
 	useGetClientsQuery,
+	useGetInvitesQuery,
+	useAcceptInviteMutation,
+	useRejectInviteMutation,
 	useToggleClientStarMutation,
+	useGetTrainerStatsQuery,
 } from '../../store/api/trainer.api'
 import { useGetMeQuery } from '../../store/api/user.api'
 import { toggleSidebar } from '../../store/slices/ui.slice'
 
-const { Title } = Typography
+const { Title, Text } = Typography
 const { Content, Sider } = Layout
 
 export const Admin: React.FC = () => {
 	const dispatch = useDispatch<AppDispatch>()
+	const [acceptingId, setAcceptingId] = useState<string | null>(null)
+	const [rejectingId, setRejectingId] = useState<string | null>(null)
+	const [activeTab, setActiveTab] = useState('overview')
 
 	// текущий пользователь (для проверки загрузки)
 	const { data: meData, isLoading: isLoadingMe } = useGetMeQuery()
 	const trainerId = meData?.user.id
 
-	// клиенты тренера с сервера (все CLIENT с флагом isFavorite)
+	// клиенты тренера с сервера (только ACCEPTED)
 	const {
 		data: clients = [],
 		isLoading: isLoadingClients,
-		isError,
+		isError: isClientsError,
+		refetch: refetchClients,
 	} = useGetClientsQuery()
+
+	// приглашения (PENDING)
+	const {
+		data: invitesData,
+		isLoading: isLoadingInvites,
+		refetch: refetchInvites,
+	} = useGetInvitesQuery({ status: 'PENDING' })
+
+	// статистика тренера
+	const {
+		data: stats,
+		refetch: refetchStats,
+	} = useGetTrainerStatsQuery()
+
+	const invites = invitesData?.invites || []
+
+	// Мутации
 	const [toggleStarMutation] = useToggleClientStarMutation()
+	const [acceptInvite] = useAcceptInviteMutation()
+	const [rejectInvite] = useRejectInviteMutation()
 
 	const sidebarCollapsed = useSelector(
 		(state: RootState) => state.ui.isSidebarOpen === false,
@@ -41,23 +76,62 @@ export const Admin: React.FC = () => {
 			await toggleStarMutation({ clientId }).unwrap()
 		} catch (error) {
 			console.error('Ошибка переключения isFavorite:', error)
+			message.error('Не удалось изменить статус избранного')
 		}
 	}
 
-	// разделяем на "в работе" и "новые" по серверному isFavorite
-	const { workingClients, newClients, sidebarClients } = useMemo(() => {
+	// Принять приглашение
+	const handleAcceptInvite = async (inviteId: string) => {
+		setAcceptingId(inviteId)
+		try {
+			const result = await acceptInvite({ inviteId }).unwrap()
+			message.success(result.message)
+			refetchStats()
+		} catch (error: any) {
+			const errorMessage = error?.data?.message || error?.data?.error?.message || 'Не удалось принять клиента'
+			message.error(errorMessage)
+		} finally {
+			setAcceptingId(null)
+		}
+	}
+
+	// Отклонить приглашение
+	const handleRejectInvite = async (inviteId: string) => {
+		setRejectingId(inviteId)
+		try {
+			const result = await rejectInvite({ inviteId }).unwrap()
+			message.success(result.message)
+			refetchStats()
+		} catch (error: any) {
+			const errorMessage = error?.data?.message || error?.data?.error?.message || 'Не удалось отклонить приглашение'
+			message.error(errorMessage)
+		} finally {
+			setRejectingId(null)
+		}
+	}
+
+	// Обновить все данные
+	const handleRefresh = () => {
+		refetchClients()
+		refetchInvites()
+		refetchStats()
+		message.success('Данные обновлены')
+	}
+
+	// Разделяем: клиенты в работе (accepted) и избранные (подмножество)
+	const { workingClients, favoriteClients, sidebarClients } = useMemo(() => {
 		const withStarFlag = clients.map((client) => ({
 			...client,
-			isFavorite: Boolean(client.isFavorite), // гарантируем boolean
+			isFavorite: Boolean(client.isFavorite),
 		}))
 
-		const working = withStarFlag.filter((c) => c.isFavorite)
-		const fresh = withStarFlag.filter((c) => !c.isFavorite)
+		const favorites = withStarFlag.filter((c) => c.isFavorite)
+		const working = withStarFlag // все ACCEPTED
 
 		return {
 			workingClients: working,
-			newClients: fresh,
-			sidebarClients: withStarFlag,
+			favoriteClients: favorites,
+			sidebarClients: working,
 		}
 	}, [clients])
 
@@ -71,7 +145,7 @@ export const Admin: React.FC = () => {
 	}
 
 	// ошибка API
-	if (isError) {
+	if (isClientsError) {
 		return (
 			<div className='p-6 text-red-500 text-center'>
 				Не удалось загрузить клиентов тренера
@@ -85,6 +159,133 @@ export const Admin: React.FC = () => {
 			<div className='p-6 text-red-500 text-center'>Не удалось определить тренера</div>
 		)
 	}
+
+	const tabItems = [
+		{
+			key: 'overview',
+			label: '📊 Обзор',
+			children: (
+				<div>
+					{/* Статистика */}
+					<StatsOverview
+						totalClients={stats?.acceptedClients || workingClients.length}
+						favoriteClients={stats?.favoriteClients || favoriteClients.length}
+						pendingInvites={stats?.pendingInvites || invites.length}
+						activeNutritionPlans={stats?.nutritionPlans || 0}
+					/>
+
+					{/* Быстрые действия */}
+					<QuickActions />
+
+					<Row gutter={[24, 24]}>
+						{/* Заявки */}
+						<Col xs={24} lg={16}>
+							<InvitesList
+								invites={invites}
+								loading={isLoadingInvites}
+								onAccept={handleAcceptInvite}
+								onReject={handleRejectInvite}
+								acceptingId={acceptingId}
+								rejectingId={rejectingId}
+							/>
+						</Col>
+
+						{/* Недавняя активность */}
+						<Col xs={24} lg={8}>
+							<RecentActivity
+								invites={invites}
+								acceptedClients={workingClients.slice(0, 5)}
+							/>
+						</Col>
+					</Row>
+
+					{/* Избранные клиенты */}
+					{favoriteClients.length > 0 && (
+						<div className="mt-8">
+							<ClientsGrid
+								title="⭐ Избранные клиенты"
+								clients={favoriteClients}
+								onToggleStar={handleToggleStar}
+								emptyText="Нет избранных клиентов"
+							/>
+						</div>
+					)}
+				</div>
+			),
+		},
+		{
+			key: 'my-clients',
+			label: `🤝 Мои клиенты (${workingClients.length})`,
+			children: (
+				<ClientsGrid
+					title="🤝 Клиенты в работе"
+					clients={workingClients}
+					onToggleStar={handleToggleStar}
+					showSearch
+					emptyText="Нет клиентов в работе. Примите заявки от клиентов, чтобы начать работу."
+				/>
+			),
+		},
+		{
+			key: 'all-clients',
+			label: '👥 Все клиенты',
+			children: (
+				<div id="clients-section">
+					<AllClientsGrid />
+				</div>
+			),
+		},
+		{
+			key: 'favorites',
+			label: `⭐ Избранные (${favoriteClients.length})`,
+			children: (
+				<ClientsGrid
+					title="⭐ Избранные клиенты"
+					clients={favoriteClients}
+					onToggleStar={handleToggleStar}
+					emptyText="Нет избранных клиентов. Отметьте звёздочкой клиентов, с которыми работаете чаще всего."
+				/>
+			),
+		},
+		{
+			key: 'invites',
+			label: (
+				<span>
+					📨 Заявки{' '}
+					{invites.length > 0 && (
+						<span
+							className="ml-1 px-2 py-0.5 rounded-full text-xs"
+							style={{
+								background: 'var(--primary)',
+								color: '#fff',
+							}}
+						>
+							{invites.length}
+						</span>
+					)}
+				</span>
+			),
+			children: (
+				<InvitesList
+					invites={invites}
+					loading={isLoadingInvites}
+					onAccept={handleAcceptInvite}
+					onReject={handleRejectInvite}
+					acceptingId={acceptingId}
+					rejectingId={rejectingId}
+				/>
+			),
+		},
+		{
+			key: 'profile',
+			label: '👤 Мой профиль',
+			children: (
+				<div id="trainer-info">
+					<TrainerInfo />
+				</div>
+			),
+		},
+	]
 
 	return (
 		<div className='gradient-bg'>
@@ -108,35 +309,42 @@ export const Admin: React.FC = () => {
 
 					{!sidebarCollapsed && (
 						<div className='p-4'>
-							<TrainerSidebar clients={sidebarClients} onToggleStar={handleToggleStar} />
+							<TrainerSidebar
+								clients={sidebarClients}
+							/>
 						</div>
 					)}
 				</Sider>
 
-				<Content className='admin-content p-6' style={{ overflow: 'auto' }}>
-					<div className='admin-page-card h-full'>
-						<div className='section-header'>
-							<Title level={2} className='section-title'>
-								🏢 Панель тренера
-							</Title>
+				<Content className='admin-content p-6'>
+					<div className='admin-page-card'>
+						{/* Header */}
+						<div className='flex items-center justify-between mb-6'>
+							<div className='section-header !mb-0 !text-left'>
+								<Title level={2} className='section-title !mb-0'>
+									🏢 Панель тренера
+								</Title>
+								<Text type='secondary' className='block mt-1'>
+									Управляйте клиентами и планами питания
+								</Text>
+							</div>
+							<Button
+								icon={<ReloadOutlined />}
+								onClick={handleRefresh}
+								style={{ borderRadius: '8px' }}
+							>
+								Обновить
+							</Button>
 						</div>
 
-						<TrainerInfo />
-
-						<div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8'>
-							<ClientList
-								title='⭐ Клиенты в работе'
-								clients={workingClients}
-								starIcon='filled'
-								onToggleStar={handleToggleStar}
-							/>
-							<ClientList
-								title='👥 Новые клиенты'
-								clients={newClients}
-								starIcon='outlined'
-								onToggleStar={handleToggleStar}
-							/>
-						</div>
+						{/* Tabs */}
+						<Tabs
+							activeKey={activeTab}
+							onChange={setActiveTab}
+							items={tabItems}
+							size="large"
+							style={{ marginTop: '16px' }}
+						/>
 					</div>
 				</Content>
 			</Layout>

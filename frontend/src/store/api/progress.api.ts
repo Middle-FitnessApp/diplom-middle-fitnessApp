@@ -54,8 +54,8 @@ export const progressApi = createApi({
 		getProgressChartData: builder.query<ProgressChartData[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { progress: ProgressReport[] }) => {
-				return response.progress.map((item) => ({
+			transformResponse: (response: { data: ProgressReport[]; meta: any }) => {
+				return response.data.map((item) => ({
 					date: item.date.split('T')[0],
 					weight: item.weight,
 					waist: item.waist,
@@ -71,7 +71,7 @@ export const progressApi = createApi({
 		getProgressReports: builder.query<ProgressReport[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { progress: ProgressReport[] }) => response.progress,
+			transformResponse: (response: { data: ProgressReport[]; meta: any }) => response.data,
 		}),
 
 		// Получение конкретного отчета по ID

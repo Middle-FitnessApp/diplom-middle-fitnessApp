@@ -45,20 +45,39 @@ export const Login = () => {
 				}),
 			)
 
-			if (result.user.role === 'TRAINER' || result.user.role === 'TRAINER') {
+			if (result.user.role === 'TRAINER') {
 				navigate('/admin')
 			} else {
 				navigate('/me')
 			}
 		} catch (err: any) {
 			console.error('Login error:', err)
+			
+			// Определяем статус ошибки
+			const status = err?.status || (err as ApiError)?.status
+			
+			// Получаем сообщение об ошибке из разных возможных мест
 			const errorMessage =
-				err?.data?.message || err?.data?.error || err?.error || 'Ошибка входа'
+				err?.data?.message || 
+				err?.data?.error?.message || 
+				err?.data?.error || 
+				err?.error?.message ||
+				err?.message ||
+				'Ошибка входа'
 
-			if (err && (err as ApiError)?.status === 400) {
+			// Обрабатываем разные типы ошибок
+			if (status === 400) {
 				setShowBadRequestNotification(true)
+			} else if (status === 401 || status === 404) {
+				// Неверные учетные данные или пользователь не найден
+				setFormError('Неверный email/телефон или пароль. Проверьте введённые данные.')
+			} else if (status === 500) {
+				setFormError('Ошибка сервера. Пожалуйста, попробуйте позже.')
+			} else if (err?.name === 'TypeError' || err?.message?.includes('fetch')) {
+				// Сетевая ошибка
+				setFormError('Не удалось подключиться к серверу. Проверьте интернет-соединение.')
 			} else {
-				setFormError(errorMessage)
+				setFormError(typeof errorMessage === 'string' ? errorMessage : 'Произошла ошибка при входе')
 			}
 		}
 	}

@@ -37,3 +37,4 @@ dist-ssr
 # файлы мультимедиа
 uploads/photos
 media/
+seed-production.ts

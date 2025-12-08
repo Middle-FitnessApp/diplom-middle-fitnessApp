@@ -1,5 +1,9 @@
 import { editClientProfile, editTrainerProfile, getUser } from '../controllers/user.js'
-import { inviteTrainer } from '../controllers/client.js'
+import {
+	inviteTrainer,
+	cancelTrainerCooperation,
+	cancelInvite,
+} from '../controllers/client.js'
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 
@@ -10,6 +14,7 @@ import {
 	TrainerUpdateProfileSchema,
 } from '../validation/zod/user/update-profile.dto.js'
 import { InviteTrainerSchema } from '../validation/zod/client/invite-trainer.dto.js'
+import { CancelInviteParamsSchema } from '../validation/zod/client/cancel-invite.dto.js'
 import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
 
 export default async function userRoutes(app: FastifyInstance) {
@@ -41,7 +46,7 @@ export default async function userRoutes(app: FastifyInstance) {
 			if (req.isMultipart()) {
 				// Обрабатываем загрузку файлов (только основное фото профиля, макс. 500KB)
 				const { uploadPhotos } = await import('../utils/uploadPhotos.js')
-				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024)
+				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024, 'users')
 				body = uploadResult.body
 				filesMap = uploadResult.files
 
@@ -78,7 +83,7 @@ export default async function userRoutes(app: FastifyInstance) {
 			if (req.isMultipart()) {
 				// Обрабатываем загрузку файлов (только основное фото профиля, макс. 500KB)
 				const { uploadPhotos } = await import('../utils/uploadPhotos.js')
-				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024)
+				const uploadResult = await uploadPhotos(req, ['photo'], 500 * 1024, 'users')
 				body = uploadResult.body
 				filesMap = uploadResult.files
 
@@ -117,6 +122,30 @@ export default async function userRoutes(app: FastifyInstance) {
 				message: 'Приглашение отправлено тренеру',
 				invite,
 			})
+		},
+	)
+
+	// Отмена сотрудничества с тренером (только для клиентов)
+	app.delete(
+		'/client/trainer',
+		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		async (req, reply) => {
+			const result = await cancelTrainerCooperation(req.user.id)
+
+			return reply.status(200).send(result)
+		},
+	)
+
+	// Отмена приглашения тренеру (только для клиентов)
+	app.delete(
+		'/client/invites/:id',
+		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		async (req, reply) => {
+			const { id } = CancelInviteParamsSchema.parse(req.params)
+
+			const result = await cancelInvite(req.user.id, id)
+
+			return reply.status(200).send(result)
 		},
 	)
 }

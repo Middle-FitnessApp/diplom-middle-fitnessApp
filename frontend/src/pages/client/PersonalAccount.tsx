@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Form, Input, Button, Card, Typography } from 'antd'
-import { EditOutlined, LogoutOutlined, SaveOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Card, Typography, Row, Col, Statistic, Divider } from 'antd'
+import { EditOutlined, LogoutOutlined, SaveOutlined, TrophyOutlined, FireOutlined, CalendarOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { ACCOUNT_FIELDS } from '../../constants/accountFields'
-import { LoadingState, AvatarUploader } from '../../components'
+import { PROGRESS_METRICS } from '../../constants/progressMetrics'
+import { LoadingState, AvatarUploader, ProgressChart } from '../../components'
 import { useAppDispatch, useAuth } from '../../store/hooks'
 import {
 	useGetMeQuery,
@@ -12,7 +13,8 @@ import {
 	useUpdateTrainerProfileMutation,
 	useUpdateTrainerProfileWithPhotoMutation,
 } from '../../store/api/user.api'
-import { logout, setUser, updateUser } from '../../store/slices/auth.slice'
+import { useGetProgressChartDataQuery, useGetLatestProgressQuery } from '../../store/api/progress.api'
+import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
 import type { ApiError } from '../../store/types/auth.types'
 import { ErrorState, UnauthorizedState } from '../../components/errors'
 
@@ -28,6 +30,15 @@ export const PersonalAccount = () => {
 	} = useGetMeQuery(undefined, {
 		skip: !isAuthenticated,
 	})
+
+	// Данные прогресса
+	const { data: progressData = [], isLoading: isLoadingProgress } = useGetProgressChartDataQuery(undefined, {
+		skip: !isAuthenticated || user?.role !== 'CLIENT',
+	})
+	const { data: latestProgress } = useGetLatestProgressQuery(undefined, {
+		skip: !isAuthenticated || user?.role !== 'CLIENT',
+	})
+
 	const initialFormData = useMemo(
 		() => ({
 			name: user?.name || '',
@@ -75,8 +86,8 @@ export const PersonalAccount = () => {
 		}
 	}, [user?.photo])
 
-	const handleLogout = () => {
-		dispatch(logout())
+	const handleLogout = async () => {
+		await dispatch(performLogout())
 		navigate('/login')
 	}
 
@@ -213,104 +224,189 @@ export const PersonalAccount = () => {
 		return null
 	}
 
+	// Статистика прогресса
+	const totalReports = progressData.length
+	const firstWeight = progressData[0]?.weight
+	const lastWeight = progressData[progressData.length - 1]?.weight
+	const weightDiff = firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null
+
 	return (
 		<div className='page-container gradient-bg'>
-			<div className='page-card' style={{ maxWidth: '600px' }}>
-				<Card
-					className='!border !border-gray-200'
-					actions={[
-						<Button
-							type='text'
-							icon={<LogoutOutlined />}
-							onClick={handleLogout}
-							danger
-							key='logout'
-							size='large'
+			<div className='page-card' style={{ maxWidth: '1000px' }}>
+				<div className='section-header'>
+					<Title level={2} className='section-title !mb-2'>
+						👤 Мой профиль
+					</Title>
+				</div>
+
+				<Row gutter={[24, 24]}>
+					{/* Левая колонка - профиль */}
+					<Col xs={24} lg={10}>
+						<Card
+							className='!border !border-gray-200'
+							actions={[
+								<Button
+									type='text'
+									icon={<LogoutOutlined />}
+									onClick={handleLogout}
+									danger
+									key='logout'
+									size='large'
+								>
+									Выйти
+								</Button>,
+							]}
 						>
-							Выйти
-						</Button>,
-					]}
-				>
-					<div className='text-center mb-8'>
-						<AvatarUploader
-							size={120}
-							initialUrl={avatarPreview ?? avatarUrl}
-							onChange={(file) => {
-								if (file) {
-									const localUrl = URL.createObjectURL(file)
-									setAvatarPreview(localUrl)
-									uploadAvatarImmediately(file)
-								}
-							}}
-						/>
+							<div className='text-center mb-6'>
+								<AvatarUploader
+									size={100}
+									initialUrl={avatarPreview ?? avatarUrl}
+									onChange={(file) => {
+										if (file) {
+											const localUrl = URL.createObjectURL(file)
+											setAvatarPreview(localUrl)
+											uploadAvatarImmediately(file)
+										}
+									}}
+								/>
 
-						<Title level={3} className='!mt-4 !mb-1 !text-gray-800'>
-							{user.name}
-						</Title>
-						<Text type='secondary' className='text-lg !mb-1'>
-							{user.email || user.phone}
-						</Text>
-					</div>
+								<Title level={4} className='!mt-4 !mb-1 !text-gray-800'>
+									{user.name}
+								</Title>
+								<Text type='secondary'>
+									{user.email || user.phone}
+								</Text>
+							</div>
 
-					<Form
-						form={form}
-						layout='vertical'
-						onFinish={onFinish}
-						requiredMark={false}
-						size='large'
-					>
-						<Form.Item label='Имя и Фамилия'>
-							<Input
-								disabled={!isEditing}
-								className={`rounded-lg ${disabledInputClass}`}
-								value={formData.name}
-								onChange={(e) => handleInputChange('name', e.target.value)}
-							/>
-						</Form.Item>
+							<Form
+								form={form}
+								layout='vertical'
+								onFinish={onFinish}
+								requiredMark={false}
+								size='middle'
+							>
+								<Form.Item label='Имя и Фамилия'>
+									<Input
+										disabled={!isEditing}
+										className={`rounded-lg ${disabledInputClass}`}
+										value={formData.name}
+										onChange={(e) => handleInputChange('name', e.target.value)}
+									/>
+								</Form.Item>
 
-						<Form.Item label={ACCOUNT_FIELDS.login || 'Email или телефон'}>
-							<Input
-								disabled={!isEditing}
-								className={`rounded-lg ${disabledInputClass}`}
-								value={formData.email || formData.phone}
-								onChange={(e) => {
-									const value = e.target.value
-									if (value.includes('@')) {
-										handleInputChange('email', value)
-										handleInputChange('phone', '')
-									} else {
-										handleInputChange('phone', value)
-										handleInputChange('email', '')
-									}
-								}}
-							/>
-						</Form.Item>
+								<Form.Item label={ACCOUNT_FIELDS.login || 'Email или телефон'}>
+									<Input
+										disabled={!isEditing}
+										className={`rounded-lg ${disabledInputClass}`}
+										value={formData.email || formData.phone}
+										onChange={(e) => {
+											const value = e.target.value
+											if (value.includes('@')) {
+												handleInputChange('email', value)
+												handleInputChange('phone', '')
+											} else {
+												handleInputChange('phone', value)
+												handleInputChange('email', '')
+											}
+										}}
+									/>
+								</Form.Item>
 
-						{formError && (
-							<Text type='danger' className='block mb-4'>
-								{formError}
-							</Text>
+								{formError && (
+									<Text type='danger' className='block mb-4'>
+										{formError}
+									</Text>
+								)}
+
+								<Button
+									type='primary'
+									icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+									className='!h-10 !rounded-lg !text-sm !font-semibold'
+									block
+									onClick={() => {
+										if (isEditing) {
+											form.submit()
+										} else setIsEditing(true)
+									}}
+								>
+									{isUpdating
+										? 'Сохранение...'
+										: isEditing
+										? 'Сохранить'
+										: 'Редактировать'}
+								</Button>
+							</Form>
+						</Card>
+
+						{/* Статистика */}
+						{totalReports > 0 && (
+							<Card className='mt-4' size='small'>
+								<Row gutter={16}>
+									<Col span={8}>
+										<Statistic
+											title='Отчётов'
+											value={totalReports}
+											prefix={<CalendarOutlined />}
+										/>
+									</Col>
+									<Col span={8}>
+										<Statistic
+											title='Текущий вес'
+											value={lastWeight || '-'}
+											suffix='кг'
+											prefix={<FireOutlined />}
+										/>
+									</Col>
+									<Col span={8}>
+										<Statistic
+											title='Изменение'
+											value={weightDiff ? `${Number(weightDiff) > 0 ? '+' : ''}${weightDiff}` : '-'}
+											suffix='кг'
+											prefix={<TrophyOutlined />}
+											valueStyle={{
+												color: weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined
+											}}
+										/>
+									</Col>
+								</Row>
+							</Card>
 						)}
+					</Col>
 
-						<Button
-							type='primary'
-							icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-							className='!h-12 !rounded-lg !text-base !font-semibold'
-							block
-							onClick={() => {
-								if (isEditing) {
-									form.submit()
-								} else setIsEditing(true)
-							}}
+					{/* Правая колонка - график прогресса */}
+					<Col xs={24} lg={14}>
+						<Card
+							title='📊 График прогресса'
+							className='h-full'
+							extra={
+								<Button type='link' onClick={() => navigate('/me/progress')}>
+									Все отчёты →
+								</Button>
+							}
 						>
-							{isUpdating
-								? 'Сохранение...'
-								: isEditing
-								? 'Сохранить изменения'
-								: 'Редактировать профиль'}
-						</Button>
-					</Form>
-				</Card>
+							{isLoadingProgress ? (
+								<div className='flex justify-center py-10'>
+									<LoadingState message='Загрузка данных...' />
+								</div>
+							) : progressData.length > 0 ? (
+								<ProgressChart
+									data={progressData}
+									metrics={PROGRESS_METRICS}
+									compact
+								/>
+							) : (
+								<div className='text-center py-10'>
+									<Text type='secondary' className='block mb-4'>
+										У вас пока нет отчётов о прогрессе
+									</Text>
+									<Button type='primary' onClick={() => navigate('/me/progress/new-report')}>
+										Создать первый отчёт
+									</Button>
+								</div>
+							)}
+						</Card>
+					</Col>
+				</Row>
 			</div>
 		</div>
 	)

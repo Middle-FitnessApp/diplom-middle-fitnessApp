@@ -41,6 +41,8 @@ a:hover {
 	background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
 	background-attachment: fixed;
 	min-height: 100vh;
+	/* Фикс для прокручиваемого контента - фон покрывает весь контент */
+	background-size: cover;
 }
 
 .page-container {
@@ -367,8 +369,8 @@ a:hover {
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
 	border: 1px solid var(--border);
 	width: 100%;
-	height: 100%;
 	box-sizing: border-box;
+	/* Убираем height: 100% - карточка должна расти по контенту */
 }
 
 /* Убираем ограничение максимальной ширины только для админской страницы */
@@ -376,15 +378,32 @@ a:hover {
 	max-width: none;
 }
 
-/* Фиксируем высоту и убираем общую прокрутку */
+/* Фиксируем высоту layout и делаем прокрутку в content */
 .admin-layout {
 	height: 100vh;
 	overflow: hidden;
 }
 
+/* Sidebar занимает всю высоту */
+.admin-layout .ant-layout-sider {
+	height: 100vh;
+	overflow-y: auto;
+}
+
+/* Content прокручивается и имеет фон */
 .admin-content {
-	height: 100%;
-	overflow: auto;
+	height: 100vh;
+	overflow-y: auto;
+	background: transparent !important;
+}
+
+/* Фикс для вкладки "Все клиенты" - фон не должен обрываться */
+.admin-page-card .ant-tabs-content {
+	min-height: auto;
+}
+
+.admin-page-card .ant-tabs-tabpane {
+	padding-bottom: 40px;
 }
 .custom-segmented {
 	background: transparent;
@@ -398,4 +417,140 @@ a:hover {
 .custom-segmented .ant-segmented-item-selected {
 	background-color: #1890ff; /* цвет активного таба */
 	color: white;
+}
+
+/* === КАРТОЧКИ ТРЕНЕРОВ === */
+.trainer-list-card {
+	background: var(--bg-light);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trainer-list-card:hover {
+	transform: translateY(-8px);
+	box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+}
+
+.my-trainer-card {
+	transition: all 0.3s ease;
+}
+
+.my-trainer-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 25px 70px rgba(102, 126, 234, 0.5);
+}
+
+/* Социальные ссылки */
+.social-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.15);
+	color: #fff;
+	transition: all 0.2s ease;
+}
+
+.social-link:hover {
+	transform: scale(1.1);
+	color: #fff;
+}
+
+.social-link.telegram:hover {
+	background: #0088cc;
+}
+
+.social-link.whatsapp:hover {
+	background: #25d366;
+}
+
+.social-link.instagram:hover {
+	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+}
+
+/* Карточка тренера в списке - социальные ссылки */
+.trainer-list-card .social-link {
+	background: var(--primary);
+	color: #fff;
+	width: 28px;
+	height: 28px;
+}
+
+.trainer-list-card .social-link:hover {
+	color: #fff;
+}
+
+/* === ANT DESIGN NOTIFICATION (v5+) === */
+.ant-notification-notice,
+.ant-notification-notice-wrapper .ant-notification-notice {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	border: 1px solid #e5e7eb !important;
+	border-radius: 12px !important;
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ant-notification-notice-message,
+.ant-notification-notice-wrapper .ant-notification-notice-message {
+	color: #1f2937 !important;
+	font-weight: 600 !important;
+}
+
+.ant-notification-notice-description,
+.ant-notification-notice-wrapper .ant-notification-notice-description {
+	color: #6b7280 !important;
+}
+
+.ant-notification-notice-icon,
+.ant-notification-notice-wrapper .ant-notification-notice-icon {
+	color: #f59e0b !important;
+}
+
+.ant-notification-notice-close,
+.ant-notification-notice-wrapper .ant-notification-notice-close {
+	color: #6b7280 !important;
+}
+
+.ant-notification-notice-close:hover,
+.ant-notification-notice-wrapper .ant-notification-notice-close:hover {
+	color: #1f2937 !important;
+}
+
+/* === ANT DESIGN MESSAGE (v5+) === */
+.ant-message .ant-message-notice-content,
+.ant-message-notice-content {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #1f2937 !important;
+	border: 1px solid #e5e7eb !important;
+	border-radius: 8px !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ant-message .ant-message-notice-content .anticon,
+.ant-message-notice-content .anticon {
+	color: inherit !important;
+}
+
+/* Фикс для message wrapper */
+.ant-message-notice-wrapper {
+	background: transparent !important;
+}
+
+/* Цвета для разных типов сообщений */
+.ant-message-success .ant-message-notice-content {
+	border-left: 4px solid #10b981 !important;
+}
+
+.ant-message-error .ant-message-notice-content {
+	border-left: 4px solid #ef4444 !important;
+}
+
+.ant-message-warning .ant-message-notice-content {
+	border-left: 4px solid #f59e0b !important;
+}
+
+.ant-message-info .ant-message-notice-content {
+	border-left: 4px solid #3b82f6 !important;
 }

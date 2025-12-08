@@ -30,9 +30,10 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
+          no-cache: true
 
       - name: Deploy to Timeweb VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -41,25 +42,34 @@ jobs:
           username: root
           key: ${{ secrets.TIMEWEB_SSH_KEY }}
           script: |
-            echo "🔄 Pulling latest Docker image..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
+            echo "🔄 Скачивание последнего Docker образа..."
+            docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
 
-            echo "🛑 Stopping old container..."
+            echo "🛑 Остановка старого контейнера..."
             docker stop fitness-backend || true
             docker rm fitness-backend || true
 
-            echo "🚀 Starting new container..."
+            echo "🚀 Запуск нового контейнера..."
             docker run -d \
               --name fitness-backend \
               --restart unless-stopped \
               -p 3000:3000 \
               --env-file /root/fitness-backend.env \
-              ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
+              ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
 
-            echo "✅ Deployment completed!"
+            echo "🧹 Очистка неиспользуемых Docker ресурсов..."
+            docker system prune -f
 
-            echo "📊 Container status:"
+            echo "🗑️ Удаление старых образов (оставляем последние 3 версии)..."
+            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-backend --format "{{.Tag}}" | grep -E '^[0-9]+$' | sort -rn | tail -n +4 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-backend:{} || true
+
+            echo "✅ Деплой завершён!"
+
+            echo "📊 Статус контейнера:"
             docker ps | grep fitness-backend
 
-            echo "📝 Recent logs:"
-            docker logs --tail 20 fitness-backend
+            echo "📝 Ожидание запуска приложения..."
+            sleep 3
+
+            echo "📝 Последние логи:"
+            docker logs --tail 30 fitness-backend

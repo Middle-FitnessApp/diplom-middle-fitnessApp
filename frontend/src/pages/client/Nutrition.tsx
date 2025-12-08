@@ -1,30 +1,24 @@
-import React, { useMemo, useState } from 'react'
-import { Card, Typography, Spin, Alert, Segmented } from 'antd'
+import React, { useState } from 'react'
+import { Card, Typography, Spin, Alert, Segmented, Tag } from 'antd'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
-import type { ProgramDay } from '../../store/types/nutrition.types'
 
 const { Title, Text } = Typography
 
-type FilterType = 'день' | 'неделю' | 'месяц'
+type FilterType = 'day' | 'week' | 'month'
+
+const filterLabels: Record<FilterType, string> = {
+	day: 'День',
+	week: 'Неделя',
+	month: 'Месяц',
+}
 
 export const Nutrition: React.FC = () => {
-	const [filter, setFilter] = useState<FilterType>('день')
+	const [filter, setFilter] = useState<FilterType>('day')
 
-	const { data: days, isLoading, isError } = useGetClientNutritionPlanQuery()
+	const { data, isLoading, isError } = useGetClientNutritionPlanQuery({ period: filter })
 
-	const filteredDays: ProgramDay[] = useMemo(() => {
-		if (!days || days.length === 0) return []
-
-		switch (filter) {
-			case 'день':
-				return [days[0]]
-			case 'неделю':
-				return days.slice(0, 7)
-			case 'месяц':
-			default:
-				return days
-		}
-	}, [days, filter])
+	const days = data?.days || []
+	const plan = data?.plan
 
 	if (isLoading) {
 		return (
@@ -49,7 +43,7 @@ export const Nutrition: React.FC = () => {
 		)
 	}
 
-	if (!days || days.length === 0) {
+	if (!plan || days.length === 0) {
 		return (
 			<div className='page-container gradient-bg'>
 				<div className='page-card'>
@@ -67,39 +61,68 @@ export const Nutrition: React.FC = () => {
 		)
 	}
 
+	// Форматирование даты
+	const formatDate = (dateStr: string) => {
+		const date = new Date(dateStr)
+		return date.toLocaleDateString('ru-RU', {
+			weekday: 'short',
+			day: 'numeric',
+			month: 'short',
+		})
+	}
+
 	return (
 		<div className='page-container gradient-bg'>
 			<div className='page-card'>
-				<div className='section-header flex items-center justify-between gap-4 flex-wrap'>
-					<Title level={2} className='section-title m-0'>
-						🍽️ План питания
-					</Title>
+				<div className='section-header flex items-center justify-between gap-4 flex-wrap mb-6'>
+					<div>
+						<Title level={2} className='section-title m-0'>
+							🍽️ План питания
+						</Title>
+						{plan.subcategory && (
+							<Text className='text-gray-500'>
+								Программа: {plan.subcategory.name}
+							</Text>
+						)}
+					</div>
 
 					<Segmented<FilterType>
 						className='custom-segmented'
 						options={[
-							{ label: 'День', value: 'день' },
-							{ label: 'Неделя', value: 'неделю' },
-							{ label: 'Месяц', value: 'месяц' },
+							{ label: 'День', value: 'day' },
+							{ label: 'Неделя', value: 'week' },
+							{ label: 'Месяц', value: 'month' },
 						]}
 						value={filter}
-						onChange={(value) => setFilter(value as FilterType)}
+						onChange={(value) => setFilter(value)}
 					/>
 				</div>
 
 				<div className='text-center mb-8'>
 					<Text className='text-xl text-gray-700'>
-						Ваш план питания на: <span className='font-bold text-primary'>{filter}</span>
+						Ваш план питания на: <span className='font-bold text-primary'>{filterLabels[filter].toLowerCase()}</span>
 					</Text>
 				</div>
 
 				<div className='space-y-6'>
-					{filteredDays.map((day) => (
+					{days.map((day) => (
 						<Card
 							key={day.id}
 							className='nutrition-day-card card-hover'
 							title={
-								<div className='text-lg font-semibold text-gray-800'>{day.day_title}</div>
+								<div className='flex items-center justify-between'>
+									<span className='text-lg font-semibold text-gray-800'>
+										{day.dayTitle}
+									</span>
+									<div className='flex items-center gap-2'>
+										<Text className='text-sm text-gray-500'>
+											{formatDate(day.date)}
+										</Text>
+										{day.isToday && (
+											<Tag color='green'>Сегодня</Tag>
+										)}
+									</div>
+								</div>
 							}
 						>
 							<div className='space-y-4'>

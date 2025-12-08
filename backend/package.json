@@ -10,12 +10,14 @@
 		"prisma:migrate": "npx prisma migrate dev --name init",
 		"prisma:migrate:name": "npx prisma migrate dev --name",
 		"prisma:migrate:dev": "npx prisma migrate dev",
+		"prisma:reset": "npx prisma migrate reset --force",
 		"prisma:seed": "tsx ./prisma/seed.ts"
 	},
 	"prisma": {
 		"seed": "tsx ./prisma/seed.ts"
 	},
 	"dependencies": {
+		"@faker-js/faker": "^10.1.0",
 		"@fastify/cookie": "11.0.2",
 		"@fastify/cors": "11.1.0",
 		"@fastify/multipart": "9.3.0",
