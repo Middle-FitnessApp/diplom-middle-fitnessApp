@@ -49,6 +49,11 @@ export interface CancelTrainerResponse {
 	deletedNutritionPlans: number
 }
 
+// Ответ на отмену приглашения
+export interface CancelInviteResponse {
+	message: string
+}
+
 const rawBaseQuery = fetchBaseQuery({
 	baseUrl: API_ENDPOINTS.user,
 	credentials: 'include',
@@ -147,6 +152,24 @@ export const userApi = createApi({
 			invalidatesTags: ['User', 'Trainers'],
 		}),
 
+		// Отменить приглашение тренеру
+		cancelInvite: builder.mutation<CancelInviteResponse, { inviteId: string }>({
+			query: ({ inviteId }) => ({
+				url: `/client/invites/${inviteId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['User', 'Trainers'],
+		}),
+
+		// Отменить приглашение тренеру по ID тренера
+		cancelInviteByTrainer: builder.mutation<CancelInviteResponse, { trainerId: string }>({
+			query: ({ trainerId }) => ({
+				url: `/client/invites/trainer/${trainerId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['User', 'Trainers'],
+		}),
+
 		updateClientProfile: builder.mutation<
 			UpdateProfileResponse,
 			UpdateClientProfileRequest
@@ -197,6 +220,8 @@ export const {
 	useGetTrainerByIdQuery,
 	useInviteTrainerMutation,
 	useCancelTrainerMutation,
+	useCancelInviteMutation,
+	useCancelInviteByTrainerMutation,
 	useUpdateClientProfileMutation,
 	useUpdateTrainerProfileMutation,
 	useUpdateClientProfileWithPhotoMutation,

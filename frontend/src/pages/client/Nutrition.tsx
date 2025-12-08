@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Card, Typography, Spin, Alert, Segmented, Tag } from 'antd'
+import { Typography, Spin, Alert, Segmented } from 'antd'
+import { NutritionDayCard } from '../../components/Common'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
 
 const { Title, Text } = Typography
@@ -61,28 +62,26 @@ export const Nutrition: React.FC = () => {
 		)
 	}
 
-	// Форматирование даты
-	const formatDate = (dateStr: string) => {
-		const date = new Date(dateStr)
-		return date.toLocaleDateString('ru-RU', {
-			weekday: 'short',
-			day: 'numeric',
-			month: 'short',
-		})
-	}
+	// Форматирование даты больше не нужен - теперь в компоненте
+	// const formatDate = (dateStr: string) => {
+	// 	const date = new Date(dateStr)
+	// 	return date.toLocaleDateString('ru-RU', {
+	// 		weekday: 'short',
+	// 		day: 'numeric',
+	// 		month: 'short',
+	// 	})
+	// }
 
 	return (
 		<div className='page-container gradient-bg'>
 			<div className='page-card'>
 				<div className='section-header flex items-center justify-between gap-4 flex-wrap mb-6'>
-					<div>
-						<Title level={2} className='section-title m-0'>
+					<div className='flex flex-col'>
+						<Title level={2} className='section-title m-0 text-left'>
 							🍽️ План питания
 						</Title>
 						{plan.subcategory && (
-							<Text className='text-gray-500'>
-								Программа: {plan.subcategory.name}
-							</Text>
+							<Text className='text-gray-500'>Программа: {plan.subcategory.name}</Text>
 						)}
 					</div>
 
@@ -100,55 +99,22 @@ export const Nutrition: React.FC = () => {
 
 				<div className='text-center mb-8'>
 					<Text className='text-xl text-gray-700'>
-						Ваш план питания на: <span className='font-bold text-primary'>{filterLabels[filter].toLowerCase()}</span>
+						Ваш план питания на:{' '}
+						<span className='font-bold text-primary'>
+							{filterLabels[filter].toLowerCase()}
+						</span>
 					</Text>
 				</div>
 
-				<div className='space-y-6'>
+				<div className='space-y-6 nutrition-days-container'>
 					{days.map((day) => (
-						<Card
+						<NutritionDayCard
 							key={day.id}
-							className='nutrition-day-card card-hover'
-							title={
-								<div className='flex items-center justify-between'>
-									<span className='text-lg font-semibold text-gray-800'>
-										{day.dayTitle}
-									</span>
-									<div className='flex items-center gap-2'>
-										<Text className='text-sm text-gray-500'>
-											{formatDate(day.date)}
-										</Text>
-										{day.isToday && (
-											<Tag color='green'>Сегодня</Tag>
-										)}
-									</div>
-								</div>
-							}
-						>
-							<div className='space-y-4'>
-								{day.meals.map((meal) => (
-									<div key={meal.id} className='border-l-4 border-primary pl-4'>
-										<div className='font-semibold text-gray-800 mb-2 text-lg'>
-											{meal.name}:
-										</div>
-
-										{meal.items && meal.items.length > 0 ? (
-											<ul className='list-disc ml-6 text-gray-700 space-y-2'>
-												{meal.items.map((item, idx) => (
-													<li key={idx} className='text-base'>
-														{item}
-													</li>
-												))}
-											</ul>
-										) : (
-											<div className='text-gray-500 italic text-base'>
-												Информация отсутствует
-											</div>
-										)}
-									</div>
-								))}
-							</div>
-						</Card>
+							day={day}
+							variant='client'
+							date={day.date}
+							isToday={day.isToday}
+						/>
 					))}
 				</div>
 			</div>

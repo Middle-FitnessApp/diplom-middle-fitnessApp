@@ -65,6 +65,7 @@ export interface NutritionPlanInfo {
 	}
 	startDate: string
 	assignedAt: string
+	totalDays: number
 }
 
 // Ответ API для плана питания клиента

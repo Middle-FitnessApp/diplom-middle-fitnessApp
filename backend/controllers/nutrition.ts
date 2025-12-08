@@ -69,6 +69,7 @@ export async function getClientNutritionPlan(req: FastifyRequest, reply: Fastify
 			subcategory: assignment.subcategory,
 			startDate: assignment.startDate.toISOString().split('T')[0],
 			assignedAt: assignment.createdAt.toISOString(),
+			totalDays: days.length,
 		},
 		days: cycleDays,
 	})
@@ -364,10 +365,7 @@ export async function deleteNutritionSubcategory(
 //  Дни подкатегории (для тренера)
 // =============================================
 
-export async function getSubcategoryDays(
-	req: FastifyRequest,
-	reply: FastifyReply,
-) {
+export async function getSubcategoryDays(req: FastifyRequest, reply: FastifyReply) {
 	const { id: subcategoryId } = req.params as { id: string }
 
 	// Проверяем права доступа через категорию

@@ -9,6 +9,7 @@ import {
 	useGetAllTrainersQuery,
 	useInviteTrainerMutation,
 	useCancelTrainerMutation,
+	useCancelInviteByTrainerMutation,
 } from '../../store/api/user.api'
 
 const { Title, Paragraph } = Typography
@@ -35,6 +36,7 @@ export const Main: React.FC = () => {
 	// Мутации
 	const [inviteTrainer] = useInviteTrainerMutation()
 	const [cancelTrainer, { isLoading: isCanceling }] = useCancelTrainerMutation()
+	const [cancelInviteByTrainer] = useCancelInviteByTrainerMutation()
 
 	const user = meData?.user
 	// Авторизован = есть токен И загружены данные пользователя
@@ -43,7 +45,7 @@ export const Main: React.FC = () => {
 	const isStillLoading = !!token && isLoadingMe
 	const isClient = user?.role === 'CLIENT'
 	const hasTrainer = isClient && !!user?.trainer
-	const trainers = trainersData?.trainers || []
+	const trainers = useMemo(() => trainersData?.trainers || [], [trainersData?.trainers])
 
 	// Собираем статусы приглашений из данных тренеров (приходят с бэкенда)
 	const inviteStatuses = useMemo(() => {
@@ -88,13 +90,24 @@ export const Main: React.FC = () => {
 			await inviteTrainer({ trainerId }).unwrap()
 			message.success('Заявка отправлена тренеру!')
 			// Данные обновятся автоматически через invalidatesTags
-		} catch (error: any) {
-			const errorMessage = error?.data?.message || error?.data?.error?.message || 'Не удалось отправить заявку'
-			
+		} catch (error: unknown) {
+			const apiError = error as {
+				data?: { message?: string; error?: { message?: string } }
+			}
+			const errorMessage =
+				apiError?.data?.message ||
+				apiError?.data?.error?.message ||
+				'Не удалось отправить заявку'
+
 			// Обрабатываем специфичные ошибки от бэкенда
 			if (errorMessage.includes('уже отклонил')) {
-				message.warning('Этот тренер ранее отклонил вашу заявку. Попробуйте выбрать другого тренера.')
-			} else if (errorMessage.includes('уже есть') || errorMessage.includes('активный тренер')) {
+				message.warning(
+					'Этот тренер ранее отклонил вашу заявку. Попробуйте выбрать другого тренера.',
+				)
+			} else if (
+				errorMessage.includes('уже есть') ||
+				errorMessage.includes('активный тренер')
+			) {
 				message.info('У вас уже есть тренер. Страница будет обновлена.')
 				window.location.reload()
 			} else if (errorMessage.includes('уже отправлено')) {
@@ -108,15 +121,15 @@ export const Main: React.FC = () => {
 	}
 
 	// Обработчик отмены заявки
-	// Примечание: бэкенд пока не поддерживает отмену PENDING приглашений
-	const handleCancelInvite = (_trainerId: string) => {
-		Modal.confirm({
-			title: 'Отменить заявку?',
-			icon: <ExclamationCircleOutlined />,
-			content: 'Функция отмены заявки пока недоступна. Дождитесь ответа тренера или выберите другого.',
-			okText: 'Понятно',
-			cancelButtonProps: { style: { display: 'none' } },
-		})
+	const handleCancelInvite = async (trainerId: string) => {
+		try {
+			await cancelInviteByTrainer({ trainerId }).unwrap()
+			message.success('Заявка успешно отменена')
+		} catch (error: unknown) {
+			const apiError = error as { data?: { message?: string } }
+			const errorMessage = apiError?.data?.message || 'Не удалось отменить заявку'
+			message.error(errorMessage)
+		}
 	}
 
 	// Обработчик отвязки тренера
@@ -133,9 +146,9 @@ export const Main: React.FC = () => {
 				try {
 					const result = await cancelTrainer().unwrap()
 					message.success(result.message)
-				} catch (error: any) {
-					const errorMessage =
-						error?.data?.message || 'Не удалось отвязать тренера'
+				} catch (error: unknown) {
+					const apiError = error as { data?: { message?: string } }
+					const errorMessage = apiError?.data?.message || 'Не удалось отвязать тренера'
 					message.error(errorMessage)
 				}
 			},
@@ -155,9 +168,9 @@ export const Main: React.FC = () => {
 	// Загрузка (есть токен, но данные ещё грузятся)
 	if (isStillLoading) {
 		return (
-			<div className="page-container gradient-bg">
-				<div className="flex justify-center items-center py-20">
-					<Spin size="large" />
+			<div className='page-container gradient-bg'>
+				<div className='flex justify-center items-center py-20'>
+					<Spin size='large' />
 				</div>
 			</div>
 		)
@@ -166,22 +179,19 @@ export const Main: React.FC = () => {
 	// Неавторизованный пользователь - показываем лендинг
 	if (!isAuthenticated) {
 		return (
-			<div className="page-container gradient-bg">
-				<div className="page-card text-center">
-					<Title
-						level={1}
-						className="!text-6xl !font-black !mb-6 !text-gray-800"
-					>
+			<div className='page-container gradient-bg'>
+				<div className='page-card text-center'>
+					<Title level={1} className='!text-6xl !font-black !mb-6 !text-gray-800'>
 						Fitness App
 					</Title>
-					<Paragraph className="!text-xl !text-gray-700 !mb-8 !max-w-2xl !mx-auto">
-						Присоединяйтесь к сообществу профессионалов и клиентов.
-						Достигайте целей вместе с лучшими тренерами.
+					<Paragraph className='!text-xl !text-gray-700 !mb-8 !max-w-2xl !mx-auto'>
+						Присоединяйтесь к сообществу профессионалов и клиентов. Достигайте целей
+						вместе с лучшими тренерами.
 					</Paragraph>
 					<Button
-						type="primary"
-						size="large"
-						className="!h-14 !px-12 !text-lg !font-semibold !rounded-lg"
+						type='primary'
+						size='large'
+						className='!h-14 !px-12 !text-lg !font-semibold !rounded-lg'
 						onClick={handleJoin}
 					>
 						Присоединиться
@@ -194,22 +204,18 @@ export const Main: React.FC = () => {
 	// Тренер - показываем приветствие и переход в админку
 	if (user?.role === 'TRAINER') {
 		return (
-			<div className="page-container gradient-bg">
-				<div className="page-card text-center">
-					<Title
-						level={1}
-						className="!text-5xl !font-black !mb-6 !text-gray-800"
-					>
+			<div className='page-container gradient-bg'>
+				<div className='page-card text-center'>
+					<Title level={1} className='!text-5xl !font-black !mb-6 !text-gray-800'>
 						👋 Добро пожаловать, {user.name}!
 					</Title>
-					<Paragraph className="!text-xl !text-gray-700 !mb-8 !max-w-2xl !mx-auto">
-						Перейдите в панель тренера для управления клиентами и
-						планами питания.
+					<Paragraph className='!text-xl !text-gray-700 !mb-8 !max-w-2xl !mx-auto'>
+						Перейдите в панель тренера для управления клиентами и планами питания.
 					</Paragraph>
 					<Button
-						type="primary"
-						size="large"
-						className="!h-14 !px-12 !text-lg !font-semibold !rounded-lg"
+						type='primary'
+						size='large'
+						className='!h-14 !px-12 !text-lg !font-semibold !rounded-lg'
 						onClick={() => navigate('/admin')}
 					>
 						Панель тренера
@@ -222,13 +228,13 @@ export const Main: React.FC = () => {
 	// Клиент с привязанным тренером
 	if (hasTrainer && user.trainer) {
 		return (
-			<div className="page-container gradient-bg">
-				<div className="page-card">
-					<div className="section-header">
-						<Title level={2} className="section-title !mb-2">
+			<div className='page-container gradient-bg'>
+				<div className='page-card'>
+					<div className='section-header'>
+						<Title level={2} className='section-title !mb-2'>
 							🏋️ Ваш тренер
 						</Title>
-						<Paragraph className="!text-gray-600 !mb-0">
+						<Paragraph className='!text-gray-600 !mb-0'>
 							Вы работаете с персональным тренером
 						</Paragraph>
 					</div>
@@ -245,11 +251,14 @@ export const Main: React.FC = () => {
 					{availableTrainers.length > 0 && (
 						<>
 							<Divider />
-							<div className="section-header">
-								<Title level={3} className="!mb-2 !flex !items-center !justify-center !gap-2">
+							<div className='section-header'>
+								<Title
+									level={3}
+									className='!mb-2 !flex !items-center !justify-center !gap-2'
+								>
 									<TeamOutlined /> Другие тренеры
 								</Title>
-								<Paragraph className="!text-gray-600 !mb-0">
+								<Paragraph className='!text-gray-600 !mb-0'>
 									Вы можете отправить заявку другим тренерам
 								</Paragraph>
 							</div>
@@ -264,7 +273,7 @@ export const Main: React.FC = () => {
 							/>
 
 							{availableTrainers.length > TRAINERS_PER_PAGE && (
-								<div className="flex justify-center mt-8">
+								<div className='flex justify-center mt-8'>
 									<Pagination
 										current={currentPage}
 										total={availableTrainers.length}
@@ -284,13 +293,13 @@ export const Main: React.FC = () => {
 
 	// Клиент без тренера - показываем список тренеров с пагинацией
 	return (
-		<div className="page-container gradient-bg">
-			<div className="page-card">
-				<div className="section-header">
-					<Title level={2} className="section-title !mb-2">
+		<div className='page-container gradient-bg'>
+			<div className='page-card'>
+				<div className='section-header'>
+					<Title level={2} className='section-title !mb-2'>
 						🎯 Выберите тренера
 					</Title>
-					<Paragraph className="!text-gray-600 !mb-0">
+					<Paragraph className='!text-gray-600 !mb-0'>
 						Найдите своего персонального тренера для достижения целей
 					</Paragraph>
 				</div>
@@ -305,7 +314,7 @@ export const Main: React.FC = () => {
 				/>
 
 				{availableTrainers.length > TRAINERS_PER_PAGE && (
-					<div className="flex justify-center mt-8">
+					<div className='flex justify-center mt-8'>
 						<Pagination
 							current={currentPage}
 							total={availableTrainers.length}

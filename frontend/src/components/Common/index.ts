@@ -1,4 +1,8 @@
 export * from './Header'
+export * from './NutritionMeal'
+export { MealCard } from './NutritionMeal'
+export * from './NutritionDayCard'
+export { NutritionDayCard } from './NutritionDayCard'
 export * from './ProgressChart'
 export * from './SelectMetric'
 export * from './SelectPeriod'

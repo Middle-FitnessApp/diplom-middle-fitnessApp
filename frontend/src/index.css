@@ -413,7 +413,10 @@ a:hover {
 	color: black; /* цвет текста */
 	border-radius: 8px; /* например, радиус */
 }
-
+/* Отступы между табами кроме последнего элемента */
+.custom-segmented .ant-segmented-item:not(:last-child) {
+	margin-right: 8px; /* отступ между табами */
+}
 .custom-segmented .ant-segmented-item-selected {
 	background-color: #1890ff; /* цвет активного таба */
 	color: white;
@@ -628,7 +631,7 @@ a:hover {
 }
 
 /* Принудительные стили для notification в Ant Design v5 */
-div[class*="ant-notification"] .ant-notification-notice {
+div[class*='ant-notification'] .ant-notification-notice {
 	background: #ffffff !important;
 	background-color: #ffffff !important;
 	border: 1px solid #e5e7eb !important;
@@ -636,24 +639,36 @@ div[class*="ant-notification"] .ant-notification-notice {
 	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
-div[class*="ant-notification"] .ant-notification-notice-message {
+div[class*='ant-notification'] .ant-notification-notice-message {
 	color: #1f2937 !important;
 	font-weight: 600 !important;
 }
 
-div[class*="ant-notification"] .ant-notification-notice-description {
+div[class*='ant-notification'] .ant-notification-notice-description {
 	color: #4b5563 !important;
 }
 
-div[class*="ant-notification"] .ant-notification-notice-icon {
+div[class*='ant-notification'] .ant-notification-notice-icon {
 	color: #f59e0b !important;
 }
 
-div[class*="ant-notification"] .ant-notification-notice-close {
+div[class*='ant-notification'] .ant-notification-notice-close {
 	color: #6b7280 !important;
 }
 
-div[class*="ant-notification"] .ant-notification-notice-close:hover {
+div[class*='ant-notification'] .ant-notification-notice-close:hover {
 	color: #1f2937 !important;
 	background: #f3f4f6 !important;
+}
+
+.ant-collapse-content-box > :last-child {
+	margin-bottom: 0;
+}
+
+.nutrition-days-container > * {
+	margin-bottom: 1.5rem; /* 24px */
+}
+
+.nutrition-days-container > *:last-child {
+	margin-bottom: 0;
 }

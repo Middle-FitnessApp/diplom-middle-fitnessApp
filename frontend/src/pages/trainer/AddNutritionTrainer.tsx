@@ -7,7 +7,6 @@ import {
 	message,
 	Spin,
 	Empty,
-	Tag,
 	Checkbox,
 	Collapse,
 	Divider,
@@ -17,8 +16,6 @@ import {
 	ArrowLeftOutlined,
 	CheckCircleOutlined,
 	CalendarOutlined,
-	CoffeeOutlined,
-	AppleOutlined,
 } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
@@ -26,33 +23,14 @@ import {
 	useGetSubcategoryDaysQuery,
 	useAssignNutritionPlanMutation,
 } from '../../store/api/nutrition.api'
-import type { NutritionCategory, NutritionSubcategory, NutritionDay, NutritionMeal } from '../../types/nutritions'
+import { MealCard } from '../../components/Common'
+import type {
+	NutritionCategory,
+	NutritionSubcategory,
+	NutritionDay,
+} from '../../types/nutritions'
 
 const { Title, Text, Paragraph } = Typography
-const { Option } = Select
-const { Panel } = Collapse
-
-// Маппинг типов приёмов пищи на русский
-const mealTypeLabels: Record<string, string> = {
-	BREAKFAST: 'Завтрак',
-	SNACK: 'Перекус',
-	LUNCH: 'Обед',
-	DINNER: 'Ужин',
-}
-
-const mealTypeIcons: Record<string, React.ReactNode> = {
-	BREAKFAST: <CoffeeOutlined />,
-	SNACK: <AppleOutlined />,
-	LUNCH: '🍽️',
-	DINNER: '🌙',
-}
-
-const mealTypeColors: Record<string, string> = {
-	BREAKFAST: '#faad14',
-	SNACK: '#52c41a',
-	LUNCH: '#1890ff',
-	DINNER: '#722ed1',
-}
 
 export const AddNutritionTrainer = () => {
 	const { id: clientId } = useParams<{ id: string }>()
@@ -83,7 +61,9 @@ export const AddNutritionTrainer = () => {
 
 	// Получаем подкатегории выбранной категории
 	const subcategories: NutritionSubcategory[] = useMemo(() => {
-		const category = categories.find((cat: NutritionCategory) => cat.id === selectedCategory)
+		const category = categories.find(
+			(cat: NutritionCategory) => cat.id === selectedCategory,
+		)
 		return category?.subcategories || []
 	}, [categories, selectedCategory])
 
@@ -153,43 +133,6 @@ export const AddNutritionTrainer = () => {
 		navigate(-1)
 	}
 
-	// Рендер приёма пищи
-	const renderMeal = (meal: NutritionMeal) => (
-		<div
-			key={meal.id}
-			className='mb-4 p-4 rounded-xl'
-			style={{
-				background: `linear-gradient(135deg, ${mealTypeColors[meal.type]}10, ${mealTypeColors[meal.type]}05)`,
-				border: `1px solid ${mealTypeColors[meal.type]}30`,
-			}}
-		>
-			<div className='flex items-center gap-2 mb-2'>
-				<span style={{ color: mealTypeColors[meal.type], fontSize: '18px' }}>
-					{mealTypeIcons[meal.type]}
-				</span>
-				<Text strong style={{ color: mealTypeColors[meal.type] }}>
-					{meal.name || mealTypeLabels[meal.type]}
-				</Text>
-				<Tag color={mealTypeColors[meal.type]} className='ml-auto'>
-					{mealTypeLabels[meal.type]}
-				</Tag>
-			</div>
-			{meal.items && meal.items.length > 0 ? (
-				<ul className='list-disc ml-6 mt-2 space-y-1'>
-					{meal.items.map((item: string, index: number) => (
-						<li key={index} className='text-gray-600'>
-							{item}
-						</li>
-					))}
-				</ul>
-			) : (
-				<Text type='secondary' className='italic'>
-					Нет продуктов
-				</Text>
-			)}
-		</div>
-	)
-
 	// Рендер дня
 	const renderDay = (day: NutritionDay) => {
 		const isSelected = selectAllDays || selectedDayIds.includes(day.id)
@@ -197,13 +140,15 @@ export const AddNutritionTrainer = () => {
 		return (
 			<Card
 				key={day.id}
-				className={`mb-4 transition-all duration-300 cursor-pointer ${
+				className={`transition-all duration-300 cursor-pointer ${
 					isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
 				}`}
 				onClick={() => !selectAllDays && handleDayToggle(day.id)}
 				style={{
 					borderColor: isSelected ? '#1890ff' : undefined,
-					background: isSelected ? 'linear-gradient(135deg, #e6f7ff, #f0f5ff)' : undefined,
+					background: isSelected
+						? 'linear-gradient(135deg, #e6f7ff, #f0f5ff)'
+						: undefined,
 				}}
 			>
 				<div className='flex items-start justify-between mb-4'>
@@ -220,9 +165,7 @@ export const AddNutritionTrainer = () => {
 							<Title level={5} className='!mb-0'>
 								{day.dayTitle}
 							</Title>
-							<Text type='secondary'>
-								{day.meals?.length || 0} приёмов пищи
-							</Text>
+							<Text type='secondary'>{day.meals?.length || 0} приёмов пищи</Text>
 						</div>
 					</div>
 					{!selectAllDays && (
@@ -237,25 +180,33 @@ export const AddNutritionTrainer = () => {
 					)}
 				</div>
 
-				<Collapse ghost>
-					<Panel
-						header={
-							<Text type='secondary' className='text-sm'>
-								Показать детали приёмов пищи
-							</Text>
-						}
-						key='1'
-					>
-						{day.meals && day.meals.length > 0 ? (
-							day.meals
-								.slice()
-								.sort((a, b) => a.mealOrder - b.mealOrder)
-								.map(renderMeal)
-						) : (
-							<Empty description='Нет приёмов пищи' image={Empty.PRESENTED_IMAGE_SIMPLE} />
-						)}
-					</Panel>
-				</Collapse>
+				<Collapse
+					ghost
+					items={[
+						{
+							key: '1',
+							label: (
+								<Text type='secondary' className='text-sm'>
+									Показать детали приёмов пищи
+								</Text>
+							),
+							children:
+								day.meals && day.meals.length > 0 ? (
+									day.meals
+										.slice()
+										.sort((a, b) => a.mealOrder - b.mealOrder)
+										.map((meal) => (
+											<MealCard key={meal.id} meal={meal} variant='trainer' />
+										))
+								) : (
+									<Empty
+										description='Нет приёмов пищи'
+										image={Empty.PRESENTED_IMAGE_SIMPLE}
+									/>
+								),
+						},
+					]}
+				/>
 			</Card>
 		)
 	}
@@ -264,7 +215,7 @@ export const AddNutritionTrainer = () => {
 	if (isLoadingCategories) {
 		return (
 			<div className='flex items-center justify-center min-h-screen'>
-				<Spin size='large' tip='Загрузка категорий...' />
+				<Spin size='large' />
 			</div>
 		)
 	}
@@ -328,7 +279,7 @@ export const AddNutritionTrainer = () => {
 								optionFilterProp='children'
 							>
 								{categories.map((category: NutritionCategory) => (
-									<Option key={category.id} value={category.id}>
+									<Select.Option key={category.id} value={category.id}>
 										<div className='flex items-center justify-between'>
 											<span>{category.name}</span>
 											<Badge
@@ -336,7 +287,7 @@ export const AddNutritionTrainer = () => {
 												style={{ backgroundColor: '#667eea' }}
 											/>
 										</div>
-									</Option>
+									</Select.Option>
 								))}
 							</Select>
 							{categories.length === 0 && (
@@ -353,9 +304,7 @@ export const AddNutritionTrainer = () => {
 							</label>
 							<Select
 								placeholder={
-									selectedCategory
-										? 'Выберите программу'
-										: 'Сначала выберите категорию'
+									selectedCategory ? 'Выберите программу' : 'Сначала выберите категорию'
 								}
 								value={selectedSubcategory || undefined}
 								onChange={handleSubcategoryChange}
@@ -366,9 +315,9 @@ export const AddNutritionTrainer = () => {
 								optionFilterProp='children'
 							>
 								{subcategories.map((subcategory) => (
-									<Option key={subcategory.id} value={subcategory.id}>
+									<Select.Option key={subcategory.id} value={subcategory.id}>
 										{subcategory.name}
-									</Option>
+									</Select.Option>
 								))}
 							</Select>
 							{selectedCategory && subcategories.length === 0 && (
@@ -423,10 +372,10 @@ export const AddNutritionTrainer = () => {
 
 						{isLoadingDays || isFetchingDays ? (
 							<div className='flex justify-center py-8'>
-								<Spin size='large' tip='Загрузка дней питания...' />
+								<Spin size='large' />
 							</div>
 						) : days.length > 0 ? (
-							<div className='space-y-4'>
+							<div className='nutrition-days-container'>
 								{!selectAllDays && (
 									<div className='p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-4'>
 										<Text type='warning'>

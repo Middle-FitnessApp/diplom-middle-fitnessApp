@@ -4,6 +4,7 @@ import { EditOutlined, LogoutOutlined, SaveOutlined, TrophyOutlined, FireOutline
 import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { LoadingState, AvatarUploader, ProgressChart } from '../../components'
+import { TrainerCard } from '../../components/Client'
 import { useAppDispatch, useAuth } from '../../store/hooks'
 import {
 	useGetMeQuery,
@@ -12,7 +13,8 @@ import {
 	useUpdateTrainerProfileMutation,
 	useUpdateTrainerProfileWithPhotoMutation,
 } from '../../store/api/user.api'
-import { useGetProgressChartDataQuery, useGetLatestProgressQuery } from '../../store/api/progress.api'
+import { useGetProgressChartDataQuery } from '../../store/api/progress.api'
+import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
 import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
 import type { ApiError, TrainerInfo } from '../../store/types/auth.types'
 import { ErrorState, UnauthorizedState } from '../../components/errors'
@@ -114,12 +116,38 @@ export const PersonalAccount = () => {
 	})
 
 	// Данные прогресса
-	const { data: progressData = [], isLoading: isLoadingProgress } = useGetProgressChartDataQuery(undefined, {
+	const { data: progressData = [], isLoading: isLoadingProgress } =
+		useGetProgressChartDataQuery(undefined, {
+			skip: !isAuthenticated || user?.role !== 'CLIENT',
+		})
+
+	// Получаем план питания клиента
+	const { data: nutritionPlanData } = useGetClientNutritionPlanQuery(undefined, {
 		skip: !isAuthenticated || user?.role !== 'CLIENT',
 	})
-	const { data: latestProgress } = useGetLatestProgressQuery(undefined, {
-		skip: !isAuthenticated || user?.role !== 'CLIENT',
-	})
+
+	// Расчет текущего дня плана питания
+	const currentNutritionDay = useMemo(() => {
+		if (!nutritionPlanData?.plan?.assignedAt) return null
+
+		const assignedAt = new Date(nutritionPlanData.plan.assignedAt)
+		const today = new Date()
+		today.setHours(0, 0, 0, 0) // Сбрасываем время для корректного сравнения
+
+		const diffTime = today.getTime() - assignedAt.getTime()
+		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+		// День начинается с 1, не с 0
+		const currentDay = diffDays + 1
+
+		// Если прошло больше дней чем в плане, возвращаем последний день
+		const totalDays = nutritionPlanData.plan?.totalDays || 0
+		if (currentDay > totalDays && totalDays > 0) {
+			return totalDays
+		}
+
+		return currentDay > 0 ? currentDay : 1
+	}, [nutritionPlanData])
 
 	const initialFormData = useMemo(
 		() => ({
@@ -317,7 +345,8 @@ export const PersonalAccount = () => {
 	const totalReports = progressData.length
 	const firstWeight = progressData[0]?.weight
 	const lastWeight = progressData[progressData.length - 1]?.weight
-	const weightDiff = firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null
+	const weightDiff =
+		firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null
 
 	return (
 		<div className='page-container gradient-bg'>
@@ -362,9 +391,7 @@ export const PersonalAccount = () => {
 								<Title level={4} className='!mt-4 !mb-1 !text-gray-800'>
 									{user.name}
 								</Title>
-								<Text type='secondary'>
-									{user.email || user.phone}
-								</Text>
+								<Text type='secondary'>{user.email || user.phone}</Text>
 							</div>
 
 							<Form
@@ -439,7 +466,7 @@ export const PersonalAccount = () => {
 
 						{/* Статистика */}
 						{totalReports > 0 && (
-							<Card className='mt-4' size='small'>
+							<Card className='mt-4!' size='small'>
 								<Row gutter={16}>
 									<Col span={8}>
 										<Statistic
@@ -460,12 +487,16 @@ export const PersonalAccount = () => {
 									<Col span={8}>
 										<Statistic
 											title='Изменение'
-											value={weightDiff ? `${Number(weightDiff) > 0 ? '+' : ''}${weightDiff}` : '-'}
+											value={
+												weightDiff
+													? `${Number(weightDiff) > 0 ? '+' : ''}${weightDiff}`
+													: '-'
+											}
 											suffix='кг'
 											prefix={<TrophyOutlined />}
 											valueStyle={{
-												color: weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined,
-												whiteSpace: 'nowrap'
+												color:
+													weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined,
 											}}
 										/>
 									</Col>
@@ -495,17 +526,16 @@ export const PersonalAccount = () => {
 									<LoadingState message='Загрузка данных...' />
 								</div>
 							) : progressData.length > 0 ? (
-								<ProgressChart
-									data={progressData}
-									metrics={PROGRESS_METRICS}
-									compact
-								/>
+								<ProgressChart data={progressData} metrics={PROGRESS_METRICS} compact />
 							) : (
 								<div className='text-center py-10'>
 									<Text type='secondary' className='block mb-4'>
 										У вас пока нет отчётов о прогрессе
 									</Text>
-									<Button type='primary' onClick={() => navigate('/me/progress/new-report')}>
+									<Button
+										type='primary'
+										onClick={() => navigate('/me/progress/new-report')}
+									>
 										Создать первый отчёт
 									</Button>
 								</div>
@@ -513,6 +543,96 @@ export const PersonalAccount = () => {
 						</Card>
 					</Col>
 				</Row>
+
+				{/* Информация о тренере */}
+				{user.trainer ? (
+					<>
+						<Card
+							title='🏋️ Ваш тренер'
+							className='h-full mb-4! mt-4!'
+							extra={
+								<Button type='link' onClick={() => navigate('/trainer')}>
+									Перейти в чат →
+								</Button>
+							}
+						>
+							<TrainerCard
+								trainer={user.trainer}
+								isMyTrainer
+								onChat={() => navigate('/trainer')}
+							/>
+						</Card>
+					</>
+				) : (
+					<>
+						<Card className='!mb-4 !border-orange-200 !bg-orange-50'>
+							<div className='text-center'>
+								<Title level={4} className='!text-orange-800 !mb-2'>
+									⚠️ У вас нет тренера
+								</Title>
+								<Text className='!text-orange-700 !mb-4'>
+									Найдите персонального тренера для достижения ваших целей
+								</Text>
+								<Button
+									type='primary'
+									onClick={() => navigate('/')}
+									className='!bg-orange-600 !border-orange-600 hover:!bg-orange-700'
+								>
+									Выбрать тренера
+								</Button>
+							</div>
+						</Card>
+					</>
+				)}
+
+				{/* Информация о плане питания */}
+
+				{nutritionPlanData?.plan ? (
+					<Card
+						title='🍎 План питания'
+						className='h-full'
+						extra={
+							<Button type='link' onClick={() => navigate('/me/nutrition')}>
+								Посмотреть план →
+							</Button>
+						}
+					>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Statistic
+									title='Программа'
+									value={nutritionPlanData.plan.subcategory.name}
+									prefix='📋'
+								/>
+							</Col>
+							<Col span={12}>
+								<Statistic
+									title='Текущий день'
+									value={currentNutritionDay || '-'}
+									suffix={
+										currentNutritionDay
+											? `из ${nutritionPlanData.plan?.totalDays || 0}`
+											: ''
+									}
+									prefix='📅'
+									valueStyle={{ color: '#52c41a' }}
+								/>
+							</Col>
+						</Row>
+					</Card>
+				) : (
+					<Card className='!mb-4 !border-blue-200 !bg-blue-50'>
+						<div className='text-center'>
+							<Title level={4} className='!text-blue-800 !mb-2'>
+								⏳ План питания не назначен
+							</Title>
+							<Text className='!text-blue-700'>
+								Ваш тренер скоро назначит вам персональный план питания. Пожалуйста,
+								подождите.
+							</Text>
+						</div>
+					</Card>
+				)}
 			</div>
 		</div>
 	)
