@@ -87,6 +87,12 @@ export const baseQueryWithReauth: BaseQueryFn<
 		)
 
 		if (refreshResult.data) {
+			// Сохраняем новый access token в localStorage
+			const data = refreshResult.data as { token?: { accessToken?: string } }
+			if (data.token?.accessToken) {
+				localStorage.setItem('token', data.token.accessToken)
+			}
+			// Повторяем оригинальный запрос с новым токеном
 			result = await rawBaseQuery(args, api, extraOptions)
 		} else {
 			if (typeof window !== 'undefined') {
