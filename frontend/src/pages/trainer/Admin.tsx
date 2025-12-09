@@ -9,7 +9,6 @@ import {
 	TrainerSidebar,
 	InvitesList,
 	StatsOverview,
-	QuickActions,
 	RecentActivity,
 	AllClientsGrid,
 } from '../../components/Admin'
@@ -187,9 +186,6 @@ export const Admin: React.FC = () => {
 						pendingInvites={stats?.pendingInvites || invites.length}
 						activeNutritionPlans={stats?.nutritionPlans || 0}
 					/>
-
-					{/* Быстрые действия */}
-					<QuickActions />
 
 					<Row gutter={[24, 24]}>
 						{/* Заявки */}
