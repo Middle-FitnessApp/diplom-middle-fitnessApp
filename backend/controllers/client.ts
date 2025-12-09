@@ -43,8 +43,16 @@ export async function inviteTrainer(clientId: string, trainerId: string) {
 		if (existingInvite.status === 'PENDING') {
 			throw ApiError.badRequest('Приглашение этому тренеру уже отправлено')
 		}
+		if (existingInvite.status === 'ACCEPTED') {
+			throw ApiError.badRequest('Вы уже работаете с этим тренером')
+		}
+		// Если REJECTED, разрешаем повторную подачу - меняем статус на PENDING
 		if (existingInvite.status === 'REJECTED') {
-			throw ApiError.badRequest('Тренер уже отклонил ваше приглашение')
+			await prisma.trainerClient.update({
+				where: { id: existingInvite.id },
+				data: { status: 'PENDING' },
+			})
+			return { message: 'Приглашение отправлено повторно' }
 		}
 	}
 
