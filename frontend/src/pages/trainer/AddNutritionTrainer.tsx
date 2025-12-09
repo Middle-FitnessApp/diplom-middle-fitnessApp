@@ -50,12 +50,17 @@ export const AddNutritionTrainer = () => {
 	} = useGetCategoriesQuery()
 
 	const {
-		data: days = [],
+		data: daysResponse,
 		isLoading: isLoadingDays,
 		isFetching: isFetchingDays,
 	} = useGetSubcategoryDaysQuery(selectedSubcategory, {
 		skip: !selectedSubcategory,
 	})
+
+	// Извлекаем массив дней из ответа с пагинацией
+	const days = useMemo(() => {
+		return daysResponse?.days || []
+	}, [daysResponse])
 
 	const [assignPlan, { isLoading: isAssigning }] = useAssignNutritionPlanMutation()
 

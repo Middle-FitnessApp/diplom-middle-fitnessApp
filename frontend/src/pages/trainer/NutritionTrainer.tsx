@@ -16,7 +16,6 @@ import {
 	FolderOutlined,
 	RightOutlined,
 	DeleteOutlined,
-	EditOutlined,
 	SearchOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -127,7 +126,8 @@ export const NutritionTrainer = () => {
 	const totalDays = categories.reduce(
 		(acc, cat) =>
 			acc +
-			(cat.subcategories?.reduce((subAcc, sub) => subAcc + (sub.days?.length || 0), 0) || 0),
+			(cat.subcategories?.reduce((subAcc, sub) => subAcc + (sub.days?.length || 0), 0) ||
+				0),
 		0,
 	)
 
@@ -249,7 +249,9 @@ export const NutritionTrainer = () => {
 														? 'Сначала удалите все планы в этой категории'
 														: 'Это действие нельзя отменить'
 												}
-												onConfirm={(e) => e && handleDeleteCategory(category.id, e as any)}
+												onConfirm={(e) =>
+													e && handleDeleteCategory(category.id, e as any)
+												}
 												okText='Удалить'
 												cancelText='Отмена'
 												disabled={Boolean(category.subcategories?.length)}

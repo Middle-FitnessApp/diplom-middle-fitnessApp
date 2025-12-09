@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Form, Input, Button, Card, Typography, Row, Col, Statistic, Modal } from 'antd'
+import { Form, Input, Button, Card, Typography, Row, Col, Statistic } from 'antd'
 import {
 	EditOutlined,
 	LogoutOutlined,
@@ -9,11 +9,15 @@ import {
 	CalendarOutlined,
 	PhoneOutlined,
 	MailOutlined,
+	UserOutlined,
+	SendOutlined,
+	WhatsAppOutlined,
+	InstagramOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { LoadingState, AvatarUploader, ProgressChart } from '../../components'
-import { useAppDispatch, useAuth } from '../../store/hooks'
+import { useAppDispatch, useAuth, useCancelTrainerModal } from '../../store/hooks'
 import {
 	useGetMeQuery,
 	useUpdateClientProfileMutation,
@@ -23,14 +27,10 @@ import {
 } from '../../store/api/user.api'
 import { useGetProgressChartDataQuery } from '../../store/api/progress.api'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
-import {
-	performLogout,
-	setUser,
-	updateUser,
-	performCancelTrainer,
-} from '../../store/slices/auth.slice'
+import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
 import type { ApiError } from '../../store/types/auth.types'
 import { ErrorState, UnauthorizedState } from '../../components/errors'
+import { API_BASE_URL, API_ENDPOINTS } from '../../config/api.config'
 
 const { Title, Text } = Typography
 
@@ -43,7 +43,18 @@ export const PersonalAccount = () => {
 		error,
 	} = useGetMeQuery(undefined, {
 		skip: !isAuthenticated,
+		pollingInterval: 5000, // Опрашиваем каждые 5 секунд для получения актуальных данных
+		refetchOnFocus: true, // Обновляем данные при возврате на вкладку
+		refetchOnReconnect: true, // Обновляем при восстановлении соединения
 	})
+
+	// Синхронизируем данные из RTK Query с Redux состоянием
+	useEffect(() => {
+		if (data?.user) {
+			// Всегда обновляем Redux состояние свежими данными из API
+			dispatch(setUser(data.user))
+		}
+	}, [data?.user, dispatch])
 
 	// Данные прогресса
 	const { data: progressData = [], isLoading: isLoadingProgress } =
@@ -227,21 +238,12 @@ export const PersonalAccount = () => {
 		}
 	}
 
+	const { showCancelTrainerModal } = useCancelTrainerModal()
+
 	const handleCancelTrainer = () => {
-		Modal.confirm({
-			title: 'Отвязать тренера',
-			content:
-				'Вы уверены, что хотите отвязать тренера? Все активные планы питания будут деактивированы.',
-			okText: 'Отвязать',
-			cancelText: 'Отмена',
-			okType: 'danger',
-			onOk: async () => {
-				try {
-					await dispatch(performCancelTrainer()).unwrap()
-				} catch (err) {
-					const apiError = err as ApiError
-					setFormError(apiError?.data?.message || 'Ошибка при отвязке тренера')
-				}
+		showCancelTrainerModal({
+			onError: (apiError) => {
+				setFormError(apiError?.data?.message || 'Ошибка при отвязке тренера')
 			},
 		})
 	}
@@ -395,7 +397,7 @@ export const PersonalAccount = () => {
 								<Button
 									type='primary'
 									icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-									className='!h-10 !rounded-lg !text-sm !font-semibold'
+									className='h-10! rounded-lg! !text-sm! font-semibold!'
 									block
 									onClick={() => {
 										if (isEditing) {
@@ -415,15 +417,15 @@ export const PersonalAccount = () => {
 						{/* Статистика */}
 						{totalReports > 0 && (
 							<Card className='mt-4!' size='small'>
-								<Row gutter={16}>
-									<Col span={8}>
+								<Row justify='space-between'>
+									<Col>
 										<Statistic
 											title='Отчётов'
 											value={totalReports}
 											prefix={<CalendarOutlined />}
 										/>
 									</Col>
-									<Col span={8}>
+									<Col>
 										<Statistic
 											title='Текущий вес'
 											value={lastWeight || '-'}
@@ -432,7 +434,7 @@ export const PersonalAccount = () => {
 											valueStyle={{ whiteSpace: 'nowrap' }}
 										/>
 									</Col>
-									<Col span={8}>
+									<Col>
 										<Statistic
 											title='Изменение'
 											value={
@@ -441,10 +443,13 @@ export const PersonalAccount = () => {
 													: '-'
 											}
 											suffix='кг'
-											prefix={<TrophyOutlined />}
+											prefix={<TrophyOutlined style={{ marginRight: 4 }} />}
 											valueStyle={{
 												color:
-													weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined,
+													weightDiff && Number(weightDiff) < 0 ? '#52c41a' : '#ff4d4f',
+												fontWeight: 'bold',
+												// display: 'flex',
+												// alignItems: 'center',
 											}}
 										/>
 									</Col>
@@ -508,7 +513,77 @@ export const PersonalAccount = () => {
 									</Button>
 								</div>
 							}
-						></Card>
+						>
+							<div className='flex items-start gap-4'>
+								{/* Аватар тренера */}
+								<div
+									className='w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300'
+									style={{
+										backgroundImage: user.trainer.photo
+											? `url(${API_BASE_URL}${user.trainer.photo})`
+											: undefined,
+										backgroundSize: 'cover',
+										backgroundPosition: 'center',
+									}}
+								>
+									{!user.trainer.photo && (
+										<UserOutlined style={{ fontSize: '32px', color: '#9ca3af' }} />
+									)}
+								</div>
+
+								<div className='flex-1'>
+									<Title level={4} className='mb-1! mt-0!'>
+										{user.trainer?.name}
+									</Title>
+									{user.trainer?.bio && (
+										<Text type='secondary' className='block mb-3'>
+											{user.trainer.bio}
+										</Text>
+									)}
+
+									{/* Иконки соцсетей */}
+									{(user.trainer?.telegram ||
+										user.trainer?.whatsapp ||
+										user.trainer?.instagram) && (
+										<div className='flex gap-2'>
+											{user.trainer?.telegram && (
+												<a
+													href={`https://t.me/${user.trainer.telegram}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition-all'
+													title='Telegram'
+												>
+													<SendOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+											{user.trainer?.whatsapp && (
+												<a
+													href={`https://wa.me/${user.trainer.whatsapp}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-green-500 hover:bg-green-50 hover:border-green-300 transition-all'
+													title='WhatsApp'
+												>
+													<WhatsAppOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+											{user.trainer?.instagram && (
+												<a
+													href={`https://instagram.com/${user.trainer.instagram}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-pink-500 hover:bg-pink-50 hover:border-pink-300 transition-all'
+													title='Instagram'
+												>
+													<InstagramOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
+						</Card>
 					</>
 				) : (
 					<>
@@ -540,13 +615,20 @@ export const PersonalAccount = () => {
 							</Button>
 						}
 					>
-						<Text>
-							Текущий день:{' '}
-							<Text strong style={{ color: '#52c41a' }}>
-								{currentNutritionDay || '-'}
-							</Text>
-							{currentNutritionDay ? ` из ${nutritionPlanData.plan?.totalDays || 0}` : ''}
-						</Text>
+						<div className='space-y-2'>
+							{nutritionPlanData.plan?.subcategory && (
+								<Text strong className='block text-base'>
+									{nutritionPlanData.plan.subcategory.name}
+								</Text>
+							)}
+							<div className='flex items-center gap-2'>
+								<CalendarOutlined style={{ fontSize: '18px', color: '#1890ff' }} />
+								<Text>
+									День <Text strong>{currentNutritionDay || '-'}</Text> из{' '}
+									{nutritionPlanData.plan?.totalDays || 0}
+								</Text>
+							</div>
+						</div>
 					</Card>
 				) : (
 					<Card className='mb-4!'>

@@ -1,16 +1,16 @@
-import React, { useState, useMemo } from 'react'
-import { Button, Typography, message, Modal, Spin, Pagination, Divider } from 'antd'
+import React, { useState, useMemo, useEffect } from 'react'
+import { Button, Typography, message, Spin, Pagination, Divider } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { ExclamationCircleOutlined, TeamOutlined } from '@ant-design/icons'
+import { TeamOutlined } from '@ant-design/icons'
 import { TrainerCard, TrainersList } from '../../components/Client'
-import { useAppSelector, useAppDispatch } from '../../store/hooks'
+import { useAppSelector, useAppDispatch, useCancelTrainerModal } from '../../store/hooks'
 import {
 	useGetMeQuery,
 	useGetAllTrainersQuery,
 	useInviteTrainerMutation,
 	useCancelInviteByTrainerMutation,
 } from '../../store/api/user.api'
-import { performCancelTrainer } from '../../store/slices/auth.slice'
+import { setUser } from '../../store/slices/auth.slice'
 
 const { Title, Paragraph } = Typography
 
@@ -27,9 +27,24 @@ export const Main: React.FC = () => {
 	const token = useAppSelector((state) => state.auth.token)
 
 	// Получаем данные о текущем пользователе (только если есть токен)
-	const { data: meData, isLoading: isLoadingMe } = useGetMeQuery(undefined, {
+	const {
+		data: meData,
+		isLoading: isLoadingMe,
+		refetch: refetchMe,
+	} = useGetMeQuery(undefined, {
 		skip: !token,
+		pollingInterval: 5000, // Опрашиваем каждые 5 секунд для получения актуальных данных
+		refetchOnFocus: true, // Обновляем данные при возврате на вкладку
+		refetchOnReconnect: true, // Обновляем при восстановлении соединения
 	})
+
+	// Синхронизируем данные из RTK Query с Redux состоянием
+	useEffect(() => {
+		if (meData?.user) {
+			// Всегда обновляем Redux состояние свежими данными из API
+			dispatch(setUser(meData.user))
+		}
+	}, [meData?.user, dispatch])
 
 	// Получаем список всех тренеров (с статусами приглашений для авторизованного клиента)
 	const { data: trainersData, isLoading: isLoadingTrainers } = useGetAllTrainersQuery()
@@ -89,7 +104,8 @@ export const Main: React.FC = () => {
 		try {
 			await inviteTrainer({ trainerId }).unwrap()
 			message.success('Заявка отправлена тренеру!')
-			// Данные обновятся автоматически через invalidatesTags
+			// Обновляем данные пользователя для отображения актуального статуса приглашения
+			refetchMe()
 		} catch (error: unknown) {
 			const apiError = error as {
 				data?: { message?: string; error?: { message?: string } }
@@ -132,25 +148,21 @@ export const Main: React.FC = () => {
 		}
 	}
 
+	const { showCancelTrainerModal } = useCancelTrainerModal()
+
 	// Обработчик отвязки тренера
 	const handleUnlinkTrainer = () => {
-		Modal.confirm({
+		showCancelTrainerModal({
 			title: 'Отвязать тренера?',
-			icon: <ExclamationCircleOutlined />,
 			content:
 				'Вы уверены, что хотите отвязать тренера? Все назначенные планы питания будут удалены.',
 			okText: 'Да, отвязать',
-			cancelText: 'Отмена',
-			okButtonProps: { danger: true },
-			async onOk() {
-				try {
-					const result = await dispatch(performCancelTrainer()).unwrap()
-					message.success(result.message)
-				} catch (error: unknown) {
-					const apiError = error as { data?: { message?: string } }
-					const errorMessage = apiError?.data?.message || 'Не удалось отвязать тренера'
-					message.error(errorMessage)
-				}
+			onSuccess: (result) => {
+				message.success(result.message)
+			},
+			onError: (apiError) => {
+				const errorMessage = apiError?.data?.message || 'Не удалось отвязать тренера'
+				message.error(errorMessage)
 			},
 		})
 	}
@@ -244,7 +256,6 @@ export const Main: React.FC = () => {
 						isMyTrainer
 						onChat={handleGoToChat}
 						onUnlink={handleUnlinkTrainer}
-						loading={isCanceling}
 					/>
 
 					{/* Список других тренеров */}

@@ -210,13 +210,13 @@ export const trainerApi = createApi({
 			query: () => '/clients',
 			transformResponse: (resp: { clients: ExtendedClient[] } | ExtendedClient[]) => {
 				// Обрабатываем разные форматы ответа
-				const clients = Array.isArray(resp) ? resp : (resp?.clients || [])
-				
+				const clients = Array.isArray(resp) ? resp : resp?.clients || []
+
 				if (!Array.isArray(clients)) {
 					console.error('Unexpected clients format:', clients)
 					return []
 				}
-				
+
 				return clients.map((client) => ({
 					id: client.id,
 					name: client.name,
