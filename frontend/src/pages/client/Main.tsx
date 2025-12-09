@@ -3,14 +3,14 @@ import { Button, Typography, message, Modal, Spin, Pagination, Divider } from 'a
 import { useNavigate } from 'react-router-dom'
 import { ExclamationCircleOutlined, TeamOutlined } from '@ant-design/icons'
 import { TrainerCard, TrainersList } from '../../components/Client'
-import { useAppSelector } from '../../store/hooks'
+import { useAppSelector, useAppDispatch } from '../../store/hooks'
 import {
 	useGetMeQuery,
 	useGetAllTrainersQuery,
 	useInviteTrainerMutation,
-	useCancelTrainerMutation,
 	useCancelInviteByTrainerMutation,
 } from '../../store/api/user.api'
+import { performCancelTrainer } from '../../store/slices/auth.slice'
 
 const { Title, Paragraph } = Typography
 
@@ -19,6 +19,7 @@ const TRAINERS_PER_PAGE = 8
 
 export const Main: React.FC = () => {
 	const navigate = useNavigate()
+	const dispatch = useAppDispatch()
 	const [selectingTrainerId, setSelectingTrainerId] = useState<string | null>(null)
 	const [currentPage, setCurrentPage] = useState(1)
 
@@ -35,7 +36,6 @@ export const Main: React.FC = () => {
 
 	// Мутации
 	const [inviteTrainer] = useInviteTrainerMutation()
-	const [cancelTrainer, { isLoading: isCanceling }] = useCancelTrainerMutation()
 	const [cancelInviteByTrainer] = useCancelInviteByTrainerMutation()
 
 	const user = meData?.user
@@ -144,7 +144,7 @@ export const Main: React.FC = () => {
 			okButtonProps: { danger: true },
 			async onOk() {
 				try {
-					const result = await cancelTrainer().unwrap()
+					const result = await dispatch(performCancelTrainer()).unwrap()
 					message.success(result.message)
 				} catch (error: unknown) {
 					const apiError = error as { data?: { message?: string } }

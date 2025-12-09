@@ -42,7 +42,20 @@ export const performLogout = createAsyncThunk(
 		dispatch(resetAllChats())
 
 		return true
-	}
+	},
+)
+
+// Отмена тренера с обновлением состояния
+export const performCancelTrainer = createAsyncThunk(
+	'auth/performCancelTrainer',
+	async (_, { dispatch }) => {
+		const result = await dispatch(userApi.endpoints.cancelTrainer.initiate()).unwrap()
+		// Обновляем локальное состояние
+		dispatch(updateUser({ trainer: null }))
+		// Инвалидируем кэш планов питания, так как они удаляются при отмене тренера
+		dispatch(nutritionApi.util.invalidateTags(['AssignedPlan', 'Day']))
+		return result
+	},
 )
 
 const authSlice = createSlice({
@@ -107,9 +120,27 @@ const authSlice = createSlice({
 				state.isAuthenticated = false
 				state.isLoading = false
 			})
+		// Обработка performCancelTrainer
+		builder
+			.addCase(performCancelTrainer.pending, (state) => {
+				state.isLoading = true
+			})
+			.addCase(performCancelTrainer.fulfilled, (state) => {
+				state.isLoading = false
+			})
+			.addCase(performCancelTrainer.rejected, (state) => {
+				state.isLoading = false
+			})
 	},
 })
 
-export const { setCredentials, setToken, setUser, updateUser, logout, setLoading, resetAuth } =
-	authSlice.actions
+export const {
+	setCredentials,
+	setToken,
+	setUser,
+	updateUser,
+	logout,
+	setLoading,
+	resetAuth,
+} = authSlice.actions
 export default authSlice.reducer
