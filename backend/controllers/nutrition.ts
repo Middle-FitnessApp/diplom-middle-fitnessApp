@@ -9,15 +9,43 @@ import { GetClientNutritionPlanQuerySchema } from '../validation/zod/nutrition/g
 // =============================================
 
 export async function getClientNutritionPlan(req: FastifyRequest, reply: FastifyReply) {
-	const clientId = req.user.id
-
 	// Валидация query параметров
 	const queryValidation = GetClientNutritionPlanQuerySchema.safeParse(req.query)
 	if (!queryValidation.success) {
 		throw ApiError.badRequest(queryValidation.error.issues[0].message)
 	}
 
-	const { period = 'day', date } = queryValidation.data
+	const { clientId: queryClientId, period = 'day', date } = queryValidation.data
+
+	const userRole = req.user.role
+	const userId = req.user.id
+
+	let clientId: string
+
+	if (userRole === 'TRAINER') {
+		if (!queryClientId) {
+			throw ApiError.badRequest('Параметр запроса clientId обязателен для тренера')
+		}
+		clientId = queryClientId
+		// Проверяем, что клиент принят тренером
+		const trainerClient = await prisma.trainerClient.findFirst({
+			where: {
+				trainerId: userId,
+				clientId,
+				status: 'ACCEPTED',
+			},
+		})
+		if (!trainerClient) {
+			throw ApiError.forbidden('Доступ запрещен: Клиент не принят этим тренером')
+		}
+	} else if (userRole === 'CLIENT') {
+		if (queryClientId) {
+			throw ApiError.badRequest('Параметр запроса clientId не разрешен для клиента')
+		}
+		clientId = userId
+	} else {
+		throw ApiError.forbidden('Доступ запрещен')
+	}
 
 	// Целевая дата (или сегодня)
 	const targetDate = date ? new Date(date) : new Date()
@@ -558,7 +586,10 @@ interface CreateSubcategoryWithDaysInput {
 	days: CreateDayInput[]
 }
 
-export async function createSubcategoryWithDays(req: FastifyRequest, reply: FastifyReply) {
+export async function createSubcategoryWithDays(
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
 	const { id: categoryId } = req.params as { id: string }
 	const { name, description, days } = req.body as CreateSubcategoryWithDaysInput
 

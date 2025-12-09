@@ -19,15 +19,13 @@ import {
 	deleteNutritionDay,
 	createSubcategoryWithDays,
 } from '../controllers/nutrition.js'
-import { GetClientNutritionPlanQuerySchema } from '../validation/zod/nutrition/get-client-plan.dto.js'
-import { GetNutritionHistoryQuerySchema } from '../validation/zod/nutrition/get-history.dto.js'
 
 export default async function nutritionRoutes(app: FastifyInstance) {
-	// План питания для текущего клиента (CLIENT)
+	// План питания для текущего клиента (CLIENT) или для принятого клиента (TRAINER)
 	app.get(
 		'/client/plan',
 		{
-			preHandler: [authGuard, hasRole(['CLIENT'])],
+			preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])],
 		},
 		getClientNutritionPlan,
 	)
@@ -110,18 +108,10 @@ export default async function nutritionRoutes(app: FastifyInstance) {
 	)
 
 	// Создание нового дня
-	app.post(
-		'/days',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		createNutritionDay,
-	)
+	app.post('/days', { preHandler: [authGuard, hasRole(['TRAINER'])] }, createNutritionDay)
 
 	// Получение конкретного дня
-	app.get(
-		'/days/:id',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		getNutritionDay,
-	)
+	app.get('/days/:id', { preHandler: [authGuard, hasRole(['TRAINER'])] }, getNutritionDay)
 
 	// Обновление дня
 	app.put(
