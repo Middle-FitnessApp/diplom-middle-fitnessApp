@@ -46,7 +46,7 @@ export interface InviteTrainerResponse {
 // Ответ на отмену сотрудничества
 export interface CancelTrainerResponse {
 	message: string
-	deletedNutritionPlans: number
+	deactivatedNutritionPlans: number
 }
 
 // Ответ на отмену приглашения
@@ -149,7 +149,7 @@ export const userApi = createApi({
 				method: 'DELETE',
 			}),
 			// Инвалидируем и User и Trainers, чтобы обновить статусы приглашений
-			invalidatesTags: ['User', 'Trainers'],
+			invalidatesTags: ['User', 'Trainers', 'AssignedPlan'],
 		}),
 
 		// Отменить приглашение тренеру
