@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Form, Input, Button, Card, Typography, Row, Col, Statistic, Avatar, Tag } from 'antd'
-import { EditOutlined, LogoutOutlined, SaveOutlined, TrophyOutlined, FireOutlined, CalendarOutlined, UserOutlined, PhoneOutlined, MailOutlined, MessageOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Card, Typography, Row, Col, Statistic } from 'antd'
+import {
+	EditOutlined,
+	LogoutOutlined,
+	SaveOutlined,
+	TrophyOutlined,
+	FireOutlined,
+	CalendarOutlined,
+	PhoneOutlined,
+	MailOutlined,
+	UserOutlined,
+	SendOutlined,
+	WhatsAppOutlined,
+	InstagramOutlined,
+} from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { LoadingState, AvatarUploader, ProgressChart } from '../../components'
-import { TrainerCard } from '../../components/Client'
-import { useAppDispatch, useAuth } from '../../store/hooks'
+import { useAppDispatch, useAuth, useCancelTrainerModal } from '../../store/hooks'
 import {
 	useGetMeQuery,
 	useUpdateClientProfileMutation,
@@ -16,104 +28,33 @@ import {
 import { useGetProgressChartDataQuery } from '../../store/api/progress.api'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
 import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
-import type { ApiError, TrainerInfo } from '../../store/types/auth.types'
+import type { ApiError } from '../../store/types/auth.types'
 import { ErrorState, UnauthorizedState } from '../../components/errors'
+import { API_BASE_URL } from '../../config/api.config'
 
 const { Title, Text } = Typography
 
-// Компонент карточки тренера
-const TrainerCard = ({ trainer }: { trainer: TrainerInfo }) => {
-	const navigate = useNavigate()
-	
-	return (
-		<Card 
-			className='mt-4' 
-			size='small'
-			style={{ 
-				background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-				border: 'none',
-			}}
-		>
-			<div className='flex items-center gap-4'>
-				<Avatar 
-					size={56} 
-					src={trainer.photo} 
-					icon={<UserOutlined />}
-					style={{ 
-						border: '2px solid rgba(255,255,255,0.3)',
-						flexShrink: 0
-					}}
-				/>
-				<div className='flex-1 min-w-0'>
-					<Text className='!text-white/70 text-xs block'>Ваш тренер</Text>
-					<Text strong className='!text-white text-base block truncate'>
-						{trainer.name}
-					</Text>
-					{trainer.bio && (
-						<Text className='!text-white/80 text-xs block truncate'>
-							{trainer.bio}
-						</Text>
-					)}
-				</div>
-				<Button
-					type='primary'
-					ghost
-					icon={<MessageOutlined />}
-					onClick={() => navigate('/trainer')}
-					style={{ 
-						borderColor: 'rgba(255,255,255,0.5)',
-						color: 'white'
-					}}
-				>
-					Чат
-				</Button>
-			</div>
-			{/* Социальные сети тренера */}
-			{(trainer.telegram || trainer.whatsapp || trainer.instagram) && (
-				<div className='flex gap-2 mt-3 pt-3 border-t border-white/20'>
-					{trainer.telegram && (
-						<Tag 
-							color='blue' 
-							className='!m-0 cursor-pointer'
-							onClick={() => window.open(`https://t.me/${trainer.telegram?.replace('@', '')}`, '_blank')}
-						>
-							Telegram
-						</Tag>
-					)}
-					{trainer.whatsapp && (
-						<Tag 
-							color='green' 
-							className='!m-0 cursor-pointer'
-							onClick={() => window.open(`https://wa.me/${trainer.whatsapp?.replace(/\D/g, '')}`, '_blank')}
-						>
-							WhatsApp
-						</Tag>
-					)}
-					{trainer.instagram && (
-						<Tag 
-							color='magenta' 
-							className='!m-0 cursor-pointer'
-							onClick={() => window.open(`https://instagram.com/${trainer.instagram?.replace('@', '')}`, '_blank')}
-						>
-							Instagram
-						</Tag>
-					)}
-				</div>
-			)}
-		</Card>
-	)
-}
-
 export const PersonalAccount = () => {
 	const dispatch = useAppDispatch()
-	const { user, isAuthenticated } = useAuth()
+	const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth()
 	const {
 		data,
 		isLoading: isLoadingUser,
 		error,
 	} = useGetMeQuery(undefined, {
 		skip: !isAuthenticated,
+		pollingInterval: 5000, // Опрашиваем каждые 5 секунд для получения актуальных данных
+		refetchOnFocus: true, // Обновляем данные при возврате на вкладку
+		refetchOnReconnect: true, // Обновляем при восстановлении соединения
 	})
+
+	// Синхронизируем данные из RTK Query с Redux состоянием
+	useEffect(() => {
+		if (data?.user) {
+			// Всегда обновляем Redux состояние свежими данными из API
+			dispatch(setUser(data.user))
+		}
+	}, [data?.user, dispatch])
 
 	// Данные прогресса
 	const { data: progressData = [], isLoading: isLoadingProgress } =
@@ -176,6 +117,12 @@ export const PersonalAccount = () => {
 		useUpdateClientProfileWithPhotoMutation()
 	const [updateTrainerProfileWithPhoto, { isLoading: isUpdatingTrainerWithPhoto }] =
 		useUpdateTrainerProfileWithPhotoMutation()
+
+	const isUpdating =
+		isUpdatingClient ||
+		isUpdatingTrainer ||
+		isUpdatingClientWithPhoto ||
+		isUpdatingTrainerWithPhoto
 
 	const disabledInputClass = !isEditing
 		? '!bg-gray-100 !text-gray-400 !cursor-not-allowed !pointer-events-none'
@@ -291,11 +238,15 @@ export const PersonalAccount = () => {
 		}
 	}
 
-	const isUpdating =
-		isUpdatingClient ||
-		isUpdatingTrainer ||
-		isUpdatingClientWithPhoto ||
-		isUpdatingTrainerWithPhoto
+	const { showCancelTrainerModal } = useCancelTrainerModal()
+
+	const handleCancelTrainer = () => {
+		showCancelTrainerModal({
+			onError: (apiError) => {
+				setFormError(apiError?.data?.message || 'Ошибка при отвязке тренера')
+			},
+		})
+	}
 
 	if (isLoadingUser) {
 		return <LoadingState message='Загрузка профиля...' />
@@ -352,7 +303,7 @@ export const PersonalAccount = () => {
 		<div className='page-container gradient-bg'>
 			<div className='page-card' style={{ maxWidth: '1000px' }}>
 				<div className='section-header'>
-					<Title level={2} className='section-title !mb-2'>
+					<Title level={2} className='section-title mb-2!'>
 						👤 Мой профиль
 					</Title>
 				</div>
@@ -361,7 +312,6 @@ export const PersonalAccount = () => {
 					{/* Левая колонка - профиль */}
 					<Col xs={24} lg={10}>
 						<Card
-							className='!border !border-gray-200'
 							actions={[
 								<Button
 									type='text'
@@ -388,7 +338,7 @@ export const PersonalAccount = () => {
 									}}
 								/>
 
-								<Title level={4} className='!mt-4 !mb-1 !text-gray-800'>
+								<Title level={4} className='mt-4! mb-1! text-gray-800!'>
 									{user.name}
 								</Title>
 								<Text type='secondary'>{user.email || user.phone}</Text>
@@ -447,7 +397,7 @@ export const PersonalAccount = () => {
 								<Button
 									type='primary'
 									icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-									className='!h-10 !rounded-lg !text-sm !font-semibold'
+									className='h-10! rounded-lg! !text-sm! font-semibold!'
 									block
 									onClick={() => {
 										if (isEditing) {
@@ -467,15 +417,15 @@ export const PersonalAccount = () => {
 						{/* Статистика */}
 						{totalReports > 0 && (
 							<Card className='mt-4!' size='small'>
-								<Row gutter={16}>
-									<Col span={8}>
+								<Row justify='space-between'>
+									<Col>
 										<Statistic
 											title='Отчётов'
 											value={totalReports}
 											prefix={<CalendarOutlined />}
 										/>
 									</Col>
-									<Col span={8}>
+									<Col>
 										<Statistic
 											title='Текущий вес'
 											value={lastWeight || '-'}
@@ -484,7 +434,7 @@ export const PersonalAccount = () => {
 											valueStyle={{ whiteSpace: 'nowrap' }}
 										/>
 									</Col>
-									<Col span={8}>
+									<Col>
 										<Statistic
 											title='Изменение'
 											value={
@@ -493,20 +443,18 @@ export const PersonalAccount = () => {
 													: '-'
 											}
 											suffix='кг'
-											prefix={<TrophyOutlined />}
+											prefix={<TrophyOutlined style={{ marginRight: 4 }} />}
 											valueStyle={{
 												color:
-													weightDiff && Number(weightDiff) < 0 ? '#52c41a' : undefined,
+													weightDiff && Number(weightDiff) < 0 ? '#52c41a' : '#ff4d4f',
+												fontWeight: 'bold',
+												// display: 'flex',
+												// alignItems: 'center',
 											}}
 										/>
 									</Col>
 								</Row>
 							</Card>
-						)}
-
-						{/* Карточка тренера */}
-						{user.trainer && (
-							<TrainerCard trainer={user.trainer} />
 						)}
 					</Col>
 
@@ -549,37 +497,109 @@ export const PersonalAccount = () => {
 					<>
 						<Card
 							title='🏋️ Ваш тренер'
-							className='h-full mb-4! mt-4!'
+							className='mb-4! mt-4!'
 							extra={
-								<Button type='link' onClick={() => navigate('/trainer')}>
-									Перейти в чат →
-								</Button>
+								<div className='flex gap-2'>
+									<Button type='link' onClick={() => navigate('/trainer')}>
+										Перейти в чат
+									</Button>
+									<Button
+										color='red'
+										variant='solid'
+										onClick={handleCancelTrainer}
+										loading={isAuthLoading}
+									>
+										Отвязать тренера
+									</Button>
+								</div>
 							}
 						>
-							<TrainerCard
-								trainer={user.trainer}
-								isMyTrainer
-								onChat={() => navigate('/trainer')}
-							/>
+							<div className='flex items-start gap-4'>
+								{/* Аватар тренера */}
+								<div
+									className='w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300'
+									style={{
+										backgroundImage: user.trainer.photo
+											? `url(${API_BASE_URL}${user.trainer.photo})`
+											: undefined,
+										backgroundSize: 'cover',
+										backgroundPosition: 'center',
+									}}
+								>
+									{!user.trainer.photo && (
+										<UserOutlined style={{ fontSize: '32px', color: '#9ca3af' }} />
+									)}
+								</div>
+
+								<div className='flex-1'>
+									<Title level={4} className='mb-1! mt-0!'>
+										{user.trainer?.name}
+									</Title>
+									{user.trainer?.bio && (
+										<Text type='secondary' className='block mb-3'>
+											{user.trainer.bio}
+										</Text>
+									)}
+
+									{/* Иконки соцсетей */}
+									{(user.trainer?.telegram ||
+										user.trainer?.whatsapp ||
+										user.trainer?.instagram) && (
+										<div className='flex gap-2'>
+											{user.trainer?.telegram && (
+												<a
+													href={`https://t.me/${user.trainer.telegram}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition-all'
+													title='Telegram'
+												>
+													<SendOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+											{user.trainer?.whatsapp && (
+												<a
+													href={`https://wa.me/${user.trainer.whatsapp}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-green-500 hover:bg-green-50 hover:border-green-300 transition-all'
+													title='WhatsApp'
+												>
+													<WhatsAppOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+											{user.trainer?.instagram && (
+												<a
+													href={`https://instagram.com/${user.trainer.instagram}`}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-pink-500 hover:bg-pink-50 hover:border-pink-300 transition-all'
+													title='Instagram'
+												>
+													<InstagramOutlined style={{ fontSize: '16px' }} />
+												</a>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
 						</Card>
 					</>
 				) : (
 					<>
-						<Card className='!mb-4 !border-orange-200 !bg-orange-50'>
+						<Card className='mb-4! mt-4!'>
 							<div className='text-center'>
-								<Title level={4} className='!text-orange-800 !mb-2'>
+								<Title level={4} className='text-gray-800! mb-2!'>
 									⚠️ У вас нет тренера
 								</Title>
-								<Text className='!text-orange-700 !mb-4'>
-									Найдите персонального тренера для достижения ваших целей
-								</Text>
-								<Button
-									type='primary'
-									onClick={() => navigate('/')}
-									className='!bg-orange-600 !border-orange-600 hover:!bg-orange-700'
-								>
-									Выбрать тренера
-								</Button>
+								<div className='max-w-md mx-auto'>
+									<Text className='text-gray-700! mb-4! block'>
+										Найдите персонального тренера для достижения ваших целей
+									</Text>
+									<Button type='primary' onClick={() => navigate('/trainers')}>
+										Выбрать тренера
+									</Button>
+								</div>
 							</div>
 						</Card>
 					</>
@@ -590,43 +610,35 @@ export const PersonalAccount = () => {
 				{nutritionPlanData?.plan ? (
 					<Card
 						title='🍎 План питания'
-						className='h-full'
+						className='mb-4!'
 						extra={
 							<Button type='link' onClick={() => navigate('/me/nutrition')}>
 								Посмотреть план →
 							</Button>
 						}
 					>
-						<Row gutter={16}>
-							<Col span={12}>
-								<Statistic
-									title='Программа'
-									value={nutritionPlanData.plan.subcategory.name}
-									prefix='📋'
-								/>
-							</Col>
-							<Col span={12}>
-								<Statistic
-									title='Текущий день'
-									value={currentNutritionDay || '-'}
-									suffix={
-										currentNutritionDay
-											? `из ${nutritionPlanData.plan?.totalDays || 0}`
-											: ''
-									}
-									prefix='📅'
-									valueStyle={{ color: '#52c41a' }}
-								/>
-							</Col>
-						</Row>
+						<div className='space-y-2'>
+							{nutritionPlanData.plan?.subcategory && (
+								<Text strong className='block text-base'>
+									{nutritionPlanData.plan.subcategory.name}
+								</Text>
+							)}
+							<div className='flex items-center gap-2'>
+								<CalendarOutlined style={{ fontSize: '18px', color: '#1890ff' }} />
+								<Text>
+									День <Text strong>{currentNutritionDay || '-'}</Text> из{' '}
+									{nutritionPlanData.plan?.totalDays || 0}
+								</Text>
+							</div>
+						</div>
 					</Card>
 				) : (
-					<Card className='!mb-4 !border-blue-200 !bg-blue-50'>
+					<Card className='mb-4!'>
 						<div className='text-center'>
-							<Title level={4} className='!text-blue-800 !mb-2'>
+							<Title level={4} className='text-gray-800! mb-2!'>
 								⏳ План питания не назначен
 							</Title>
-							<Text className='!text-blue-700'>
+							<Text className='text-gray-700!'>
 								Ваш тренер скоро назначит вам персональный план питания. Пожалуйста,
 								подождите.
 							</Text>

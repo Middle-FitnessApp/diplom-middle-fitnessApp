@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Typography, Button, Form, Input, message, Modal, Card, Empty, Spin } from 'antd'
+import { Typography, Button, Form, Input, message, Modal, Card, Empty } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
 import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons'
-import type { NutritionDay, NutritionMeal, MealType } from '../../types/nutritions'
+import type { NutritionDay, MealType } from '../../types/nutritions'
 import { CreateDayForm } from '../../components/Admin/CreateDayForm'
 import {
 	useCreateSubcategoryWithDaysMutation,
@@ -107,7 +107,9 @@ export const CreateNutritionTrainer = () => {
 	}
 
 	const handleDayFormSubmit = (
-		dayData: Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'> | NutritionDay,
+		dayData:
+			| Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'>
+			| NutritionDay,
 	) => {
 		// Преобразуем в локальный формат
 		const localDay: LocalDay = {
@@ -354,7 +356,9 @@ export const CreateNutritionTrainer = () => {
 
 				{/* Модальное окно для добавления/редактирования дня */}
 				<Modal
-					title={editingDayIndex !== null ? 'Редактирование дня' : 'Добавление нового дня'}
+					title={
+						editingDayIndex !== null ? 'Редактирование дня' : 'Добавление нового дня'
+					}
 					open={isDayFormVisible}
 					onCancel={handleDayFormCancel}
 					footer={null}
@@ -386,4 +390,3 @@ export const CreateNutritionTrainer = () => {
 		</div>
 	)
 }
-

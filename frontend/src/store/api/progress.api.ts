@@ -33,6 +33,7 @@ export interface ProgressChartData {
 	chest?: number
 	arm?: number
 	leg?: number
+	[key: string]: string | number | boolean | undefined
 }
 
 // Типы для пагинации (согласно документации API)

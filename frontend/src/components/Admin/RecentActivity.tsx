@@ -1,11 +1,6 @@
 import React from 'react'
 import { Card, Timeline, Typography, Avatar, Empty } from 'antd'
-import {
-	UserAddOutlined,
-	CheckCircleOutlined,
-	StarOutlined,
-	FileTextOutlined,
-} from '@ant-design/icons'
+import { UserAddOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { TrainerInvite } from '../../store/api/trainer.api'
 
 const { Text } = Typography
@@ -53,9 +48,9 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 			/>
 		),
 		children: (
-			<div className="ml-2">
+			<div className='ml-2'>
 				<Text strong>{invite.client.name}</Text>
-				<Text type="secondary" className="block text-xs">
+				<Text type='secondary' className='block text-xs'>
 					Отправил заявку · {formatDate(invite.createdAt)}
 				</Text>
 			</div>
@@ -74,9 +69,9 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 			/>
 		),
 		children: (
-			<div className="ml-2">
+			<div className='ml-2'>
 				<Text strong>{client.name}</Text>
-				<Text type="secondary" className="block text-xs">
+				<Text type='secondary' className='block text-xs'>
 					Принят в работу
 				</Text>
 			</div>
@@ -87,10 +82,8 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
 	return (
 		<Card
-			title={
-				<span className="text-lg font-semibold">📋 Недавняя активность</span>
-			}
-			className="shadow-lg"
+			title={<span className='text-lg font-semibold'>📋 Недавняя активность</span>}
+			className='shadow-lg'
 			styles={{
 				body: {
 					padding: '16px',
@@ -102,9 +95,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 			{allItems.length === 0 ? (
 				<Empty
 					image={Empty.PRESENTED_IMAGE_SIMPLE}
-					description={
-						<Text type="secondary">Нет недавней активности</Text>
-					}
+					description={<Text type='secondary'>Нет недавней активности</Text>}
 				/>
 			) : (
 				<Timeline items={allItems} />
@@ -112,4 +103,3 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 		</Card>
 	)
 }
-

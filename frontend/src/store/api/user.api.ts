@@ -10,7 +10,7 @@ import type {
 	UpdateProfileResponse,
 	UpdateTrainerProfileRequest,
 } from '../types/user.types'
-import type { AuthUser, TrainerInfo } from '../types/auth.types'
+import type { AuthUser } from '../types/auth.types'
 import { API_ENDPOINTS } from '../../config/api.config'
 
 // Тип для тренера в списке (с опциональным статусом приглашения)
@@ -149,7 +149,7 @@ export const userApi = createApi({
 				method: 'DELETE',
 			}),
 			// Инвалидируем и User и Trainers, чтобы обновить статусы приглашений
-			invalidatesTags: ['User', 'Trainers', 'AssignedPlan'],
+			invalidatesTags: ['User', 'Trainers'],
 		}),
 
 		// Отменить приглашение тренеру

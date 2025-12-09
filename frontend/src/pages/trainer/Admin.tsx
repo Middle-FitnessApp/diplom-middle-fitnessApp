@@ -22,6 +22,7 @@ import {
 	useGetTrainerStatsQuery,
 } from '../../store/api/trainer.api'
 import { useGetMeQuery } from '../../store/api/user.api'
+import { userApi } from '../../store/api/user.api'
 import { toggleSidebar } from '../../store/slices/ui.slice'
 
 const { Title, Text } = Typography
@@ -53,10 +54,7 @@ export const Admin: React.FC = () => {
 	} = useGetInvitesQuery({ status: 'PENDING' })
 
 	// статистика тренера
-	const {
-		data: stats,
-		refetch: refetchStats,
-	} = useGetTrainerStatsQuery()
+	const { data: stats, refetch: refetchStats } = useGetTrainerStatsQuery()
 
 	const invites = invitesData?.invites || []
 
@@ -86,9 +84,17 @@ export const Admin: React.FC = () => {
 		try {
 			const result = await acceptInvite({ inviteId }).unwrap()
 			message.success(result.message)
+			// Инвалидируем кэш данных пользователя, чтобы обновить статус
+			dispatch(userApi.util.invalidateTags(['User']))
 			refetchStats()
-		} catch (error: any) {
-			const errorMessage = error?.data?.message || error?.data?.error?.message || 'Не удалось принять клиента'
+		} catch (error) {
+			const apiError = error as {
+				data?: { message?: string; error?: { message?: string } }
+			}
+			const errorMessage =
+				apiError?.data?.message ||
+				apiError?.data?.error?.message ||
+				'Не удалось принять клиента'
 			message.error(errorMessage)
 		} finally {
 			setAcceptingId(null)
@@ -101,9 +107,17 @@ export const Admin: React.FC = () => {
 		try {
 			const result = await rejectInvite({ inviteId }).unwrap()
 			message.success(result.message)
+			// Инвалидируем кэш данных пользователя, чтобы обновить статус
+			dispatch(userApi.util.invalidateTags(['User']))
 			refetchStats()
-		} catch (error: any) {
-			const errorMessage = error?.data?.message || error?.data?.error?.message || 'Не удалось отклонить приглашение'
+		} catch (error) {
+			const apiError = error as {
+				data?: { message?: string; error?: { message?: string } }
+			}
+			const errorMessage =
+				apiError?.data?.message ||
+				apiError?.data?.error?.message ||
+				'Не удалось отклонить приглашение'
 			message.error(errorMessage)
 		} finally {
 			setRejectingId(null)
@@ -201,12 +215,12 @@ export const Admin: React.FC = () => {
 
 					{/* Избранные клиенты */}
 					{favoriteClients.length > 0 && (
-						<div className="mt-8">
+						<div className='mt-8'>
 							<ClientsGrid
-								title="⭐ Избранные клиенты"
+								title='⭐ Избранные клиенты'
 								clients={favoriteClients}
 								onToggleStar={handleToggleStar}
-								emptyText="Нет избранных клиентов"
+								emptyText='Нет избранных клиентов'
 							/>
 						</div>
 					)}
@@ -218,11 +232,11 @@ export const Admin: React.FC = () => {
 			label: `🤝 Мои клиенты (${workingClients.length})`,
 			children: (
 				<ClientsGrid
-					title="🤝 Клиенты в работе"
+					title='🤝 Клиенты в работе'
 					clients={workingClients}
 					onToggleStar={handleToggleStar}
 					showSearch
-					emptyText="Нет клиентов в работе. Примите заявки от клиентов, чтобы начать работу."
+					emptyText='Нет клиентов в работе. Примите заявки от клиентов, чтобы начать работу.'
 				/>
 			),
 		},
@@ -230,7 +244,7 @@ export const Admin: React.FC = () => {
 			key: 'all-clients',
 			label: '👥 Все клиенты',
 			children: (
-				<div id="clients-section">
+				<div id='clients-section'>
 					<AllClientsGrid />
 				</div>
 			),
@@ -240,10 +254,10 @@ export const Admin: React.FC = () => {
 			label: `⭐ Избранные (${favoriteClients.length})`,
 			children: (
 				<ClientsGrid
-					title="⭐ Избранные клиенты"
+					title='⭐ Избранные клиенты'
 					clients={favoriteClients}
 					onToggleStar={handleToggleStar}
-					emptyText="Нет избранных клиентов. Отметьте звёздочкой клиентов, с которыми работаете чаще всего."
+					emptyText='Нет избранных клиентов. Отметьте звёздочкой клиентов, с которыми работаете чаще всего.'
 				/>
 			),
 		},
@@ -254,7 +268,7 @@ export const Admin: React.FC = () => {
 					📨 Заявки{' '}
 					{invites.length > 0 && (
 						<span
-							className="ml-1 px-2 py-0.5 rounded-full text-xs"
+							className='ml-1 px-2 py-0.5 rounded-full text-xs'
 							style={{
 								background: 'var(--primary)',
 								color: '#fff',
@@ -280,7 +294,7 @@ export const Admin: React.FC = () => {
 			key: 'profile',
 			label: '👤 Мой профиль',
 			children: (
-				<div id="trainer-info">
+				<div id='trainer-info'>
 					<TrainerInfo />
 				</div>
 			),
@@ -309,9 +323,7 @@ export const Admin: React.FC = () => {
 
 					{!sidebarCollapsed && (
 						<div className='p-4'>
-							<TrainerSidebar
-								clients={sidebarClients}
-							/>
+							<TrainerSidebar clients={sidebarClients} />
 						</div>
 					)}
 				</Sider>
@@ -320,8 +332,8 @@ export const Admin: React.FC = () => {
 					<div className='admin-page-card'>
 						{/* Header */}
 						<div className='flex items-center justify-between mb-6'>
-							<div className='section-header !mb-0 !text-left'>
-								<Title level={2} className='section-title !mb-0'>
+							<div className='section-header mb-0! text-left!'>
+								<Title level={2} className='section-title mb-0!'>
 									🏢 Панель тренера
 								</Title>
 								<Text type='secondary' className='block mt-1'>
@@ -342,7 +354,7 @@ export const Admin: React.FC = () => {
 							activeKey={activeTab}
 							onChange={setActiveTab}
 							items={tabItems}
-							size="large"
+							size='large'
 							style={{ marginTop: '16px' }}
 						/>
 					</div>

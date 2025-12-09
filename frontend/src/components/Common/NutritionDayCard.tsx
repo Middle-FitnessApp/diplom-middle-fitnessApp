@@ -44,7 +44,7 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 							{day.dayOrder}
 						</div>
 						<div>
-							<Title level={5} className='!mb-0'>
+							<Title level={5} className='mb-0!'>
 								{day.dayTitle}
 							</Title>
 							<Text type='secondary'>{day.meals?.length || 0} приёмов пищи</Text>
@@ -99,7 +99,7 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 						{day.dayOrder}
 					</div>
 					<div>
-						<Title level={4} className='!mb-1 !text-gray-800'>
+						<Title level={4} className='mb-1! text-gray-800!'>
 							{day.dayTitle}
 						</Title>
 						<div className='flex items-center gap-3'>

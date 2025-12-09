@@ -6,6 +6,15 @@ import type {
 	AssignedNutritionPlan,
 	ClientNutritionPlanResponse,
 } from '../types/nutrition.types'
+
+interface PaginatedDaysResponse {
+	days: NutritionDay[]
+	pagination: {
+		total: number
+		limit: number
+		offset: number
+	}
+}
 import {
 	createApi,
 	fetchBaseQuery,
@@ -82,6 +91,7 @@ export const nutritionApi = createApi({
 			{ clientId: string; period?: 'day' | 'week' | 'month'; date?: string }
 		>({
 			query: ({ clientId, period = 'day', date }) => ({
+
 				url: '/nutrition/client/plan',
 				params: {
 					clientId,
@@ -182,7 +192,7 @@ export const nutritionApi = createApi({
 		}),
 
 		// === ДНИ ===
-		getSubcategoryDays: builder.query<NutritionDay[], string>({
+		getSubcategoryDays: builder.query<PaginatedDaysResponse, string>({
 			query: (subcategoryId) => `/nutrition/subcategories/${subcategoryId}/days`,
 			providesTags: ['Day'],
 		}),
