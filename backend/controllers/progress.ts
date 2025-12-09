@@ -104,7 +104,7 @@ export async function getProgressById(
 ) {
 	const { ApiError } = await import('../utils/ApiError.js')
 
-	// Находим отчет о прогрессе
+	// Находим отчет о прогрессе с комментариями тренера
 	const progress = await prisma.progress.findUnique({
 		where: { id: progressId },
 		include: {
@@ -114,6 +114,18 @@ export async function getProgressById(
 					name: true,
 					photo: true,
 				},
+			},
+			comments: {
+				include: {
+					trainer: {
+						select: {
+							id: true,
+							name: true,
+							photo: true,
+						},
+					},
+				},
+				orderBy: { createdAt: 'desc' },
 			},
 		},
 	})
