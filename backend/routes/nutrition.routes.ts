@@ -21,7 +21,7 @@ import {
 } from '../controllers/nutrition.js'
 
 export default async function nutritionRoutes(app: FastifyInstance) {
-	// План питания для текущего клиента (CLIENT) или для принятого клиента (TRAINER)
+	// Получение активного плана питания клиента (CLIENT) или плана принятого клиента (TRAINER)
 	app.get(
 		'/client/plan',
 		{
@@ -30,7 +30,7 @@ export default async function nutritionRoutes(app: FastifyInstance) {
 		getClientNutritionPlan,
 	)
 
-	// История планов питания клиента (CLIENT)
+	// Получение истории планов питания клиента
 	app.get(
 		'/client/history',
 		{
@@ -39,33 +39,61 @@ export default async function nutritionRoutes(app: FastifyInstance) {
 		getClientNutritionHistory,
 	)
 
-	// CRUD КАТЕГОРИЙ (TRAINER)
-
+	// Создание категории питания
 	app.post(
 		'/categories',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		createNutritionCategory,
 	)
 
+	// Получение всех категорий тренера
 	app.get(
 		'/categories',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		getTrainerNutritionCategories,
 	)
 
+	// Обновление категории питания
 	app.put(
 		'/categories/:id',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		updateNutritionCategory,
 	)
 
+	// Удаление категории питания
 	app.delete(
 		'/categories/:id',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		deleteNutritionCategory,
 	)
 
-	// CRUD ПОДКАТЕГОРИЙ (TRAINER)
+	// Создание подкатегории в категории
+	app.post(
+		'/categories/:id/subcategories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		createNutritionSubcategory,
+	)
+
+	// Получение подкатегорий категории
+	app.get(
+		'/categories/:id/subcategories',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		getNutritionSubcategories,
+	)
+
+	// Обновление подкатегории
+	app.put(
+		'/subcategories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		updateNutritionSubcategory,
+	)
+
+	// Удаление подкатегории
+	app.delete(
+		'/subcategories/:id',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		deleteNutritionSubcategory,
+	)
 
 	// Создание подкатегории с днями (полная форма)
 	app.post(
@@ -74,53 +102,31 @@ export default async function nutritionRoutes(app: FastifyInstance) {
 		createSubcategoryWithDays,
 	)
 
-	app.post(
-		'/categories/:id/subcategories',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		createNutritionSubcategory,
-	)
-
-	app.get(
-		'/categories/:id/subcategories',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		getNutritionSubcategories,
-	)
-
-	app.put(
-		'/subcategories/:id',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		updateNutritionSubcategory,
-	)
-
-	app.delete(
-		'/subcategories/:id',
-		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
-		deleteNutritionSubcategory,
-	)
-
-	// CRUD ДНЕЙ (TRAINER)
-
-	// Получение дней подкатегории с meals
+	// Получение дней подкатегории с фильтрацией и поиском
 	app.get(
 		'/subcategories/:id/days',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		getSubcategoryDays,
 	)
 
-	// Создание нового дня
-	app.post('/days', { preHandler: [authGuard, hasRole(['TRAINER'])] }, createNutritionDay)
+	// Создание нового дня в подкатегории
+	app.post(
+		'/subcategories/:id/days',
+		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
+		createNutritionDay,
+	)
 
-	// Получение конкретного дня
+	// Получение конкретного дня с приемами пищи
 	app.get('/days/:id', { preHandler: [authGuard, hasRole(['TRAINER'])] }, getNutritionDay)
 
-	// Обновление дня
-	app.put(
+	// Частичное обновление дня
+	app.patch(
 		'/days/:id',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },
 		updateNutritionDay,
 	)
 
-	// Удаление дня
+	// Удаление дня с каскадным удалением приемов пищи
 	app.delete(
 		'/days/:id',
 		{ preHandler: [authGuard, hasRole(['TRAINER'])] },

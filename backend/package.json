@@ -12,10 +12,8 @@
 		"prisma:migrate:dev": "npx prisma migrate dev",
 		"prisma:reset": "npx prisma migrate reset --force",
 		"prisma:seed": "tsx ./prisma/seed.ts",
+		"prisma:seed:light": "tsx ./prisma/seed-light.ts",
 		"prisma:studio": "npx prisma studio"
-	},
-	"prisma": {
-		"seed": "tsx ./prisma/seed.ts"
 	},
 	"dependencies": {
 		"@faker-js/faker": "10.1.0",

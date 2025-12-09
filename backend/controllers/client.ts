@@ -43,8 +43,16 @@ export async function inviteTrainer(clientId: string, trainerId: string) {
 		if (existingInvite.status === 'PENDING') {
 			throw ApiError.badRequest('Приглашение этому тренеру уже отправлено')
 		}
+		if (existingInvite.status === 'ACCEPTED') {
+			throw ApiError.badRequest('Вы уже работаете с этим тренером')
+		}
+		// Если REJECTED, разрешаем повторную подачу - меняем статус на PENDING
 		if (existingInvite.status === 'REJECTED') {
-			throw ApiError.badRequest('Тренер уже отклонил ваше приглашение')
+			await prisma.trainerClient.update({
+				where: { id: existingInvite.id },
+				data: { status: 'PENDING' },
+			})
+			return { message: 'Приглашение отправлено повторно' }
 		}
 	}
 
@@ -124,7 +132,7 @@ export async function cancelTrainerCooperation(clientId: string) {
 
 	const planIds = nutritionPlansToDelete.map((plan) => plan.id)
 
-	// 3. Удаляем связь с тренером и планы питания в транзакции
+	// 3. Удаляем связь с тренером и деактивируем все активные планы питания клиента в транзакции
 	await prisma.$transaction([
 		// Удаляем связь с тренером
 		prisma.trainerClient.delete({
@@ -132,23 +140,21 @@ export async function cancelTrainerCooperation(clientId: string) {
 				id: activeRelation.id,
 			},
 		}),
-		// Удаляем все планы питания от этого тренера
-		...(planIds.length > 0
-			? [
-					prisma.clientNutritionPlan.deleteMany({
-						where: {
-							id: {
-								in: planIds,
-							},
-						},
-					}),
-			  ]
-			: []),
+		// Деактивируем все активные планы питания клиента (на всякий случай, если связь неправильная)
+		prisma.clientNutritionPlan.updateMany({
+			where: {
+				clientId,
+				isActive: true,
+			},
+			data: {
+				isActive: false,
+			},
+		}),
 	])
 
 	return {
 		message: `Сотрудничество с тренером "${activeRelation.trainer.name}" успешно отменено`,
-		deletedNutritionPlans: planIds.length,
+		deactivatedNutritionPlans: planIds.length,
 	}
 }
 
