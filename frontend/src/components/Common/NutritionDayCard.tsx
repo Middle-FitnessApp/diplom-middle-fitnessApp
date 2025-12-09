@@ -1,5 +1,6 @@
 import React from 'react'
-import { Card, Typography, Collapse, Empty, Tag } from 'antd'
+import { Card, Typography, Collapse, Empty, Tag, Button, Tooltip, Popconfirm } from 'antd'
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { MealCard } from './NutritionMeal'
 import type { NutritionDay } from '../../types/nutritions'
 
@@ -11,6 +12,8 @@ interface NutritionDayCardProps {
 	date?: string
 	isToday?: boolean
 	showMealsByDefault?: boolean
+	onEdit?: (day: NutritionDay, e: React.MouseEvent) => void
+	onDelete?: (day: NutritionDay, e: React.MouseEvent) => void
 }
 
 export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
@@ -19,6 +22,8 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 	date,
 	isToday = false,
 	showMealsByDefault = false,
+	onEdit,
+	onDelete,
 }) => {
 	const formatDate = (dateStr: string) => {
 		const date = new Date(dateStr)
@@ -28,6 +33,38 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 			month: 'short',
 		})
 	}
+
+	const getMealTypeLabel = (type: string) => {
+		switch (type) {
+			case 'BREAKFAST':
+				return 'Завтрак'
+			case 'LUNCH':
+				return 'Обед'
+			case 'DINNER':
+				return 'Ужин'
+			case 'SNACK':
+				return 'Перекус'
+			default:
+				return type
+		}
+	}
+
+	const getMealTypeColor = (type: string) => {
+		switch (type) {
+			case 'BREAKFAST':
+				return '#faad14'
+			case 'LUNCH':
+				return '#1890ff'
+			case 'DINNER':
+				return '#722ed1'
+			case 'SNACK':
+				return '#52c41a'
+			default:
+				return '#d9d9d9'
+		}
+	}
+
+	const uniqueTypes = [...new Set(day.meals.map((meal) => meal.type))]
 
 	if (variant === 'trainer') {
 		// Стиль для тренера - с выбором и интерактивностью
@@ -47,9 +84,58 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 							<Title level={5} className='mb-0!'>
 								{day.dayTitle}
 							</Title>
-							<Text type='secondary'>{day.meals?.length || 0} приёмов пищи</Text>
+							<div className='flex items-center gap-2 mt-1'>
+								<Text type='secondary'>{day.meals?.length || 0} приёмов пищи</Text>
+								<div className='flex flex-wrap gap-1'>
+									{uniqueTypes.map((type) => (
+										<Tag
+											key={type}
+											className='text-xs'
+											style={{
+												backgroundColor: `${getMealTypeColor(type)}20`,
+												borderColor: getMealTypeColor(type),
+												color: getMealTypeColor(type),
+											}}
+										>
+											{getMealTypeLabel(type)}
+										</Tag>
+									))}
+								</div>
+							</div>
 						</div>
 					</div>
+					{(onEdit || onDelete) && (
+						<div className='flex items-center gap-2'>
+							{onEdit && (
+								<Tooltip title='Редактировать'>
+									<Button
+										type='text'
+										icon={<EditOutlined />}
+										onClick={(e) => onEdit(day, e)}
+									/>
+								</Tooltip>
+							)}
+							{onDelete && (
+								<Popconfirm
+									title='Удалить день?'
+									description='Это действие нельзя отменить'
+									onConfirm={(e) => e && onDelete(day, e)}
+									onCancel={(e) => e?.stopPropagation()}
+									okText='Удалить'
+									cancelText='Отмена'
+								>
+									<Tooltip title='Удалить'>
+										<Button
+											type='text'
+											danger
+											icon={<DeleteOutlined />}
+											onClick={(e) => e.stopPropagation()}
+										/>
+									</Tooltip>
+								</Popconfirm>
+							)}
+						</div>
+					)}
 				</div>
 
 				<Collapse
@@ -106,6 +192,21 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 							<Text type='secondary' className='text-sm'>
 								{day.meals?.length || 0} приёмов пищи
 							</Text>
+							<div className='flex flex-wrap gap-1'>
+								{uniqueTypes.map((type) => (
+									<Tag
+										key={type}
+										className='text-xs'
+										style={{
+											backgroundColor: `${getMealTypeColor(type)}20`,
+											borderColor: getMealTypeColor(type),
+											color: getMealTypeColor(type),
+										}}
+									>
+										{getMealTypeLabel(type)}
+									</Tag>
+								))}
+							</div>
 							{date && (
 								<>
 									<span className='text-gray-300'>•</span>

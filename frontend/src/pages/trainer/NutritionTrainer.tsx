@@ -123,13 +123,6 @@ export const NutritionTrainer = () => {
 		(acc, cat) => acc + (cat.subcategories?.length || 0),
 		0,
 	)
-	const totalDays = categories.reduce(
-		(acc, cat) =>
-			acc +
-			(cat.subcategories?.reduce((subAcc, sub) => subAcc + (sub.days?.length || 0), 0) ||
-				0),
-		0,
-	)
 
 	if (isLoadingCategories) {
 		return (
@@ -164,7 +157,7 @@ export const NutritionTrainer = () => {
 				{/* Header */}
 				<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8'>
 					<div>
-						<Title level={2} className='m-0'>
+						<Title level={2} className='section-title m-0!'>
 							📚 Библиотека планов питания
 						</Title>
 						<Text type='secondary' className='text-sm mt-1 block'>
@@ -183,7 +176,7 @@ export const NutritionTrainer = () => {
 				</div>
 
 				{/* Stats */}
-				<div className='grid grid-cols-3 gap-4 mb-6'>
+				<div className='grid grid-cols-2 gap-4 mb-6'>
 					<Card size='small' className='text-center'>
 						<div className='text-2xl font-bold text-primary'>{categories.length}</div>
 						<Text type='secondary'>Категорий</Text>
@@ -191,10 +184,6 @@ export const NutritionTrainer = () => {
 					<Card size='small' className='text-center'>
 						<div className='text-2xl font-bold text-green-600'>{totalSubcategories}</div>
 						<Text type='secondary'>Планов</Text>
-					</Card>
-					<Card size='small' className='text-center'>
-						<div className='text-2xl font-bold text-blue-600'>{totalDays}</div>
-						<Text type='secondary'>Дней</Text>
 					</Card>
 				</div>
 
@@ -207,18 +196,18 @@ export const NutritionTrainer = () => {
 							size='large'
 							prefix={<SearchOutlined className='text-gray-400' />}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className='max-w-md'
+							value={searchQuery}
 						/>
 					</div>
 				)}
 
 				{/* Categories */}
 				{filteredCategories.length > 0 ? (
-					<div className='flex flex-col gap-6'>
+					<div className='space-y-6!'>
 						{filteredCategories.map((category: NutritionCategory) => (
 							<Card
 								key={category.id}
-								className='overflow-hidden !mb-0'
+								className='overflow-hidden mb-0!'
 								title={
 									<div className='flex justify-between items-center'>
 										<div className='flex items-center gap-3'>

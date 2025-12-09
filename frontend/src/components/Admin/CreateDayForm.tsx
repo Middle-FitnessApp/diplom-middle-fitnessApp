@@ -190,7 +190,7 @@ export const CreateDayForm = ({
 									options={mealTypes}
 									className='w-32'
 								/>
-								<span className='text-gray-500'>#{meal.mealOrder}</span>
+								<span className='text-gray-500'>#{String(meal.mealOrder)}</span>
 							</div>
 						}
 						extra={

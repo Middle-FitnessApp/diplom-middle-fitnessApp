@@ -192,8 +192,14 @@ export const nutritionApi = createApi({
 		}),
 
 		// === ДНИ ===
-		getSubcategoryDays: builder.query<PaginatedDaysResponse, string>({
-			query: (subcategoryId) => `/nutrition/subcategories/${subcategoryId}/days`,
+		getSubcategoryDays: builder.query<
+			PaginatedDaysResponse,
+			{ subcategoryId: string; page: number; limit: number }
+		>({
+			query: ({ subcategoryId, page, limit }) =>
+				`/nutrition/subcategories/${subcategoryId}/days?limit=${limit}&offset=${
+					(page - 1) * limit
+				}`,
 			providesTags: ['Day'],
 		}),
 

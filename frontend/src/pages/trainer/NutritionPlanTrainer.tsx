@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import {
 	Typography,
 	Button,
@@ -9,19 +9,13 @@ import {
 	message,
 	Breadcrumb,
 	Tag,
-	Tooltip,
-	Popconfirm,
+	Pagination,
 } from 'antd'
-import {
-	PlusOutlined,
-	ArrowLeftOutlined,
-	DeleteOutlined,
-	EditOutlined,
-	HomeOutlined,
-} from '@ant-design/icons'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import type { NutritionDay, MealType } from '../../types/nutritions'
+import { PlusOutlined, ArrowLeftOutlined, HomeOutlined } from '@ant-design/icons'
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
+import type { NutritionDay } from '../../types/nutritions'
 import { CreateDayForm } from '../../components/Admin/CreateDayForm'
+import { NutritionDayCard } from '../../components/Common/NutritionDayCard'
 import {
 	useGetSubcategoryDaysQuery,
 	useCreateDayMutation,
@@ -32,13 +26,27 @@ import {
 
 const { Title, Text } = Typography
 
+// Константа для пагинации дней
+const DAYS_PER_PAGE = 10
+
 export const NutritionPlanTrainer = () => {
 	const { category: categoryId, subcategory: subcategoryId } = useParams()
 	const navigate = useNavigate()
 
-	const [openedDayId, setOpenedDayId] = useState<string | null>(null)
 	const [isDayFormVisible, setIsDayFormVisible] = useState(false)
 	const [editingDay, setEditingDay] = useState<NutritionDay | null>(null)
+
+	const [searchParams, setSearchParams] = useSearchParams()
+	const currentPage = parseInt(searchParams.get('page') || '1', 10)
+
+	const prevSubcategoryIdRef = useRef<string | undefined>()
+
+	useEffect(() => {
+		if (prevSubcategoryIdRef.current && prevSubcategoryIdRef.current !== subcategoryId) {
+			setSearchParams({ page: '1' })
+		}
+		prevSubcategoryIdRef.current = subcategoryId
+	}, [subcategoryId, setSearchParams])
 
 	// API queries
 	const {
@@ -46,25 +54,36 @@ export const NutritionPlanTrainer = () => {
 		isLoading,
 		isError,
 		refetch,
-	} = useGetSubcategoryDaysQuery(subcategoryId || '', {
-		skip: !subcategoryId,
-	})
+	} = useGetSubcategoryDaysQuery(
+		{
+			subcategoryId: subcategoryId || '',
+			page: currentPage,
+			limit: DAYS_PER_PAGE,
+		},
+		{
+			skip: !subcategoryId,
+		},
+	)
 
 	// Извлекаем days из пагинированного ответа
 	const days = daysResponse?.days ?? []
 
 	const { data: categories = [] } = useGetCategoriesQuery()
 
-	// Mutations
-	const [createDay, { isLoading: isCreating }] = useCreateDayMutation()
-	const [updateDay, { isLoading: isUpdating }] = useUpdateDayMutation()
-	const [deleteDay, { isLoading: isDeleting }] = useDeleteDayMutation()
-
-	// Находим информацию о категории и подкатегории
+	// Найти текущую категорию и подкатегорию
 	const currentCategory = categories.find((cat) => cat.id === categoryId)
 	const currentSubcategory = currentCategory?.subcategories?.find(
 		(sub) => sub.id === subcategoryId,
 	)
+	const [createDay, { isLoading: isCreating }] = useCreateDayMutation()
+	const [updateDay] = useUpdateDayMutation()
+	const [deleteDay] = useDeleteDayMutation()
+
+	const handlePageChange = (page: number) => {
+		setSearchParams({ page: page.toString() })
+		// Прокрутка к началу списка дней
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
 
 	const handleAddDay = () => {
 		setEditingDay(null)
@@ -77,21 +96,14 @@ export const NutritionPlanTrainer = () => {
 		setIsDayFormVisible(true)
 	}
 
-	const handleDeleteDay = async (dayId: string, e: React.MouseEvent) => {
-		e.stopPropagation()
+	const handleDeleteDay = async (day: NutritionDay, e?: React.MouseEvent) => {
+		e?.stopPropagation()
 		try {
-			await deleteDay(dayId).unwrap()
+			await deleteDay(day.id).unwrap()
 			message.success('День удалён')
-			if (openedDayId === dayId) {
-				setOpenedDayId(null)
-			}
-		} catch (error: any) {
-			message.error(error?.data?.message || 'Ошибка при удалении дня')
+		} catch (error: unknown) {
+			message.error(error instanceof Error ? error.message : 'Ошибка при удалении дня')
 		}
-	}
-
-	const handleDayClick = (dayId: string) => {
-		setOpenedDayId((prev) => (prev === dayId ? null : dayId))
 	}
 
 	const handleDayFormCancel = () => {
@@ -141,29 +153,9 @@ export const NutritionPlanTrainer = () => {
 
 			setIsDayFormVisible(false)
 			setEditingDay(null)
-		} catch (error: any) {
-			message.error(error?.data?.message || 'Ошибка при сохранении дня')
+		} catch (error: unknown) {
+			message.error(error instanceof Error ? error.message : 'Ошибка при сохранении дня')
 		}
-	}
-
-	const getMealTypeLabel = (type: MealType): string => {
-		const labels: Record<MealType, string> = {
-			BREAKFAST: 'Завтрак',
-			SNACK: 'Перекус',
-			LUNCH: 'Обед',
-			DINNER: 'Ужин',
-		}
-		return labels[type] || type
-	}
-
-	const getMealTypeColor = (type: MealType): string => {
-		const colors: Record<MealType, string> = {
-			BREAKFAST: 'orange',
-			SNACK: 'green',
-			LUNCH: 'blue',
-			DINNER: 'purple',
-		}
-		return colors[type] || 'default'
 	}
 
 	if (isLoading) {
@@ -191,9 +183,6 @@ export const NutritionPlanTrainer = () => {
 		)
 	}
 
-	// Сортируем дни по dayOrder
-	const sortedDays = [...days].sort((a, b) => a.dayOrder - b.dayOrder)
-
 	return (
 		<div className='page-container gradient-bg'>
 			<div className='page-card max-w-4xl mx-auto'>
@@ -210,10 +199,10 @@ export const NutritionPlanTrainer = () => {
 							),
 						},
 						{
-							title: currentCategory?.name || 'Категория',
+							title: String(currentCategory?.name || 'Категория'),
 						},
 						{
-							title: currentSubcategory?.name || 'Подкатегория',
+							title: String(currentSubcategory?.name || 'Подкатегория'),
 						},
 					]}
 				/>
@@ -229,11 +218,11 @@ export const NutritionPlanTrainer = () => {
 						/>
 						<div>
 							<Title level={2} className='m-0'>
-								{currentSubcategory?.name || 'План питания'}
+								{String(currentSubcategory?.name || 'План питания')}
 							</Title>
 							{currentSubcategory?.description && (
 								<Text type='secondary' className='text-sm mt-1 block'>
-									{currentSubcategory.description}
+									{String(currentSubcategory.description)}
 								</Text>
 							)}
 						</div>
@@ -251,124 +240,42 @@ export const NutritionPlanTrainer = () => {
 				{/* Stats */}
 				<div className='mb-6 flex items-center gap-4'>
 					<Tag color='blue' className='text-sm px-3 py-1'>
-						{sortedDays.length} дней
+						{String(daysResponse?.pagination?.total || 0)} дней
 					</Tag>
 					<Tag color='green' className='text-sm px-3 py-1'>
-						{sortedDays.reduce((acc, day) => acc + (day.meals?.length || 0), 0)} приёмов пищи
+						{String(days.reduce((acc: number, day) => acc + day.meals.length, 0))} приёмов
+						пищи
 					</Tag>
 				</div>
 
 				{/* Days list */}
-				{sortedDays.length > 0 ? (
-					<div className='flex flex-col gap-4'>
-						{sortedDays.map((day) => {
-							const meals = day.meals ?? []
-							return (
-								<Card
+				{days.length > 0 ? (
+					<>
+						<div className='space-y-4!'>
+							{days.map((day) => (
+								<NutritionDayCard
 									key={day.id}
-									className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-										openedDayId === day.id ? 'border-primary shadow-md' : ''
-									}`}
-									onClick={() => handleDayClick(day.id)}
-								>
-									<div className='flex justify-between items-start'>
-										<div className='flex items-center gap-4 flex-1'>
-											<div className='flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary font-bold text-lg'>
-												{day.dayOrder}
-											</div>
-											<div className='flex-1'>
-												<Text strong className='text-lg block'>
-													{day.dayTitle}
-												</Text>
-												<div className='flex flex-wrap gap-2 mt-2'>
-													{meals.map((meal) => (
-														<Tag key={meal.id} color={getMealTypeColor(meal.type)}>
-															{getMealTypeLabel(meal.type)}
-														</Tag>
-													))}
-												</div>
-											</div>
-										</div>
+									day={day}
+									variant='trainer'
+									onEdit={handleEditDay}
+									onDelete={handleDeleteDay}
+								/>
+							))}
+						</div>
 
-										<div className='flex items-center gap-2'>
-											<Tooltip title='Редактировать'>
-												<Button
-													type='text'
-													icon={<EditOutlined />}
-													onClick={(e) => handleEditDay(day, e)}
-													loading={isUpdating}
-												/>
-											</Tooltip>
-											<Popconfirm
-												title='Удалить день?'
-												description='Это действие нельзя отменить'
-												onConfirm={(e) => e && handleDeleteDay(day.id, e as any)}
-												onCancel={(e) => e?.stopPropagation()}
-												okText='Удалить'
-												cancelText='Отмена'
-											>
-												<Tooltip title='Удалить'>
-													<Button
-														type='text'
-														danger
-														icon={<DeleteOutlined />}
-														onClick={(e) => e.stopPropagation()}
-														loading={isDeleting}
-													/>
-												</Tooltip>
-											</Popconfirm>
-										</div>
-									</div>
-
-									{/* Expanded content */}
-									{openedDayId === day.id && (
-										<div className='mt-4 pt-4 border-t border-gray-100'>
-											{meals.length > 0 ? (
-												<div className='space-y-4'>
-													{[...meals]
-														.sort((a, b) => a.mealOrder - b.mealOrder)
-														.map((meal) => (
-															<div
-																key={meal.id}
-																className='bg-gray-50 rounded-lg p-4'
-															>
-																<div className='flex items-center gap-2 mb-2'>
-																	<Tag color={getMealTypeColor(meal.type)}>
-																		{getMealTypeLabel(meal.type)}
-																	</Tag>
-																	<Text strong>{meal.name}</Text>
-																</div>
-																{meal.items && meal.items.length > 0 ? (
-																	<ul className='ml-4 space-y-1'>
-																		{meal.items.map((item, index) => (
-																			<li
-																				key={index}
-																				className='text-gray-600 text-sm'
-																			>
-																				• {item}
-																			</li>
-																		))}
-																	</ul>
-																) : (
-																	<Text type='secondary' className='text-sm'>
-																		Нет элементов
-																	</Text>
-																)}
-															</div>
-														))}
-												</div>
-											) : (
-												<Empty
-													image={Empty.PRESENTED_IMAGE_SIMPLE}
-													description='Нет приёмов пищи'
-												/>
-											)}
-										</div>
-									)}
-								</Card>
-							)
-						})}
-					</div>
+						{daysResponse?.pagination?.total > DAYS_PER_PAGE && (
+							<div className='flex justify-center mt-8'>
+								<Pagination
+									current={currentPage}
+									total={daysResponse?.pagination?.total || 0}
+									pageSize={DAYS_PER_PAGE}
+									onChange={handlePageChange}
+									showSizeChanger={false}
+									showTotal={(total) => `Всего ${total} дней`}
+								/>
+							</div>
+						)}
+					</>
 				) : (
 					<Card className='text-center py-12'>
 						<Empty
@@ -398,7 +305,7 @@ export const NutritionPlanTrainer = () => {
 				>
 					<CreateDayForm
 						day={editingDay}
-						existingDays={sortedDays}
+						existingDays={days}
 						onSubmit={handleDayFormSubmit}
 						onCancel={handleDayFormCancel}
 					/>
