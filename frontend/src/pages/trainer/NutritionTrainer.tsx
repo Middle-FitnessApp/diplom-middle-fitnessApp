@@ -214,11 +214,11 @@ export const NutritionTrainer = () => {
 
 				{/* Categories */}
 				{filteredCategories.length > 0 ? (
-					<div className='space-y-6'>
+					<div className='flex flex-col gap-6'>
 						{filteredCategories.map((category: NutritionCategory) => (
 							<Card
 								key={category.id}
-								className='overflow-hidden'
+								className='overflow-hidden !mb-0'
 								title={
 									<div className='flex justify-between items-center'>
 										<div className='flex items-center gap-3'>

@@ -220,7 +220,15 @@ export async function getTrainerNutritionCategories(
 	const categories = await prisma.nutritionCategory.findMany({
 		where: { trainerId: req.user.id },
 		include: {
-			subcategories: true,
+			subcategories: {
+				include: {
+					days: {
+						select: {
+							id: true,
+						},
+					},
+				},
+			},
 		},
 	})
 

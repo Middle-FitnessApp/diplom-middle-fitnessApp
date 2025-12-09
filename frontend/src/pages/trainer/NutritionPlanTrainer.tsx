@@ -42,13 +42,16 @@ export const NutritionPlanTrainer = () => {
 
 	// API queries
 	const {
-		data: days = [],
+		data: daysResponse,
 		isLoading,
 		isError,
 		refetch,
 	} = useGetSubcategoryDaysQuery(subcategoryId || '', {
 		skip: !subcategoryId,
 	})
+
+	// Извлекаем days из пагинированного ответа
+	const days = daysResponse?.days ?? []
 
 	const { data: categories = [] } = useGetCategoriesQuery()
 
@@ -200,8 +203,8 @@ export const NutritionPlanTrainer = () => {
 					items={[
 						{
 							title: (
-								<Link to='/admin/nutrition' className='flex items-center gap-1'>
-									<HomeOutlined />
+								<Link to='/admin/nutrition' className='flex items-center'>
+									<HomeOutlined className='mr-2' />
 									Питание
 								</Link>
 							),
@@ -251,117 +254,120 @@ export const NutritionPlanTrainer = () => {
 						{sortedDays.length} дней
 					</Tag>
 					<Tag color='green' className='text-sm px-3 py-1'>
-						{sortedDays.reduce((acc, day) => acc + day.meals.length, 0)} приёмов пищи
+						{sortedDays.reduce((acc, day) => acc + (day.meals?.length || 0), 0)} приёмов пищи
 					</Tag>
 				</div>
 
 				{/* Days list */}
 				{sortedDays.length > 0 ? (
-					<div className='space-y-4'>
-						{sortedDays.map((day) => (
-							<Card
-								key={day.id}
-								className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-									openedDayId === day.id ? 'border-primary shadow-md' : ''
-								}`}
-								onClick={() => handleDayClick(day.id)}
-							>
-								<div className='flex justify-between items-start'>
-									<div className='flex items-center gap-4 flex-1'>
-										<div className='flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary font-bold text-lg'>
-											{day.dayOrder}
-										</div>
-										<div className='flex-1'>
-											<Text strong className='text-lg block'>
-												{day.dayTitle}
-											</Text>
-											<div className='flex flex-wrap gap-2 mt-2'>
-												{day.meals.map((meal) => (
-													<Tag key={meal.id} color={getMealTypeColor(meal.type)}>
-														{getMealTypeLabel(meal.type)}
-													</Tag>
-												))}
+					<div className='flex flex-col gap-4'>
+						{sortedDays.map((day) => {
+							const meals = day.meals ?? []
+							return (
+								<Card
+									key={day.id}
+									className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+										openedDayId === day.id ? 'border-primary shadow-md' : ''
+									}`}
+									onClick={() => handleDayClick(day.id)}
+								>
+									<div className='flex justify-between items-start'>
+										<div className='flex items-center gap-4 flex-1'>
+											<div className='flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary font-bold text-lg'>
+												{day.dayOrder}
+											</div>
+											<div className='flex-1'>
+												<Text strong className='text-lg block'>
+													{day.dayTitle}
+												</Text>
+												<div className='flex flex-wrap gap-2 mt-2'>
+													{meals.map((meal) => (
+														<Tag key={meal.id} color={getMealTypeColor(meal.type)}>
+															{getMealTypeLabel(meal.type)}
+														</Tag>
+													))}
+												</div>
 											</div>
 										</div>
-									</div>
 
-									<div className='flex items-center gap-2'>
-										<Tooltip title='Редактировать'>
-											<Button
-												type='text'
-												icon={<EditOutlined />}
-												onClick={(e) => handleEditDay(day, e)}
-												loading={isUpdating}
-											/>
-										</Tooltip>
-										<Popconfirm
-											title='Удалить день?'
-											description='Это действие нельзя отменить'
-											onConfirm={(e) => e && handleDeleteDay(day.id, e as any)}
-											onCancel={(e) => e?.stopPropagation()}
-											okText='Удалить'
-											cancelText='Отмена'
-										>
-											<Tooltip title='Удалить'>
+										<div className='flex items-center gap-2'>
+											<Tooltip title='Редактировать'>
 												<Button
 													type='text'
-													danger
-													icon={<DeleteOutlined />}
-													onClick={(e) => e.stopPropagation()}
-													loading={isDeleting}
+													icon={<EditOutlined />}
+													onClick={(e) => handleEditDay(day, e)}
+													loading={isUpdating}
 												/>
 											</Tooltip>
-										</Popconfirm>
+											<Popconfirm
+												title='Удалить день?'
+												description='Это действие нельзя отменить'
+												onConfirm={(e) => e && handleDeleteDay(day.id, e as any)}
+												onCancel={(e) => e?.stopPropagation()}
+												okText='Удалить'
+												cancelText='Отмена'
+											>
+												<Tooltip title='Удалить'>
+													<Button
+														type='text'
+														danger
+														icon={<DeleteOutlined />}
+														onClick={(e) => e.stopPropagation()}
+														loading={isDeleting}
+													/>
+												</Tooltip>
+											</Popconfirm>
+										</div>
 									</div>
-								</div>
 
-								{/* Expanded content */}
-								{openedDayId === day.id && (
-									<div className='mt-4 pt-4 border-t border-gray-100'>
-										{day.meals.length > 0 ? (
-											<div className='space-y-4'>
-												{day.meals
-													.sort((a, b) => a.mealOrder - b.mealOrder)
-													.map((meal) => (
-														<div
-															key={meal.id}
-															className='bg-gray-50 rounded-lg p-4'
-														>
-															<div className='flex items-center gap-2 mb-2'>
-																<Tag color={getMealTypeColor(meal.type)}>
-																	{getMealTypeLabel(meal.type)}
-																</Tag>
-																<Text strong>{meal.name}</Text>
+									{/* Expanded content */}
+									{openedDayId === day.id && (
+										<div className='mt-4 pt-4 border-t border-gray-100'>
+											{meals.length > 0 ? (
+												<div className='space-y-4'>
+													{[...meals]
+														.sort((a, b) => a.mealOrder - b.mealOrder)
+														.map((meal) => (
+															<div
+																key={meal.id}
+																className='bg-gray-50 rounded-lg p-4'
+															>
+																<div className='flex items-center gap-2 mb-2'>
+																	<Tag color={getMealTypeColor(meal.type)}>
+																		{getMealTypeLabel(meal.type)}
+																	</Tag>
+																	<Text strong>{meal.name}</Text>
+																</div>
+																{meal.items && meal.items.length > 0 ? (
+																	<ul className='ml-4 space-y-1'>
+																		{meal.items.map((item, index) => (
+																			<li
+																				key={index}
+																				className='text-gray-600 text-sm'
+																			>
+																				• {item}
+																			</li>
+																		))}
+																	</ul>
+																) : (
+																	<Text type='secondary' className='text-sm'>
+																		Нет элементов
+																	</Text>
+																)}
 															</div>
-															{meal.items.length > 0 ? (
-																<ul className='ml-4 space-y-1'>
-																	{meal.items.map((item, index) => (
-																		<li
-																			key={index}
-																			className='text-gray-600 text-sm'
-																		>
-																			• {item}
-																		</li>
-																	))}
-																</ul>
-															) : (
-																<Text type='secondary' className='text-sm'>
-																	Нет элементов
-																</Text>
-															)}
-														</div>
-													))}
-											</div>
-										) : (
-											<Empty
-												image={Empty.PRESENTED_IMAGE_SIMPLE}
-												description='Нет приёмов пищи'
-											/>
-										)}
-									</div>
-								)}
-							</Card>
-						))}
+														))}
+												</div>
+											) : (
+												<Empty
+													image={Empty.PRESENTED_IMAGE_SIMPLE}
+													description='Нет приёмов пищи'
+												/>
+											)}
+										</div>
+									)}
+								</Card>
+							)
+						})}
 					</div>
 				) : (
 					<Card className='text-center py-12'>
