@@ -63,9 +63,12 @@ export const PersonalAccount = () => {
 		})
 
 	// Получаем план питания клиента
-	const { data: nutritionPlanData } = useGetClientNutritionPlanQuery(undefined, {
-		skip: !isAuthenticated || user?.role !== 'CLIENT',
-	})
+	const { data: nutritionPlanData } = useGetClientNutritionPlanQuery(
+		{ clientId: user?.id || '', period: 'day' },
+		{
+			skip: !isAuthenticated || user?.role !== 'CLIENT',
+		},
+	)
 
 	// Расчет текущего дня плана питания
 	const currentNutritionDay = useMemo(() => {

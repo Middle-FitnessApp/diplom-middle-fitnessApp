@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Typography, Spin, Alert, Segmented } from 'antd'
 import { NutritionDayCard } from '../../components/Common'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text } = Typography
 
@@ -16,7 +17,13 @@ const filterLabels: Record<FilterType, string> = {
 export const Nutrition: React.FC = () => {
 	const [filter, setFilter] = useState<FilterType>('day')
 
-	const { data, isLoading, isError } = useGetClientNutritionPlanQuery({ period: filter })
+	const user = useAppSelector((state) => state.auth.user)
+	const clientId = user?.id || ''
+
+	const { data, isLoading, isError } = useGetClientNutritionPlanQuery({
+		clientId,
+		period: filter,
+	})
 
 	const days = data?.days || []
 	const plan = data?.plan

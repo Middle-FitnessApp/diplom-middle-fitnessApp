@@ -53,9 +53,16 @@ export const AddNutritionTrainer = () => {
 		data: daysResponse,
 		isLoading: isLoadingDays,
 		isFetching: isFetchingDays,
-	} = useGetSubcategoryDaysQuery(selectedSubcategory, {
-		skip: !selectedSubcategory,
-	})
+	} = useGetSubcategoryDaysQuery(
+		{
+			subcategoryId: selectedSubcategory,
+			page: 1,
+			limit: 1000, // Получить все дни для выбора
+		},
+		{
+			skip: !selectedSubcategory,
+		},
+	)
 
 	// Извлекаем массив дней из ответа с пагинацией
 	const days = useMemo(() => {
