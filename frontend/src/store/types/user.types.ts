@@ -1,4 +1,6 @@
-import type { AuthUser } from './auth.types'
+import type { ProgressReport } from '../api/progress.api'
+import type { AuthUser, ClientUser } from './auth.types'
+import type { NutritionPlans } from './nutrition.types'
 
 export interface UserProfile {
 	id: string
@@ -43,4 +45,21 @@ export interface UpdateTrainerProfileRequest extends UpdateClientProfileRequest 
 export interface UpdateProfileResponse {
 	message: string
 	user: AuthUser
+}
+
+export interface ClientData {
+	client: ClientUser
+	lastProgress: ProgressReport | null
+	nutritionPlans: NutritionPlans[]
+	statistics: {
+		dynamics: Dynamic
+		totalReports: number
+	}
+}
+
+export interface Dynamic {
+	hipsChange: number
+	waistChange: number
+	weightChange: number
+	periodDays: number
 }

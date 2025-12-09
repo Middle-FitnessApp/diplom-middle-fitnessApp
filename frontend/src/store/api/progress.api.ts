@@ -1,5 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { API_ENDPOINTS } from '../../config/api.config'
+import type {
+	CommentsResponse,
+	Comment,
+	ProgressAnalyticsResponse,
+} from '../types/progress.types'
 
 export interface ProgressReport {
 	id: string
@@ -129,6 +134,43 @@ export const progressApi = createApi({
 			query: () => '/progress/latest',
 			transformResponse: (response: ProgressReportResponse) => response.progress,
 		}),
+
+		getProgressAnalytics: builder.query<
+			ProgressAnalyticsResponse,
+			{
+				period: string
+				metrics: string[]
+				startDate?: string
+				endDate?: string
+				clientId?: string
+			}
+		>({
+			query: (params) => ({
+				url: '/progress/analytics',
+				method: 'GET',
+				params,
+			}),
+		}),
+
+		getProgressComments: builder.query<
+			CommentsResponse,
+			{ progressId: string; page?: number; limit?: number }
+		>({
+			query: ({ progressId, page = 1, limit = 10 }) => ({
+				url: `/progress/${progressId}/comments`,
+				params: { page, limit },
+			}),
+			providesTags: ['Progress'],
+		}),
+
+		addProgressComment: builder.mutation<Comment, { progressId: string; text: string }>({
+			query: ({ progressId, text }) => ({
+				url: `/progress/${progressId}/comments`,
+				method: 'POST',
+				body: { text },
+			}),
+			invalidatesTags: ['Progress'],
+		}),
 	}),
 })
 
@@ -138,4 +180,7 @@ export const {
 	useGetProgressReportQuery,
 	useAddProgressReportMutation,
 	useGetLatestProgressQuery,
+	useGetProgressAnalyticsQuery,
+	useGetProgressCommentsQuery,
+	useAddProgressCommentMutation,
 } = progressApi

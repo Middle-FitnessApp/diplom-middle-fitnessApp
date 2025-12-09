@@ -1,4 +1,4 @@
-import type { UserProfile } from '../types/user.types'
+import type { ClientData, UserProfile } from '../types/user.types'
 import type { ProgressReport } from '../types/progress.types'
 import {
 	createApi,
@@ -267,12 +267,10 @@ export const trainerApi = createApi({
 			invalidatesTags: ['Clients'],
 		}),
 
-		getClientProfile: builder.query<UserProfile, { trainerId: string; clientId: string }>(
-			{
-				query: ({ trainerId, clientId }) => `/${trainerId}/clients/${clientId}/profile`,
-				providesTags: ['Client'],
-			},
-		),
+		getClientProfile: builder.query<ClientData, { clientId: string }>({
+			query: ({ clientId }) => `/clients/${clientId}`,
+			providesTags: ['Client'],
+		}),
 
 		getClientProgress: builder.query<
 			ProgressReport[],
