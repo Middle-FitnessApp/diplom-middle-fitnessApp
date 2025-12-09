@@ -1,6 +1,8 @@
-export const mealTypes = [
-	{ value: 'BREAKFAST' as const, label: 'Завтрак' },
-	{ value: 'SNACK' as const, label: 'Перекус' },
-	{ value: 'LUNCH' as const, label: 'Обед' },
-	{ value: 'DINNER' as const, label: 'Ужин' },
-] as const
+import type { MealType } from '../types/nutritions'
+
+export const mealTypes: { value: MealType; label: string }[] = [
+	{ value: 'BREAKFAST', label: 'Завтрак' },
+	{ value: 'SNACK', label: 'Перекус' },
+	{ value: 'LUNCH', label: 'Обед' },
+	{ value: 'DINNER', label: 'Ужин' },
+]

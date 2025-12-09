@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
 	Typography,
 	Button,
@@ -263,7 +263,7 @@ export const NutritionPlanTrainer = () => {
 							))}
 						</div>
 
-						{daysResponse?.pagination?.total > DAYS_PER_PAGE && (
+						{(daysResponse?.pagination?.total || 0) > DAYS_PER_PAGE && (
 							<div className='flex justify-center mt-8'>
 								<Pagination
 									current={currentPage}

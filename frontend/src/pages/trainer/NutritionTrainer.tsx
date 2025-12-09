@@ -27,6 +27,7 @@ import {
 } from '../../store/api/nutrition.api'
 import { ModalForCreateCategory } from '../../components/Admin/ModalForCreateCategory'
 import type { NutritionCategory, NutritionSubcategory } from '../../types/nutritions'
+import type { ApiError } from '../../store/types/auth.types'
 
 const { Title, Text, Paragraph } = Typography
 const { Search } = Input
@@ -74,9 +75,10 @@ export const NutritionTrainer = () => {
 			setNewCategoryDescription('')
 			message.success('Категория создана')
 			refetchCategories()
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const apiError = error as ApiError
 			console.error('Ошибка при создании категории:', error)
-			message.error(error?.data?.message || 'Ошибка при создании категории')
+			message.error(apiError?.data?.message || 'Ошибка при создании категории')
 		}
 	}
 
@@ -85,8 +87,9 @@ export const NutritionTrainer = () => {
 		try {
 			await deleteCategory(categoryId).unwrap()
 			message.success('Категория удалена')
-		} catch (error: any) {
-			message.error(error?.data?.message || 'Ошибка при удалении категории')
+		} catch (error: unknown) {
+			const apiError = error as ApiError
+			message.error(apiError?.data?.message || 'Ошибка при удалении категории')
 		}
 	}
 
@@ -95,8 +98,9 @@ export const NutritionTrainer = () => {
 		try {
 			await deleteSubcategory(subcategoryId).unwrap()
 			message.success('План удалён')
-		} catch (error: any) {
-			message.error(error?.data?.message || 'Ошибка при удалении плана')
+		} catch (error: unknown) {
+			const apiError = error as ApiError
+			message.error(apiError?.data?.message || 'Ошибка при удалении плана')
 		}
 	}
 
@@ -239,7 +243,7 @@ export const NutritionTrainer = () => {
 														: 'Это действие нельзя отменить'
 												}
 												onConfirm={(e) =>
-													e && handleDeleteCategory(category.id, e as any)
+													e && handleDeleteCategory(category.id, e as React.MouseEvent)
 												}
 												okText='Удалить'
 												cancelText='Отмена'
@@ -309,7 +313,10 @@ export const NutritionTrainer = () => {
 															description='Это действие нельзя отменить'
 															onConfirm={(e) => {
 																e?.stopPropagation()
-																handleDeleteSubcategory(subcategory.id, e as any)
+																handleDeleteSubcategory(
+																	subcategory.id,
+																	e as React.MouseEvent,
+																)
 															}}
 															onCancel={(e) => e?.stopPropagation()}
 															okText='Удалить'

@@ -29,7 +29,10 @@ import {
 	CloseCircleOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { useGetAllClientsQuery, useToggleClientStarMutation } from '../../store/api/trainer.api'
+import {
+	useGetAllClientsQuery,
+	useToggleClientStarMutation,
+} from '../../store/api/trainer.api'
 import type { AllSystemClient } from '../../store/api/trainer.api'
 
 const { Text, Title } = Typography
@@ -37,7 +40,7 @@ const { Text, Title } = Typography
 const API_URL = 'http://localhost:3000'
 
 interface AllClientsGridProps {
-	onToggleStar?: (clientId: string) => void
+	isSidebarCollapsed?: boolean
 }
 
 export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
@@ -91,11 +94,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		switch (status) {
 			case 'ACCEPTED':
 				return (
-					<Tag
-						icon={<CheckCircleOutlined />}
-						color="success"
-						style={{ marginLeft: 8 }}
-					>
+					<Tag icon={<CheckCircleOutlined />} color='success' style={{ marginLeft: 8 }}>
 						В работе
 					</Tag>
 				)
@@ -103,7 +102,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				return (
 					<Tag
 						icon={<ClockCircleOutlined />}
-						color="processing"
+						color='processing'
 						style={{ marginLeft: 8 }}
 					>
 						Ожидает
@@ -111,11 +110,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				)
 			case 'REJECTED':
 				return (
-					<Tag
-						icon={<CloseCircleOutlined />}
-						color="error"
-						style={{ marginLeft: 8 }}
-					>
+					<Tag icon={<CloseCircleOutlined />} color='error' style={{ marginLeft: 8 }}>
 						Отклонён
 					</Tag>
 				)
@@ -130,7 +125,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		return (
 			<Card
 				key={client.id}
-				className="shadow-md hover:shadow-xl transition-all"
+				className='shadow-md hover:shadow-xl transition-all'
 				style={{
 					borderRadius: '16px',
 					overflow: 'hidden',
@@ -142,7 +137,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 			>
 				{/* Header с градиентом */}
 				<div
-					className="p-4 relative"
+					className='p-4 relative'
 					style={{
 						background: isWorking
 							? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
@@ -151,7 +146,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 							: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
 					}}
 				>
-					<div className="flex items-start gap-4">
+					<div className='flex items-start gap-4'>
 						<Avatar
 							src={getPhotoUrl(client.photo)}
 							icon={<UserOutlined />}
@@ -161,18 +156,18 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 								boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
 							}}
 						/>
-						<div className="flex-1 min-w-0">
-							<div className="flex items-center flex-wrap gap-1">
+						<div className='flex-1 min-w-0'>
+							<div className='flex items-center flex-wrap gap-1'>
 								<Text
 									strong
-									className="text-white text-base truncate"
+									className='text-white text-base truncate'
 									style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
 								>
 									{client.name}
 								</Text>
 								{getStatusTag(client.relationshipStatus)}
 							</div>
-							<div className="flex flex-wrap gap-2 mt-2">
+							<div className='flex flex-wrap gap-2 mt-2'>
 								{client.age && (
 									<Tag
 										icon={<CalendarOutlined />}
@@ -188,23 +183,15 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 							</div>
 						</div>
 						{isWorking && (
-							<Tooltip
-								title={
-									client.isFavorite ? 'Убрать из избранных' : 'В избранное'
-								}
-							>
+							<Tooltip title={client.isFavorite ? 'Убрать из избранных' : 'В избранное'}>
 								<Button
-									type="text"
-									size="large"
+									type='text'
+									size='large'
 									icon={
 										client.isFavorite ? (
-											<StarFilled
-												style={{ color: '#ffd700', fontSize: 20 }}
-											/>
+											<StarFilled style={{ color: '#ffd700', fontSize: 20 }} />
 										) : (
-											<StarOutlined
-												style={{ color: '#fff', fontSize: 20 }}
-											/>
+											<StarOutlined style={{ color: '#fff', fontSize: 20 }} />
 										)
 									}
 									onClick={(e) => {
@@ -219,41 +206,39 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				</div>
 
 				{/* Body */}
-				<div className="p-4">
+				<div className='p-4'>
 					{/* Контактная информация */}
-					<div className="space-y-2 mb-4">
+					<div className='space-y-2 mb-4'>
 						{client.email && (
-							<div className="flex items-center gap-2 text-sm">
+							<div className='flex items-center gap-2 text-sm'>
 								<MailOutlined style={{ color: 'var(--primary)' }} />
-								<Text type="secondary" className="truncate text-xs">
+								<Text type='secondary' className='truncate text-xs'>
 									{client.email}
 								</Text>
 							</div>
 						)}
 						{client.phone && (
-							<div className="flex items-center gap-2 text-sm">
+							<div className='flex items-center gap-2 text-sm'>
 								<PhoneOutlined style={{ color: 'var(--success)' }} />
-								<Text type="secondary" className="text-xs">
+								<Text type='secondary' className='text-xs'>
 									{client.phone}
 								</Text>
 							</div>
 						)}
 						{client.goal && (
-							<div className="text-xs text-gray-500 truncate">
-								Цель: {client.goal}
-							</div>
+							<div className='text-xs text-gray-500 truncate'>Цель: {client.goal}</div>
 						)}
 					</div>
 
 					{/* Действия */}
 					{isWorking ? (
-						<Space wrap className="w-full">
+						<Space wrap className='w-full'>
 							<Button
-								type="primary"
+								type='primary'
 								icon={<EyeOutlined />}
 								onClick={() => handleViewProfile(client.id)}
 								style={{ borderRadius: '8px' }}
-								size="small"
+								size='small'
 							>
 								Профиль
 							</Button>
@@ -261,13 +246,13 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 								icon={<MessageOutlined />}
 								onClick={() => handleOpenChat(client.id)}
 								style={{ borderRadius: '8px' }}
-								size="small"
+								size='small'
 							>
 								Чат
 							</Button>
 						</Space>
 					) : (
-						<Text type="secondary" className="text-xs">
+						<Text type='secondary' className='text-xs'>
 							{client.relationshipStatus === 'PENDING'
 								? 'Заявка на рассмотрении'
 								: client.relationshipStatus === 'REJECTED'
@@ -281,20 +266,20 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 	}
 
 	return (
-		<div className="pb-4">
+		<div className='pb-4 flex flex-col h-full'>
 			{/* Header */}
-			<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-				<Title level={4} className="!mb-0" style={{ color: 'var(--text)' }}>
+			<div className='flex flex-wrap items-center justify-between mb-6 '>
+				<Title level={4} className='mb-0!' style={{ color: 'var(--text)' }}>
 					👥 Все клиенты системы
 					{pagination && (
-						<Text type="secondary" className="ml-2 text-base font-normal">
+						<Text type='secondary' className='ml-2 text-base font-normal'>
 							({pagination.total})
 						</Text>
 					)}
 				</Title>
 
 				<Input
-					placeholder="Поиск по имени..."
+					placeholder='Поиск по имени...'
 					prefix={<SearchOutlined style={{ color: 'var(--text-muted)' }} />}
 					value={searchValue}
 					onChange={(e) => handleSearch(e.target.value)}
@@ -305,25 +290,23 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 
 			{/* Grid */}
 			{isLoading ? (
-				<div className="flex justify-center py-12">
-					<Spin size="large" />
+				<div className='flex justify-center items-center h-full'>
+					<Spin size='large' />
 				</div>
 			) : clients.length === 0 ? (
 				<Empty
 					image={Empty.PRESENTED_IMAGE_SIMPLE}
 					description={
-						<Text type="secondary">
-							{searchValue
-								? 'Клиенты не найдены'
-								: 'Нет клиентов в системе'}
+						<Text type='secondary'>
+							{searchValue ? 'Клиенты не найдены' : 'Нет клиентов в системе'}
 						</Text>
 					}
-					className="py-8"
+					className='py-8'
 				/>
 			) : (
 				<>
 					<Spin spinning={isFetching}>
-						<Row gutter={[16, 16]}>
+						<Row gutter={[24, 24]}>
 							{clients.map((client) => (
 								<Col key={client.id} xs={24} sm={12} lg={8} xl={6}>
 									{renderClientCard(client)}
@@ -334,13 +317,8 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 
 					{/* Pagination */}
 					{pagination && pagination.totalPages > 1 && (
-						<div 
-							className="flex justify-center mt-8 pt-4"
-							style={{ 
-								background: 'var(--bg-light)',
-								borderRadius: '8px',
-								padding: '16px'
-							}}
+						<div
+							className='flex justify-center pt-4 z-10'
 						>
 							<Pagination
 								current={currentPage}
@@ -359,4 +337,3 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		</div>
 	)
 }
-

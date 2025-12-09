@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Form, Input, Button, Card, Space, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useParams } from 'react-router-dom'
 import type { NutritionMeal, NutritionDay, MealType } from '../../types/nutritions'
 import { mealTypes } from '../../constants/mealTypes'
 
@@ -23,12 +22,12 @@ export const CreateDayForm = ({
 	onCancel,
 }: CreateDayFormProps) => {
 	const [form] = Form.useForm()
-	const { subcategoryId } = useParams() // переименовал
 	const [meals, setMeals] = useState<NutritionMeal[]>([])
 
 	// Инициализация meals при монтировании или изменении day
 	useEffect(() => {
 		if (day?.meals && day.meals.length > 0) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setMeals(day.meals)
 		} else {
 			// Создаем завтрак по умолчанию
@@ -42,6 +41,7 @@ export const CreateDayForm = ({
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			}
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setMeals([defaultMeal])
 		}
 	}, [day])

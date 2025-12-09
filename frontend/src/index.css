@@ -25,6 +25,8 @@ body {
 	margin: 0;
 	background-color: var(--bg);
 	color: var(--text);
+	height: auto;
+	overflow: auto;
 }
 
 a {
@@ -310,7 +312,6 @@ a:hover {
 	background: transparent !important;
 	padding: 0 !important;
 }
-/* Добавьте это в конец вашего CSS файла */
 
 /* Стили для Nutrition страницы */
 .nutrition-category-wrapper {
@@ -364,18 +365,16 @@ a:hover {
 /* Специальные стили для страницы Admin */
 .admin-page-card {
 	background: var(--bg-light);
-	border-radius: 20px;
 	padding: 40px;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-	border: 1px solid var(--border);
 	width: 100%;
 	box-sizing: border-box;
-	/* Убираем height: 100% - карточка должна расти по контенту */
 }
 
 /* Убираем ограничение максимальной ширины только для админской страницы */
 .admin-layout .admin-page-card {
 	max-width: none;
+	min-height: 100%;
 }
 
 /* Фиксируем высоту layout и делаем прокрутку в content */
@@ -711,4 +710,25 @@ div[class*='ant-notification'] .ant-notification-notice-close:hover {
 .nav-link-active {
 	color: var(--primary) !important;
 	font-weight: 600 !important;
+}
+
+/* Action buttons in cards */
+.action-buttons {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.action-buttons button {
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+	.action-buttons {
+		flex-direction: column;
+		align-items: stretch;
+	}
 }

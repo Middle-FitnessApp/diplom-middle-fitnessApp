@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, Avatar, Button, Tooltip, Tag, Typography, Space } from 'antd'
+import { Card, Avatar, Button, Tooltip, Tag, Typography } from 'antd'
 import {
 	UserOutlined,
 	StarFilled,
@@ -60,7 +60,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 		return (
 			<Card
 				className='shadow-sm hover:shadow-md transition-all cursor-pointer'
-				style={{ borderRadius: '12px' }}
+				style={{ borderRadius: '12px', height: '100%', width: '100%' }}
 				styles={{ body: { padding: '12px' } }}
 				onClick={handleViewProfile}
 			>
@@ -95,9 +95,11 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 			style={{
 				borderRadius: '16px',
 				overflow: 'hidden',
+				height: '100%',
+				width: '100%',
 			}}
 			styles={{
-				body: { padding: 0 },
+				body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
 			}}
 		>
 			{/* Header с градиентом */}
@@ -171,7 +173,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 			</div>
 
 			{/* Body */}
-			<div className='p-4'>
+			<div className='p-4 flex-1'>
 				{/* Контактная информация */}
 				<div className='space-y-2 mb-4'>
 					{client.email && (
@@ -189,9 +191,11 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 						</div>
 					)}
 				</div>
+			</div>
 
-				{/* Действия */}
-				<Space wrap className='w-full' style={{ justifyContent: 'space-between' }}>
+			{/* Действия */}
+			<div className='p-4'>
+				<div className='action-buttons'>
 					<Button
 						type='primary'
 						icon={<EyeOutlined />}
@@ -212,9 +216,11 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 							icon={<AppleOutlined />}
 							onClick={handleAddNutrition}
 							style={{ borderRadius: '8px', color: 'var(--success)' }}
-						/>
+						>
+							Питание
+						</Button>
 					</Tooltip>
-				</Space>
+				</div>
 			</div>
 		</Card>
 	)

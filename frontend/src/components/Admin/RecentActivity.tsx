@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, Timeline, Typography, Avatar, Empty } from 'antd'
+import { Card, List, Typography, Avatar, Empty } from 'antd'
 import { UserAddOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { TrainerInvite } from '../../store/api/trainer.api'
 
@@ -83,14 +83,8 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 	return (
 		<Card
 			title={<span className='text-lg font-semibold'>📋 Недавняя активность</span>}
-			className='shadow-lg'
-			styles={{
-				body: {
-					padding: '16px',
-					maxHeight: '400px',
-					overflow: 'auto',
-				},
-			}}
+			className='shadow-md'
+			styles={{ body: { padding: '16px' } }}
 		>
 			{allItems.length === 0 ? (
 				<Empty
@@ -98,7 +92,14 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 					description={<Text type='secondary'>Нет недавней активности</Text>}
 				/>
 			) : (
-				<Timeline items={allItems} />
+				<List
+					dataSource={allItems}
+					renderItem={(item) => (
+						<List.Item>
+							<List.Item.Meta avatar={item.dot} title={item.children} />
+						</List.Item>
+					)}
+				/>
 			)}
 		</Card>
 	)
