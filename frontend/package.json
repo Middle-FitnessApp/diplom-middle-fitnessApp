@@ -11,6 +11,8 @@
 	},
 	"dependencies": {
 		"@ant-design/icons": "6.1.0",
+		"@react-three/drei": "^9.88.0",
+		"@react-three/fiber": "^8.15.0",
 		"@reduxjs/toolkit": "2.10.1",
 		"@tailwindcss/vite": "4.1.17",
 		"antd": "5.29.1",
@@ -19,11 +21,13 @@
 		"emoji-picker-react": "^4.15.2",
 		"react": "18.2.0",
 		"react-dom": "18.2.0",
+		"react-is": "^18.2.0",
 		"react-redux": "9.2.0",
 		"react-router-dom": "7.9.6",
 		"recharts": "3.4.1",
 		"socket.io-client": "^4.8.1",
-		"tailwindcss": "4.1.17"
+		"tailwindcss": "4.1.17",
+		"three": "^0.160.0"
 	},
 	"devDependencies": {
 		"@eslint/js": "9.39.1",

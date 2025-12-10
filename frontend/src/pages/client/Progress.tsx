@@ -1,8 +1,9 @@
-import { Typography, Card, Spin, Alert, Empty, Button, Space, List, Avatar, Divider } from 'antd'
-import { PlusOutlined, UnorderedListOutlined, CommentOutlined, UserOutlined } from '@ant-design/icons'
+import { useState } from 'react'
+import { Typography, Card, Spin, Alert, Empty, Button, Space, List, Avatar, Divider, Tabs, Modal, Row, Col, Statistic } from 'antd'
+import { PlusOutlined, UnorderedListOutlined, CommentOutlined, UserOutlined, LineChartOutlined, BoxPlotOutlined, CalendarOutlined, TrophyOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
-import { ProgressChart } from '../../components'
+import { ProgressChart, ProgressTower3D } from '../../components'
 import { useGetProgressReportsQuery } from '../../store/api/progress.api'
 import type { ProgressReport } from '../../store/api/progress.api'
 
@@ -28,6 +29,9 @@ interface ProgressReportWithComments extends ProgressReport {
 export const Progress = () => {
   const navigate = useNavigate()
   const { data: reports, isLoading, error, refetch } = useGetProgressReportsQuery()
+  const [activeTab, setActiveTab] = useState<string>('2d')
+  const [selectedReport, setSelectedReport] = useState<any>(null)
+  const [isModalVisible, setIsModalVisible] = useState(false)
 
   if (isLoading) {
     return (
@@ -106,17 +110,27 @@ export const Progress = () => {
     return `${day}.${month}.${year} ${hours}:${minutes}`
   }
 
+  const handleBlockClick = (data: any, index: number) => {
+    setSelectedReport({ ...data, index })
+    setIsModalVisible(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalVisible(false)
+    setSelectedReport(null)
+  }
+
   return (
-    <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-      <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
-        <div className='text-center mb-8'>
-          <Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+    <div className='gradient-bg min-h-[calc(100vh-4rem)] p-6 flex justify-center items-start'>
+      <div className='bg-light rounded-2xl p-8 shadow-xl border border-gray-200 w-full max-w-[1600px]'>
+        <div className='text-center mb-6'>
+          <Title level={2} className='text-gray-800 font-semibold mb-3 pb-2 border-b-3 border-primary inline-block'>
             📈 Ваш прогресс
           </Title>
         </div>
 
         {/* Кнопки действий */}
-        <div className='mb-6'>
+        <div className='mb-5'>
           <Space size="middle" wrap>
             <Button 
               type="primary" 
@@ -147,14 +161,178 @@ export const Progress = () => {
           </Empty>
         ) : (
           <>
-            {/* График прогресса */}
-            <Card className='!border !border-gray-200 mb-6'>
-              <ProgressChart
-                data={chartData}
-                metrics={PROGRESS_METRICS}
-                chartTitle='График прогресса'
+            {/* Переключатель между 2D и 3D */}
+            <Card className='!border !border-gray-200 mb-6' bodyStyle={{ padding: '16px' }}>
+              <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                size="large"
+                items={[
+                  {
+                    key: '2d',
+                    label: (
+                      <span>
+                        <LineChartOutlined /> 2D График
+                      </span>
+                    ),
+                    children: (
+                      <ProgressChart
+                        data={chartData}
+                        metrics={PROGRESS_METRICS}
+                        chartTitle='График прогресса'
+                      />
+                    ),
+                  },
+                  {
+                    key: '3d',
+                    label: (
+                      <span>
+                        <BoxPlotOutlined /> 3D Башня прогресса
+                      </span>
+                    ),
+                    children: (
+                      <ProgressTower3D 
+                        data={chartData} 
+                        onBlockClick={handleBlockClick}
+                      />
+                    ),
+                  },
+                ]}
               />
             </Card>
+
+            {/* Модальное окно с деталями отчета */}
+            <Modal
+              title={
+                <Space>
+                  <TrophyOutlined style={{ color: '#1890ff' }} />
+                  <span>Отчет #{(selectedReport?.index ?? 0) + 1}</span>
+                </Space>
+              }
+              open={isModalVisible}
+              onCancel={handleModalClose}
+              width={600}
+              footer={[
+                <Button key="close" type="primary" onClick={handleModalClose}>
+                  Закрыть
+                </Button>,
+              ]}
+            >
+              {selectedReport && (
+                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                  {/* Дата */}
+                  <Card size="small" style={{ background: '#f0f5ff', border: '1px solid #adc6ff' }}>
+                    <Space>
+                      <CalendarOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '12px', display: 'block', color: '#595959' }}>Дата отчета</Text>
+                        <Text strong style={{ fontSize: '16px', color: '#262626' }}>
+                          {new Date(selectedReport.date).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </Text>
+                      </div>
+                    </Space>
+                  </Card>
+
+                  {/* Метрики */}
+                  <div>
+                    <Text strong style={{ fontSize: '14px', display: 'block', marginBottom: '12px' }}>
+                      📊 Измерения
+                    </Text>
+                    <Row gutter={[16, 16]}>
+                      {selectedReport.weight && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="⚖️ Вес"
+                              value={selectedReport.weight}
+                              suffix="кг"
+                              valueStyle={{ color: '#3f8600', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                      {selectedReport.waist && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="📏 Талия"
+                              value={selectedReport.waist}
+                              suffix="см"
+                              valueStyle={{ color: '#1890ff', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                      {selectedReport.hips && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="📐 Бедра"
+                              value={selectedReport.hips}
+                              suffix="см"
+                              valueStyle={{ color: '#722ed1', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                      {selectedReport.chest > 0 && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="💪 Грудь"
+                              value={selectedReport.chest}
+                              suffix="см"
+                              valueStyle={{ color: '#eb2f96', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                      {selectedReport.arm > 0 && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="💪 Рука"
+                              value={selectedReport.arm}
+                              suffix="см"
+                              valueStyle={{ color: '#fa8c16', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                      {selectedReport.leg > 0 && (
+                        <Col xs={12} sm={8}>
+                          <Card size="small" hoverable>
+                            <Statistic
+                              title="🦵 Нога"
+                              value={selectedReport.leg}
+                              suffix="см"
+                              valueStyle={{ color: '#13c2c2', fontSize: '20px' }}
+                            />
+                          </Card>
+                        </Col>
+                      )}
+                    </Row>
+                  </div>
+
+                  {/* Позиция в башне */}
+                  <Card size="small" style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                    <Space>
+                      <TrophyOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>Позиция в башне</Text>
+                        <Text strong style={{ fontSize: '16px', color: '#52c41a' }}>
+                          Этаж #{(selectedReport?.index ?? 0) + 1} из {chartData.length}
+                        </Text>
+                      </div>
+                    </Space>
+                  </Card>
+                </Space>
+              )}
+            </Modal>
 
             {/* Комментарии тренера */}
             {allComments.length > 0 && (
