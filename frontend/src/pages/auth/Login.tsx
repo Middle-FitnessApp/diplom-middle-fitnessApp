@@ -5,7 +5,6 @@ import { setCredentials } from '../../store/slices/auth.slice'
 import { useAppDispatch } from '../../store/hooks'
 import { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import type { ApiError } from '../../store/types/auth.types'
 import { BadRequestState } from '../../components/errors'
 
 export const Login = () => {
@@ -50,20 +49,27 @@ export const Login = () => {
 			} else {
 				navigate('/me')
 			}
-		} catch (err: any) {
+		} catch (err) {
 			console.error('Login error:', err)
 			
-			// Определяем статус ошибки
-			const status = err?.status || (err as ApiError)?.status
-			
-			// Получаем сообщение об ошибке из разных возможных мест
-			const errorMessage =
-				err?.data?.message || 
-				err?.data?.error?.message || 
-				err?.data?.error || 
-				err?.error?.message ||
-				err?.message ||
-				'Ошибка входа'
+		const error = err as {
+			status?: number
+			data?: { message?: string; error?: string }
+			error?: { message?: string }
+			message?: string
+			name?: string
+		}
+		
+		// Определяем статус ошибки
+		const status = error?.status
+		
+		// Получаем сообщение об ошибке из разных возможных мест
+		const errorMessage =
+			error?.data?.message || 
+			error?.data?.error || 
+			error?.error?.message ||
+			error?.message ||
+			'Ошибка входа'
 
 			// Обрабатываем разные типы ошибок
 			if (status === 400) {
@@ -73,7 +79,7 @@ export const Login = () => {
 				setFormError('Неверный email/телефон или пароль. Проверьте введённые данные.')
 			} else if (status === 500) {
 				setFormError('Ошибка сервера. Пожалуйста, попробуйте позже.')
-			} else if (err?.name === 'TypeError' || err?.message?.includes('fetch')) {
+			} else if (error?.name === 'TypeError' || error?.message?.includes('fetch')) {
 				// Сетевая ошибка
 				setFormError('Не удалось подключиться к серверу. Проверьте интернет-соединение.')
 			} else {

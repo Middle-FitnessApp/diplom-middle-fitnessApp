@@ -1,0 +1,88 @@
+# ============================================
+# CI Pipeline - Проверка качества кода
+# ============================================
+# Запускается на каждый Pull Request в development
+# Проверяет код ПЕРЕД мержем фичи
+
+name: CI - Code Quality Check
+
+on:
+  # Когда кто-то создаёт PR в development
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  # ═══════════════════════════════════════════
+  # JOB 1: Проверка Frontend
+  # ═══════════════════════════════════════════
+  frontend:
+    name: 🎨 Frontend Check
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run ESLint
+        run: npm run lint
+
+      - name: 🔨 TypeScript Build Check
+        run: npm run build
+
+  # ═══════════════════════════════════════════
+  # JOB 2: Проверка Backend
+  # ═══════════════════════════════════════════
+  backend:
+    name: 🖥️ Backend Check
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 🗄️ Generate Prisma Client
+        run: npx prisma generate
+
+      - name: 🔨 TypeScript Build Check
+        run: npm run build
+
+  # ═══════════════════════════════════════════
+  # JOB 3: Финальный статус
+  # ═══════════════════════════════════════════
+  ci-success:
+    name: ✅ CI Success
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    
+    steps:
+      - name: 🎉 All checks passed
+        run: echo "All CI checks passed successfully! ✨"

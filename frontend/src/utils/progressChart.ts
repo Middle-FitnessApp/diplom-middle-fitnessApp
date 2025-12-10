@@ -5,14 +5,19 @@ import type { ProgressAnalyticsResponse } from '../store/types/progress.types'
  * в массив данных для графика (LineChart)
  */
 
+type ChartDataPoint = {
+	date: string
+	[key: string]: string | number | boolean | undefined
+}
+
 export const transformAnalyticsToChartData = (
 	analyticsResponse: ProgressAnalyticsResponse,
-) => {
+): ChartDataPoint[] => {
 	if (!analyticsResponse?.metrics || analyticsResponse.metrics.length === 0) {
 		return []
 	}
 
-	const dateMap = new Map<string, Record<string, any>>()
+	const dateMap = new Map<string, ChartDataPoint>()
 
 	analyticsResponse.metrics.forEach((metricData) => {
 		metricData.data.forEach((point) => {

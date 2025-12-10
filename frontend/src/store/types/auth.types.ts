@@ -54,7 +54,7 @@ export interface Token {
 }
 
 export interface AuthResponse {
-	user: UserRole
+	user: AuthUser
 	token: Token
 }
 

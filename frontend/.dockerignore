@@ -1,0 +1,37 @@
+# Зависимости (устанавливаются заново в Docker)
+node_modules
+
+# Локальная сборка
+dist
+build
+
+# Логи
+*.log
+npm-debug.log*
+
+# IDE и редакторы
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Тесты
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Документация
+README.md
+*.md
+
+# Окружение (не должно попадать в образ)
+.env
+.env.*
+!.env.example
+

@@ -38,11 +38,10 @@ export const CreateDayForm = ({
 				name: 'Завтрак',
 				mealOrder: 1,
 				items: [''],
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-			}
-			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setMeals([defaultMeal])
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		}
+		setMeals([defaultMeal])
 		}
 	}, [day])
 

@@ -27,7 +27,7 @@ export const AvatarUploader = ({
 			setAvatarUrl(initialUrl ?? null)
 		}, 0)
 		return () => clearTimeout(t)
-	}, [initialUrl])
+	}, [initialUrl, avatarUrl])
 
 	const uploadProps: UploadProps = {
 		showUploadList: false,

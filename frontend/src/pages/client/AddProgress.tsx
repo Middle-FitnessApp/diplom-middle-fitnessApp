@@ -111,9 +111,11 @@ export const AddProgress = () => {
 
 			message.success('Отчёт о прогрессе успешно добавлен!')
 			navigate('/me/progress')
-		} catch (error: any) {
-			console.error('Failed to add progress:', error)
+		} catch (err) {
+			console.error('Failed to add progress:', err)
 
+			const error = err as { data?: { message?: string }; status?: number }
+			
 			if (error.data?.message) {
 				message.error(error.data.message)
 			} else if (error.status === 400) {
