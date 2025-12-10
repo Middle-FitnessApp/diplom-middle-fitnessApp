@@ -16,6 +16,9 @@ const start = async () => {
 			},
 		})
 
+		// Делаем io доступным в app для роутов
+		app.io = io
+
 		// Middleware для аутентификации
 		io.use(socketAuthMiddleware)
 

@@ -1,5 +1,6 @@
 import 'fastify'
 import type { UserRole } from '@prisma/client'
+import { Server as SocketIOServer } from 'socket.io'
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -7,5 +8,9 @@ declare module 'fastify' {
 			id: string
 			role: UserRole
 		}
+	}
+
+	interface FastifyInstance {
+		io?: SocketIOServer
 	}
 }

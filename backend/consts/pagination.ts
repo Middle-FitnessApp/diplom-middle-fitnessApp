@@ -16,3 +16,6 @@ export const MAX_LIMIT = 100
 
 // Минимальный номер страницы
 export const MIN_PAGE = 1
+
+// Лимит сообщений чата
+export const CHAT_MESSAGES_LIMIT = 100
