@@ -85,13 +85,19 @@ export const chatApi = createApi({
 
 		sendMessage: builder.mutation<
 			SendMessageResponse,
-			{ chatId: string; text: string; image?: string }
+			{ chatId: string; text?: string; image?: File }
 		>({
-			query: ({ chatId, ...body }) => ({
-				url: `/${chatId}/messages`,
-				method: 'POST',
-				body,
-			}),
+			query: ({ chatId, ...body }) => {
+				const formData = new FormData()
+				if (body.text) formData.append('text', body.text)
+				if (body.image) formData.append('image', body.image)
+
+				return {
+					url: `/${chatId}/messages`,
+					method: 'POST',
+					body: formData,
+				}
+			},
 			invalidatesTags: ['Messages', 'Chats'],
 		}),
 	}),

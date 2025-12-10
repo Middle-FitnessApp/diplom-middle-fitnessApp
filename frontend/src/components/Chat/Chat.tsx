@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Form, Typography, Spin, Alert } from 'antd'
+import { Form, Typography, Spin, Alert, message } from 'antd'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import type { MessageType, ChatUploadFile } from '../../types'
 import { MessageList } from './MessageList'
@@ -107,6 +107,23 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 			return
 		}
 
+		// Валидация типа файла
+		if (!file.type.startsWith('image/')) {
+			console.error('Only image files are allowed')
+			message.error(
+				'Разрешены только изображения. Выберите файл с расширением .jpg, .png, .gif и т.д.',
+			)
+			return
+		}
+
+		// Валидация размера файла (500KB = 500 * 1024 байт)
+		const maxSize = 500 * 1024
+		if (file.size > maxSize) {
+			console.error('File size exceeds 500KB limit')
+			message.error('Размер файла превышает 500KB. Выберите файл меньшего размера.')
+			return
+		}
+
 		const reader = new FileReader()
 		reader.onload = (e: ProgressEvent<FileReader>) => {
 			if (e.target?.result) {
@@ -115,9 +132,15 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 						uid: info.file.uid,
 						name: info.file.name,
 						url: e.target.result as string,
+						originFileObj: file as File,
 					},
 				])
 			}
+		}
+		reader.onerror = () => {
+			console.error('Failed to read file')
+			message.error('Не удалось прочитать файл. Попробуйте выбрать другое изображение.')
+			setFileList([]) // Очищаем список файлов при ошибке
 		}
 		reader.readAsDataURL(file)
 	}
@@ -138,17 +161,17 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 		if (!chatId) return
 
 		const text = form.getFieldValue('text') || ''
-		const imageUrl = fileList.length > 0 ? fileList[0].url : undefined
+		const imageFile = fileList.length > 0 ? fileList[0].originFileObj : undefined
 
-		if (!text && !imageUrl) {
+		if (!text && !imageFile) {
 			return
 		}
 
 		try {
 			const result = await sendMessage({
 				chatId,
-				text,
-				image: imageUrl,
+				text: text || undefined,
+				image: imageFile,
 			}).unwrap()
 
 			// Сообщение уже добавлено через WebSocket или RTK Query invalidation
@@ -160,7 +183,7 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 			setFileList([])
 		} catch (error) {
 			console.error('Failed to send message:', error)
-			// Можно показать уведомление об ошибке
+			message.error('Не удалось отправить сообщение. Попробуйте еще раз.')
 		}
 	}
 

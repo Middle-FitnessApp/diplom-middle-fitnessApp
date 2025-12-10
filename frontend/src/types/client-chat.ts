@@ -2,6 +2,7 @@ export type ChatUploadFile = {
 	uid: string
 	name: string
 	url: string
+	originFileObj?: File
 }
 
 export type MessageType = {
