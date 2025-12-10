@@ -31,8 +31,8 @@ export const Progress = () => {
 
   if (isLoading) {
     return (
-      <div className="page-container gradient-bg">
-        <div className="page-card">
+      <div className="gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start">
+        <div className="bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]">
           <div className="flex justify-center items-center h-64">
             <Spin size="large" />
           </div>
@@ -43,8 +43,8 @@ export const Progress = () => {
 
   if (error) {
     return (
-      <div className="page-container gradient-bg">
-        <div className="page-card">
+      <div className="gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start">
+        <div className="bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]">
           <Alert 
             message="Ошибка загрузки" 
             description="Не удалось загрузить данные о прогрессе"
@@ -107,10 +107,10 @@ export const Progress = () => {
   }
 
   return (
-    <div className='page-container gradient-bg'>
-      <div className='page-card'>
-        <div className='section-header'>
-          <Title level={2} className='section-title'>
+    <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+      <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+        <div className='text-center mb-8'>
+          <Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
             📈 Ваш прогресс
           </Title>
         </div>

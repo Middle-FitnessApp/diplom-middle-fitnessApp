@@ -180,7 +180,7 @@ export const Main: React.FC = () => {
 	// Загрузка (есть токен, но данные ещё грузятся)
 	if (isStillLoading) {
 		return (
-			<div className='page-container gradient-bg'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
 				<div className='flex justify-center items-center py-20'>
 					<Spin size='large' />
 				</div>
@@ -191,8 +191,8 @@ export const Main: React.FC = () => {
 	// Неавторизованный пользователь - показываем лендинг
 	if (!isAuthenticated) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card text-center'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] text-center'>
 					<Title level={1} className='text-6xl! font-black! mb-6! text-gray-800!'>
 						Fitness App
 					</Title>
@@ -216,8 +216,8 @@ export const Main: React.FC = () => {
 	// Тренер - показываем приветствие и переход в админку
 	if (user?.role === 'TRAINER') {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card text-center'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] text-center'>
 					<Title level={1} className='text-5xl! font-black! mb-6! text-gray-800!'>
 						👋 Добро пожаловать, {user.name}!
 					</Title>
@@ -240,10 +240,10 @@ export const Main: React.FC = () => {
 	// Клиент с привязанным тренером
 	if (hasTrainer && user.trainer) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
-					<div className='section-header'>
-						<Title level={2} className='section-title mb-2!'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+					<div className='text-center mb-8'>
+						<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
 							🏋️ Ваш тренер
 						</Title>
 						<Paragraph className='text-gray-600! mb-0!'>
@@ -262,10 +262,10 @@ export const Main: React.FC = () => {
 					{availableTrainers.length > 0 && (
 						<>
 							<Divider />
-							<div className='section-header'>
+							<div className='text-center mb-8'>
 								<Title
 									level={3}
-									className='mb-2! flex! items-center! justify-center! gap-2!'
+									className='mb-2 flex items-center justify-center gap-2'
 								>
 									<TeamOutlined /> Другие тренеры
 								</Title>
@@ -304,10 +304,10 @@ export const Main: React.FC = () => {
 
 	// Клиент без тренера - показываем список тренеров с пагинацией
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card'>
-				<div className='section-header'>
-					<Title level={2} className='section-title mb-2!'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className='text-center mb-8'>
+					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
 						🎯 Выберите тренера
 					</Title>
 					<Paragraph className='text-gray-600! mb-0!'>

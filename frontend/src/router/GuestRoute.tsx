@@ -28,7 +28,7 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 	// Есть токен, но данные ещё загружаются
 	if (isLoading) {
 		return (
-			<div className="page-container gradient-bg">
+			<div className="gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start">
 				<div className="flex justify-center items-center py-20">
 					<Spin size="large" />
 				</div>

@@ -298,12 +298,11 @@ export const Admin: React.FC = () => {
 	]
 
 	return (
-		// <div className='gradient-bg min-h-screen'>
-			<Layout className='admin-layout bg-transparent'>
+			<Layout className='min-h-screen overflow-hidden bg-transparent'>
 				<Sider
 					width={sidebarCollapsed ? 80 : 300}
 					collapsed={sidebarCollapsed}
-					className='admin-sidebar'
+					className='bg-light! border-r border-gray-200 shadow-md h-screen overflow-y-auto'
 					theme='light'
 				>
 					<div className='p-4 border-b border-gray-200'>
@@ -324,12 +323,12 @@ export const Admin: React.FC = () => {
 					)}
 				</Sider>
 
-				<Content className='admin-content'>
-					<div className='admin-page-card'>
+				<Content className='h-screen overflow-y-auto bg-transparent! p-0!'>
+					<div className='bg-light p-10 shadow-xl w-full min-h-full'>
 						{/* Header */}
 						<div className='flex items-center justify-between mb-6'>
-							<div className='section-header mb-0! text-left!'>
-								<Title level={2} className='section-title mb-0!'>
+							<div className='text-left'>
+								<Title level={2} className='text-gray-800 font-semibold mb-0 pb-3 border-b-3 border-primary inline-block'>
 									🏢 Панель тренера
 								</Title>
 								<Text type='secondary' className='block mt-1'>
@@ -356,6 +355,5 @@ export const Admin: React.FC = () => {
 					</div>
 				</Content>
 			</Layout>
-		// </div>
 	)
 }

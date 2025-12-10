@@ -79,7 +79,7 @@ export function Header() {
 	// Загрузка данных пользователя
 	if (token && isLoading) {
 		return (
-			<header className="border-b border-muted background-light">
+			<header className="border-b border-muted bg-light">
 				<div className="flex h-16 items-center justify-between px-6">
 					<Link to="/" className="text-xl font-bold text-gray-800">
 						Fitness App
@@ -96,7 +96,7 @@ export function Header() {
 	// Неавторизованный пользователь (нет токена или нет данных)
 	if (!isAuthenticated) {
 		return (
-			<header className="border-b border-muted background-light">
+			<header className="border-b border-muted bg-light">
 				<div className="flex h-16 items-center justify-between px-6">
 					<Link to="/" className="text-xl font-bold text-gray-800">
 						Fitness App
@@ -124,7 +124,7 @@ export function Header() {
 		const isNutritionActive = location.pathname.startsWith('/me/nutrition')
 
 		return (
-			<header className="border-b border-muted background-light">
+			<header className="border-b border-muted bg-light">
 				<div className="flex h-16 items-center justify-between px-6">
 					<nav className="flex items-center gap-6 h-full">
 						<Link
@@ -135,11 +135,7 @@ export function Header() {
 						</Link>
 						<Link
 							to="/"
-							className="relative text-sm font-medium transition-colors h-full flex items-center"
-							style={{
-								color: isHomeActive ? '#2563eb' : '#4b5563',
-								fontWeight: isHomeActive ? 600 : 500,
-							}}
+							className={`relative text-sm transition-colors h-full flex items-center ${isHomeActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 						>
 							Главная
 							{isHomeActive && (
@@ -148,11 +144,7 @@ export function Header() {
 						</Link>
 						<Link
 							to="/me/nutrition"
-							className="relative text-sm font-medium transition-colors h-full flex items-center"
-							style={{
-								color: isNutritionActive ? '#2563eb' : '#4b5563',
-								fontWeight: isNutritionActive ? 600 : 500,
-							}}
+							className={`relative text-sm transition-colors h-full flex items-center ${isNutritionActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 						>
 							Питание
 							{isNutritionActive && (
@@ -161,11 +153,7 @@ export function Header() {
 						</Link>
 						<Link
 							to="/me/progress"
-							className="relative text-sm font-medium transition-colors h-full flex items-center"
-							style={{
-								color: isProgressActive ? '#2563eb' : '#4b5563',
-								fontWeight: isProgressActive ? 600 : 500,
-							}}
+							className={`relative text-sm transition-colors h-full flex items-center ${isProgressActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 						>
 							Прогресс
 							{isProgressActive && (
@@ -174,11 +162,7 @@ export function Header() {
 						</Link>
 						<Link
 							to="/me/progress/reports"
-							className="relative text-sm font-medium transition-colors h-full flex items-center"
-							style={{
-								color: isReportsActive ? '#2563eb' : '#4b5563',
-								fontWeight: isReportsActive ? 600 : 500,
-							}}
+							className={`relative text-sm transition-colors h-full flex items-center ${isReportsActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 						>
 							Отчёты
 							{isReportsActive && (
@@ -192,11 +176,7 @@ export function Header() {
 						{hasTrainer && (
 							<Link
 								to="/trainer"
-								className="relative flex items-center gap-2 text-sm font-medium transition-colors h-full"
-								style={{
-									color: isTrainerChatActive ? '#2563eb' : '#4b5563',
-									fontWeight: isTrainerChatActive ? 600 : 500,
-								}}
+								className={`relative flex items-center gap-2 text-sm transition-colors h-full ${isTrainerChatActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 							>
 								<Badge count={unreadMessages} size="small" offset={[2, -2]}>
 									<MessageOutlined className="text-lg" />
@@ -230,7 +210,7 @@ export function Header() {
 
 	// Тренер
 	return (
-		<header className="border-b border-muted background-light">
+		<header className="border-b border-muted bg-light">
 			<div className="flex h-16 items-center justify-between px-6">
 				<nav className="flex items-center gap-6 h-full">
 					<Link
@@ -241,11 +221,7 @@ export function Header() {
 					</Link>
 					<Link
 						to="/admin"
-						className="relative text-sm font-medium transition-colors h-full flex items-center"
-						style={{
-							color: isAdminActive ? '#2563eb' : '#4b5563',
-							fontWeight: isAdminActive ? 600 : 500,
-						}}
+						className={`relative text-sm transition-colors h-full flex items-center ${isAdminActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 					>
 						Панель тренера
 						{isAdminActive && (
@@ -254,11 +230,7 @@ export function Header() {
 					</Link>
 					<Link
 						to="/admin/nutrition"
-						className="relative text-sm font-medium transition-colors h-full flex items-center"
-						style={{
-							color: isNutritionTrainerActive ? '#2563eb' : '#4b5563',
-							fontWeight: isNutritionTrainerActive ? 600 : 500,
-						}}
+						className={`relative text-sm transition-colors h-full flex items-center ${isNutritionTrainerActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
 					>
 						Планы питания
 						{isNutritionTrainerActive && (

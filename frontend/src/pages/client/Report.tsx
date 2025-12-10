@@ -58,8 +58,8 @@ export const Report: FC = () => {
 
     if (!id) {
         return (
-            <div className='page-container gradient-bg'>
-                <div className='page-card'>
+            <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+                <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
                     <Alert
                         message='Ошибка'
                         description='ID отчета не указан'
@@ -76,8 +76,8 @@ export const Report: FC = () => {
 
     if (isLoading) {
         return (
-            <div className='page-container gradient-bg'>
-                <div className='page-card flex justify-center items-center min-h-[400px]'>
+            <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+                <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] flex justify-center items-center min-h-[400px]'>
                     <Spin
                         indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
                         tip='Загрузка отчета...'
@@ -94,8 +94,8 @@ export const Report: FC = () => {
                 : 'Ошибка при загрузке отчета'
 
         return (
-            <div className='page-container gradient-bg'>
-                <div className='page-card'>
+            <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+                <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
                     <Alert
                         message='Ошибка загрузки'
                         description={errorMessage}
@@ -117,8 +117,8 @@ export const Report: FC = () => {
 
     if (!report) {
         return (
-            <div className='page-container gradient-bg'>
-                <div className='page-card'>
+            <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+                <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
                     <Alert message='Отчет не найден' type='warning' showIcon />
                     <Button
                         type='primary'
@@ -139,8 +139,8 @@ export const Report: FC = () => {
     const hasAnyPhoto = showFront || showSide || showBack
 
     return (
-        <div className='page-container gradient-bg'>
-            <div className='page-card' style={{ maxWidth: '800px' }}>
+        <div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+            <div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[800px]'>
                 <Button
                     type='text'
                     icon={<ArrowLeftOutlined />}
@@ -151,8 +151,8 @@ export const Report: FC = () => {
                 </Button>
 
                 <Card>
-                    <div className='section-header'>
-                        <Title level={2} className='section-title'>
+                    <div className='text-center mb-8'>
+                        <Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
                             📄 Отчет от {formatDate(report.date)}
                         </Title>
                     </div>

@@ -205,8 +205,8 @@ export const CreateNutritionTrainer = () => {
 	}
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card max-w-4xl mx-auto'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-4xl'>
 				{/* Header */}
 				<div className='flex items-center gap-4 mb-6'>
 					<Button

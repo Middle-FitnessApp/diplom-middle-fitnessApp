@@ -40,7 +40,7 @@ export const DayCard = ({ day, openedDayId, onDayClick, onEditDay }: DayCardProp
 
 	return (
 		<Card
-			className='background-light border-muted cursor-pointer hover:shadow-md transition-shadow'
+			className='bg-light border-muted cursor-pointer hover:shadow-md transition-shadow'
 			onClick={() => onDayClick(day.id)}
 		>
 			<div className='flex justify-between items-center'>

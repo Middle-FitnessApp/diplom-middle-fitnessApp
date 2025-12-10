@@ -94,7 +94,16 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		switch (status) {
 			case 'ACCEPTED':
 				return (
-					<Tag icon={<CheckCircleOutlined />} color='success' style={{ marginLeft: 8 }}>
+					<Tag 
+						icon={<CheckCircleOutlined />} 
+						style={{ 
+							marginLeft: 8,
+							background: 'var(--success)',
+							borderColor: 'var(--success)',
+							color: '#fff',
+							fontWeight: 600
+						}}
+					>
 						В работе
 					</Tag>
 				)

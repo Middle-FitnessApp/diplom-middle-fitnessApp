@@ -5,8 +5,8 @@ export const UnauthorizedState = () => {
 	const navigate = useNavigate()
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card' style={{ maxWidth: '500px' }}>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[500px]'>
 				<Result
 					status='403'
 					title='Требуется авторизация'

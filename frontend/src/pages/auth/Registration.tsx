@@ -222,8 +222,8 @@ export const Registration = () => {
 	}
 
 	return (
-		<div className='auth-container gradient-bg'>
-			<div className='auth-card' style={{ maxWidth: '800px' }}>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 max-w-[800px] w-full'>
 				<div className='text-center mb-8'>
 					<Title>Создать аккаунт</Title>
 					<Text type='secondary' className='text-lg'>
@@ -242,8 +242,8 @@ export const Registration = () => {
 					scrollToFirstError
 				>
 					{/* Секция фото */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							<CameraOutlined className='mr-2' />
 							Фотографии для анализа
 						</Title>
@@ -251,9 +251,9 @@ export const Registration = () => {
 							Загрузите три фотографии для точного анализа телосложения
 						</Text>
 
-						<div className='photo-upload-grid'>
+						<div className='grid grid-cols-2 gap-4 mb-6'>
 							{photoFields.map((photoType, index) => (
-								<div key={photoType} className='upload-area'>
+								<div key={photoType} className='border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer transition-all hover:border-primary hover:bg-gray-50'>
 									<Form.Item
 										name={photoType}
 										valuePropName='file'
@@ -320,8 +320,8 @@ export const Registration = () => {
 					</div>
 
 					{/* Личная информация */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							👤 Личная информация
 						</Title>
 
@@ -364,8 +364,8 @@ export const Registration = () => {
 					</div>
 
 					{/* Физические параметры */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							📏 Физические параметры
 						</Title>
 
@@ -399,8 +399,8 @@ export const Registration = () => {
 					</div>
 
 					{/* Замеры тела */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							📐 Замеры тела (см)
 						</Title>
 
@@ -473,8 +473,8 @@ export const Registration = () => {
 					</div>
 
 					{/* Фитнес цели */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							🎯 Фитнес информация
 						</Title>
 
@@ -528,8 +528,8 @@ export const Registration = () => {
 					</div>
 
 					{/* Пароль */}
-					<div className='form-section'>
-						<Title level={4} className='section-title'>
+					<div className='mb-8'>
+						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
 							🔐 Безопасность
 						</Title>
 						<Form.Item

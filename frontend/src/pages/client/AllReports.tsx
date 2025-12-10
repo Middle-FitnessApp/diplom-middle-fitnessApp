@@ -122,8 +122,8 @@ export const AllReports: FC = () => {
 
 	if (isLoading) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card flex justify-center items-center min-h-[400px]'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] flex justify-center items-center min-h-[400px]'>
 					<Spin
 						indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
 						tip='Загрузка отчетов...'
@@ -140,8 +140,8 @@ export const AllReports: FC = () => {
 				: 'Ошибка при загрузке отчетов'
 
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
 					<Alert
 						message='Ошибка загрузки'
 						description={errorMessage}
@@ -155,10 +155,10 @@ export const AllReports: FC = () => {
 
 	if (reports.length === 0) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
-					<div className='section-header'>
-						<Title level={2} className='section-title'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+					<div className='text-center mb-8'>
+						<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
 							📋 Ваши отчеты
 						</Title>
 					</div>
@@ -174,10 +174,10 @@ export const AllReports: FC = () => {
 	const paginated = filteredReports.slice((page - 1) * pageSize, page * pageSize)
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card'>
-				<div className='section-header'>
-					<Title level={2} className='section-title'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className='text-center mb-8'>
+					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
 						📋 Ваши отчеты
 					</Title>
 				</div>

@@ -138,8 +138,8 @@ export const NutritionTrainer = () => {
 
 	if (isErrorCategories) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
 					<div className='text-center py-12'>
 						<Empty
 							description='Ошибка при загрузке категорий'
@@ -156,12 +156,12 @@ export const NutritionTrainer = () => {
 	}
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card max-w-6xl mx-auto'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-6xl'>
 				{/* Header */}
 				<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8'>
 					<div>
-						<Title level={2} className='section-title m-0!'>
+						<Title level={2} className='text-gray-800 font-semibold m-0 pb-3 border-b-3 border-primary inline-block'>
 							📚 Библиотека планов питания
 						</Title>
 						<Text type='secondary' className='text-sm mt-1 block'>
@@ -207,11 +207,11 @@ export const NutritionTrainer = () => {
 
 				{/* Categories */}
 				{filteredCategories.length > 0 ? (
-					<div className='space-y-6!'>
+					<div className='space-y-6'>
 						{filteredCategories.map((category: NutritionCategory) => (
 							<Card
 								key={category.id}
-								className='overflow-hidden mb-0!'
+								className='overflow-hidden'
 								title={
 									<div className='flex justify-between items-center'>
 										<div className='flex items-center gap-3'>

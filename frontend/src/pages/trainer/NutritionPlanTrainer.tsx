@@ -168,8 +168,8 @@ export const NutritionPlanTrainer = () => {
 
 	if (isError) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
 					<Empty
 						description='Ошибка при загрузке дней'
 						image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -184,8 +184,8 @@ export const NutritionPlanTrainer = () => {
 	}
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card max-w-4xl mx-auto'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-4xl'>
 				{/* Breadcrumb */}
 				<Breadcrumb
 					className='mb-4'

@@ -261,8 +261,8 @@ export const PersonalAccount = () => {
 
 	if (error) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[500px]'>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='Не удалось загрузить данные профиля'
@@ -276,8 +276,8 @@ export const PersonalAccount = () => {
 
 	if (!user) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[500px]'>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='Пожалуйста, войдите в аккаунт'
@@ -303,10 +303,10 @@ export const PersonalAccount = () => {
 		firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card' style={{ maxWidth: '1000px' }}>
-				<div className='section-header'>
-					<Title level={2} className='section-title mb-2!'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1000px]'>
+				<div className='text-center mb-8'>
+					<Title level={2} className='text-gray-800 font-semibold mb-2 pb-3 border-b-3 border-primary inline-block'>
 						👤 Мой профиль
 					</Title>
 				</div>

@@ -1,11 +1,10 @@
-import { Button, Form, Input, Typography, Alert, Spin } from 'antd'
+import { Button, Form, Input, Typography, Alert } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLoginMutation } from '../../store/api/auth.api'
 import { setCredentials } from '../../store/slices/auth.slice'
 import { useAppDispatch } from '../../store/hooks'
 import { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import { BadRequestState } from '../../components/errors'
 
 export const Login = () => {
 	const { Title, Text } = Typography
@@ -14,7 +13,6 @@ export const Login = () => {
 
 	const [login, { isLoading }] = useLoginMutation()
 	const [formError, setFormError] = useState<string | null>(null)
-	const [showBadRequestNotification, setShowBadRequestNotification] = useState(false)
 
 	type FieldType = {
 		login: string
@@ -24,7 +22,6 @@ export const Login = () => {
 	const onFinish = async (values: FieldType) => {
 		try {
 			setFormError(null)
-			setShowBadRequestNotification(false)
 
 			const loginData = {
 				emailOrPhone: values.login,
@@ -54,7 +51,10 @@ export const Login = () => {
 			
 		const error = err as {
 			status?: number
-			data?: { message?: string; error?: string }
+			data?: { 
+				message?: string
+				error?: { message?: string; statusCode?: number } | string 
+			}
 			error?: { message?: string }
 			message?: string
 			name?: string
@@ -64,16 +64,18 @@ export const Login = () => {
 		const status = error?.status
 		
 		// Получаем сообщение об ошибке из разных возможных мест
+		// Бэкенд возвращает: { error: { message: "...", statusCode: ... } }
 		const errorMessage =
+			(typeof error?.data?.error === 'object' ? error?.data?.error?.message : error?.data?.error) ||
 			error?.data?.message || 
-			error?.data?.error || 
 			error?.error?.message ||
 			error?.message ||
 			'Ошибка входа'
 
 			// Обрабатываем разные типы ошибок
 			if (status === 400) {
-				setShowBadRequestNotification(true)
+				// Показываем конкретную ошибку валидации от бэкенда
+				setFormError(typeof errorMessage === 'string' ? errorMessage : 'Неверный формат данных. Проверьте введённые данные.')
 			} else if (status === 401 || status === 404) {
 				// Неверные учетные данные или пользователь не найден
 				setFormError('Неверный email/телефон или пароль. Проверьте введённые данные.')
@@ -89,14 +91,8 @@ export const Login = () => {
 	}
 
 	return (
-		<div className='auth-container gradient-bg'>
-			{showBadRequestNotification && (
-				<BadRequestState
-					title='Вы ввели неверные данные'
-					message='Пожалуйста попробуйте снова'
-				/>
-			)}
-			<div className='auth-card'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 max-w-[480px] w-full'>
 				<div className='text-center mb-8'>
 					<Title level={2} className='!mb-2 !text-gray-800'>
 						Добро пожаловать
@@ -168,7 +164,7 @@ export const Login = () => {
 							loading={isLoading}
 							className='!rounded-lg !h-12 !text-base font-semibold'
 						>
-							{isLoading ? <Spin size='small' /> : 'Войти'}
+							Войти
 						</Button>
 					</Form.Item>
 

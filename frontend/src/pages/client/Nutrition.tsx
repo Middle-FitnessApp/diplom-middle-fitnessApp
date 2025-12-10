@@ -30,7 +30,7 @@ export const Nutrition: React.FC = () => {
 
 	if (isLoading) {
 		return (
-			<div className='page-container gradient-bg flex items-center justify-center min-h-[60vh]'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex items-center justify-center'>
 				<Spin size='large' />
 			</div>
 		)
@@ -38,8 +38,8 @@ export const Nutrition: React.FC = () => {
 
 	if (isError) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
 					<Alert
 						type='error'
 						message='Не удалось загрузить план питания'
@@ -53,9 +53,9 @@ export const Nutrition: React.FC = () => {
 
 	if (!plan || days.length === 0) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card'>
-					<Title level={2} className='section-title'>
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
 						🍽️ План питания
 					</Title>
 					<Alert
@@ -80,11 +80,11 @@ export const Nutrition: React.FC = () => {
 	// }
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card'>
-				<div className='section-header flex items-center justify-between gap-4 flex-wrap mb-6'>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className='flex items-center justify-between gap-4 flex-wrap mb-6'>
 					<div className='flex flex-col'>
-						<Title level={2} className='section-title m-0 text-left'>
+						<Title level={2} className='text-gray-800 font-semibold m-0 text-left pb-3 border-b-3 border-primary inline-block'>
 							🍽️ План питания
 						</Title>
 						{plan.subcategory && (
@@ -93,7 +93,6 @@ export const Nutrition: React.FC = () => {
 					</div>
 
 					<Segmented<FilterType>
-						className='custom-segmented'
 						options={[
 							{ label: 'День', value: 'day' },
 							{ label: 'Неделя', value: 'week' },
@@ -113,7 +112,7 @@ export const Nutrition: React.FC = () => {
 					</Text>
 				</div>
 
-				<div className='space-y-6 nutrition-days-container'>
+				<div className='space-y-6'>
 					{days.map((day) => (
 						<NutritionDayCard
 							key={day.id}
