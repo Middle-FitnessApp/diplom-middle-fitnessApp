@@ -183,9 +183,11 @@ export const Registration = () => {
 
 			// Перенаправляем на главную страницу
 			navigate('/')
-		} catch (error: any) {
-			console.error('Registration failed:', error)
+		} catch (err) {
+			console.error('Registration failed:', err)
 
+			const error = err as { data?: { message?: string; error?: string }; status?: number }
+			
 			if (error.data?.message) {
 				message.error(`Ошибка регистрации: ${error.data.message}`)
 			} else if (error.data?.error) {
@@ -209,7 +211,7 @@ export const Registration = () => {
 	}
 
 	// Валидатор для email или телефона
-	const validateEmailOrPhone = (_: any, value: string) => {
+	const validateEmailOrPhone = (_: unknown, value: string) => {
 		if (!value) {
 			return Promise.reject('Введите email или телефон')
 		}

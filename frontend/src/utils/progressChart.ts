@@ -12,7 +12,7 @@ export const transformAnalyticsToChartData = (
 		return []
 	}
 
-	const dateMap = new Map<string, Record<string, any>>()
+	const dateMap = new Map<string, Record<string, string | number>>()
 
 	analyticsResponse.metrics.forEach((metricData) => {
 		metricData.data.forEach((point) => {
