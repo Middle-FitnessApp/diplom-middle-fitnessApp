@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify'
-import { sendMessage, getMessages } from '../controllers/chat.js'
+import { sendMessage, getMessages, getChats } from '../controllers/chat.js'
 import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
 import {
@@ -18,6 +18,13 @@ import { MAX_PHOTO_SIZE, CHAT_IMAGES_SUBFOLDER } from '../consts/file.js'
 
 export default async function chatRoutes(app: FastifyInstance) {
 	app.register(multipart)
+
+	// Получение списка чатов
+	app.get('/chats', { preHandler: [authGuard] }, async (req, reply) => {
+		const chats = await getChats(req.user.id, req.user.role)
+
+		return reply.status(200).send({ chats })
+	})
 
 	// Получение истории сообщений чата
 	app.get(

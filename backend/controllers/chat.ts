@@ -2,6 +2,7 @@ import { prisma } from '../prisma.js'
 import { ApiError } from '../utils/ApiError.js'
 import { SendMessageDTO } from '../validation/zod/chat/send-message.dto.js'
 import { GetMessagesQueryDTO } from '../validation/zod/chat/get-messages.dto.js'
+import type { UserRole } from '@prisma/client'
 
 /**
  * Отправка сообщения в чат
@@ -134,5 +135,127 @@ export async function getMessages(
 			total,
 			totalPages: Math.ceil(total / limit),
 		},
+	}
+}
+
+/**
+ * Получение списка чатов пользователя
+ * @param userId - ID пользователя
+ * @param role - Роль пользователя
+ * @returns Список чатов с последним сообщением и счетчиком непрочитанных
+ */
+export async function getChats(userId: string, role: UserRole) {
+	if (role === 'TRAINER') {
+		// Для тренера: чаты с клиентами
+		const chats = await prisma.chat.findMany({
+			where: {
+				trainerId: userId,
+			},
+			include: {
+				client: {
+					select: { id: true, name: true, photo: true },
+				},
+				messages: {
+					orderBy: { createdAt: 'desc' },
+					take: 1,
+					include: {
+						sender: {
+							select: { id: true, name: true },
+						},
+					},
+				},
+			},
+		})
+
+		// Получаем избранных клиентов
+		const favoriteClients = await prisma.trainerClient.findMany({
+			where: {
+				trainerId: userId,
+				isFavorite: true,
+			},
+			select: { clientId: true },
+		})
+		const favoriteClientIds = new Set(favoriteClients.map((tc) => tc.clientId))
+
+		// Добавляем счетчик непрочитанных и сортируем
+		const chatsWithMeta = await Promise.all(
+			chats.map(async (chat) => {
+				const unreadCount = await prisma.message.count({
+					where: {
+						chatId: chat.id,
+						senderId: { not: userId }, // От клиента
+						isRead: false,
+					},
+				})
+
+				return {
+					id: chat.id,
+					trainerId: chat.trainerId,
+					clientId: chat.clientId,
+					createdAt: chat.createdAt,
+					updatedAt: chat.updatedAt,
+					client: chat.client,
+					lastMessage: chat.messages[0] || null,
+					unreadCount,
+					isFavorite: favoriteClientIds.has(chat.clientId),
+				}
+			}),
+		)
+
+		// Сортировка: избранные сначала
+		chatsWithMeta.sort((a, b) => {
+			if (a.isFavorite && !b.isFavorite) return -1
+			if (!a.isFavorite && b.isFavorite) return 1
+			return 0
+		})
+
+		return chatsWithMeta
+	} else {
+		// Для клиента: чаты с тренерами (обычно один)
+		const chats = await prisma.chat.findMany({
+			where: {
+				clientId: userId,
+			},
+			include: {
+				trainer: {
+					select: { id: true, name: true, photo: true },
+				},
+				messages: {
+					orderBy: { createdAt: 'desc' },
+					take: 1,
+					include: {
+						sender: {
+							select: { id: true, name: true },
+						},
+					},
+				},
+			},
+		})
+
+		// Добавляем счетчик непрочитанных
+		const chatsWithMeta = await Promise.all(
+			chats.map(async (chat) => {
+				const unreadCount = await prisma.message.count({
+					where: {
+						chatId: chat.id,
+						senderId: { not: userId }, // От тренера
+						isRead: false,
+					},
+				})
+
+				return {
+					id: chat.id,
+					trainerId: chat.trainerId,
+					clientId: chat.clientId,
+					createdAt: chat.createdAt,
+					updatedAt: chat.updatedAt,
+					trainer: chat.trainer,
+					lastMessage: chat.messages[0] || null,
+					unreadCount,
+				}
+			}),
+		)
+
+		return chatsWithMeta
 	}
 }
