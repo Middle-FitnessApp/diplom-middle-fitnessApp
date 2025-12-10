@@ -12,6 +12,7 @@ import userRoutes from './routes/user.routes.js'
 import trainerRoutes from './routes/trainer.routes.js'
 import nutritionRoutes from './routes/nutrition.routes.js'
 import progressRoutes from './routes/progress.routes.js'
+import chatRoutes from './routes/chat.routes.js'
 
 const app = Fastify()
 
@@ -55,6 +56,7 @@ app.register(
 		instance.register(trainerRoutes, { prefix: '/trainer' })
 		instance.register(nutritionRoutes, { prefix: '/nutrition' })
 		instance.register(progressRoutes, { prefix: '/progress' })
+		instance.register(chatRoutes, { prefix: '/chat' })
 	},
 	{ prefix: '/api' },
 )
