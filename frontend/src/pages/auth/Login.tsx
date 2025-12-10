@@ -53,23 +53,24 @@ export const Login = () => {
 		} catch (err) {
 			console.error('Login error:', err)
 			
-			const error = err as ApiError & { 
-				data?: { message?: string; error?: { message?: string } | string }
-				error?: { message?: string }
-				message?: string
-				name?: string
-			}
-			
-			// Определяем статус ошибки
-			const status = error?.status
-			
-			// Получаем сообщение об ошибке из разных возможных мест
-			const errorMessage =
-				error?.data?.message || 
-				(typeof error?.data?.error === 'object' ? error?.data?.error?.message : error?.data?.error) || 
-				error?.error?.message ||
-				error?.message ||
-				'Ошибка входа'
+		const error = err as {
+			status?: number
+			data?: { message?: string; error?: string }
+			error?: { message?: string }
+			message?: string
+			name?: string
+		}
+		
+		// Определяем статус ошибки
+		const status = error?.status
+		
+		// Получаем сообщение об ошибке из разных возможных мест
+		const errorMessage =
+			error?.data?.message || 
+			error?.data?.error || 
+			error?.error?.message ||
+			error?.message ||
+			'Ошибка входа'
 
 			// Обрабатываем разные типы ошибок
 			if (status === 400) {
