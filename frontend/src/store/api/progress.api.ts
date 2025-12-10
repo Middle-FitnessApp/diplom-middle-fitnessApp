@@ -6,18 +6,6 @@ import type {
 	ProgressAnalyticsResponse,
 } from '../types/progress.types'
 
-// Комментарий тренера к отчёту
-export interface TrainerComment {
-	id: string
-	text: string
-	createdAt: string
-	trainer: {
-		id: string
-		name: string
-		photo?: string
-	}
-}
-
 export interface ProgressReport {
 	id: string
 	date: string
