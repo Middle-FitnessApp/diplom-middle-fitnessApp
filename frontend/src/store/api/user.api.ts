@@ -1,10 +1,5 @@
-import {
-	createApi,
-	fetchBaseQuery,
-	type BaseQueryFn,
-	type FetchArgs,
-	type FetchBaseQueryError,
-} from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import type {
 	UpdateClientProfileRequest,
 	UpdateProfileResponse,
@@ -54,65 +49,9 @@ export interface CancelInviteResponse {
 	message: string
 }
 
-const rawBaseQuery = fetchBaseQuery({
-	baseUrl: API_ENDPOINTS.user,
-	credentials: 'include',
-	prepareHeaders: (headers, { endpoint, type }) => {
-		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-		if (token) {
-			headers.set('authorization', `Bearer ${token}`)
-		}
-
-		const isJsonEndpoint = ['getMe'].includes(endpoint)
-
-		if (isJsonEndpoint || type === 'query') {
-			headers.set('Content-Type', 'application/json')
-		}
-
-		return headers
-	},
-})
-
-export const baseQueryWithReauth: BaseQueryFn<
-	string | FetchArgs,
-	unknown,
-	FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-	let result = await rawBaseQuery(args, api, extraOptions)
-
-	if (result.error && result.error.status === 401) {
-		const refreshResult = await rawBaseQuery(
-			{
-				url: '/../auth/refresh',
-				method: 'POST',
-				credentials: 'include',
-			},
-			api,
-			extraOptions,
-		)
-
-		if (refreshResult.data) {
-			// Сохраняем новый access token в localStorage
-			const data = refreshResult.data as { token?: { accessToken?: string } }
-			if (data.token?.accessToken) {
-				localStorage.setItem('token', data.token.accessToken)
-			}
-			// Повторяем оригинальный запрос с новым токеном
-			result = await rawBaseQuery(args, api, extraOptions)
-		} else {
-			if (typeof window !== 'undefined') {
-				localStorage.removeItem('token')
-				window.location.href = '/login'
-			}
-		}
-	}
-
-	return result
-}
-
 export const userApi = createApi({
 	reducerPath: 'userApi',
-	baseQuery: baseQueryWithReauth,
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.user),
 	tagTypes: ['User', 'Trainers'],
 	endpoints: (builder) => ({
 		getMe: builder.query<{ user: AuthUser }, void>({

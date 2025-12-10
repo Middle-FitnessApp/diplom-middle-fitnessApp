@@ -15,24 +15,23 @@ export const EmojiPickerComponent: React.FC<EmojiPickerProps> = ({
 	}
 
 	return (
-		<div style={{ position: 'relative' }}>
-			<EmojiPicker onEmojiClick={onEmojiClick} />
-			<button
-				type='button'
-				onClick={onClose}
-				style={{
-					position: 'absolute',
-					top: 5,
-					right: 5,
-					background: 'transparent',
-					border: 'none',
-					fontSize: 18,
-					cursor: 'pointer',
+		<div className='emoji-picker-wrapper'>
+			<EmojiPicker
+				onEmojiClick={onEmojiClick}
+				previewConfig={{
+					showPreview: false,
 				}}
-				aria-label='Закрыть'
-			>
-				✕
-			</button>
+			/>
+			<div className='emoji-picker-footer'>
+				<button
+					type='button'
+					onClick={onClose}
+					className='emoji-picker-close-btn'
+					aria-label='Закрыть'
+				>
+					Закрыть
+				</button>
+			</div>
 		</div>
 	)
 }

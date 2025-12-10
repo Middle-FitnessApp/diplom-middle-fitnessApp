@@ -16,6 +16,6 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
 		onCancel={onClose}
 		styles={{ body: { textAlign: 'center' } }}
 	>
-		<img src={imageUrl} alt='preview' style={{ maxWidth: '100%', maxHeight: '100%' }} />
+		<img src={imageUrl} alt='preview' className='image-preview-modal-img' />
 	</Modal>
 )

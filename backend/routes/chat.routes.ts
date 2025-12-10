@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { sendMessage, getMessages, getChats } from '../controllers/chat.js'
+import { prisma } from '../prisma.js'
 import { authGuard } from '../middleware/authGuard.js'
 import { hasRole } from '../middleware/hasRole.js'
 import {
@@ -44,7 +45,7 @@ export default async function chatRoutes(app: FastifyInstance) {
 
 	// Отправка сообщения в чат
 	app.post(
-		'/:chatId/messages',
+		'/messages',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])],
 			onError: cleanupFilesOnError,
@@ -69,16 +70,29 @@ export default async function chatRoutes(app: FastifyInstance) {
 				body = req.body as Record<string, string>
 			}
 
-			const { chatId } = SendMessageSchemaZod.params.parse(req.params)
 			const messageData = SendMessageSchemaZod.body.parse(body)
 
-			const message = await sendMessage(chatId, req.user.id, messageData, filesMap)
+			const message = await sendMessage(
+				messageData.chatId || null,
+				req.user.id,
+				{ text: messageData.text, image: messageData.image },
+				filesMap,
+			)
 
 			// Отправка через Socket.IO (если подключены)
 			// Предполагаем, что io доступен глобально или через app
 			const io = app.io
 			if (io) {
-				io.to(`chat_${chatId}`).emit('new_message', message)
+				io.to(`chat_${message.chatId}`).emit('new_message', message)
+				// Отправляем событие тренеру для обновления списка чатов
+				const chat = await prisma.chat.findUnique({
+					where: { id: message.chatId },
+					select: { trainerId: true, clientId: true },
+				})
+				if (chat) {
+					io.to(`user_${chat.trainerId}`).emit('chat_updated')
+					io.to(`user_${chat.clientId}`).emit('chat_updated')
+				}
 			}
 
 			return reply.status(201).send({ message })

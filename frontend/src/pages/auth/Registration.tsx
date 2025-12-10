@@ -192,10 +192,13 @@ export const Registration = () => {
 			// Перенаправляем на главную страницу
 			navigate('/')
 		} catch (err) {
-			console.error('Registration failed:', err)
+			console.error('Регистрация не удалась:', err)
 
-			const error = err as { data?: { message?: string; error?: string }; status?: number }
-			
+			const error = err as {
+				data?: { message?: string; error?: string }
+				status?: number
+			}
+
 			if (error.data?.message) {
 				message.error(`Ошибка регистрации: ${error.data.message}`)
 			} else if (error.data?.error) {
@@ -213,7 +216,6 @@ export const Registration = () => {
 	}
 
 	const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
-		console.log('Failed:', errorInfo)
 		const errorFields = errorInfo.errorFields.map((field) => field.name[0]).join(', ')
 		message.error(`Заполните обязательные поля: ${errorFields}`)
 	}
@@ -312,9 +314,7 @@ export const Registration = () => {
 											>
 												<div className='py-4'>
 													<UploadOutlined className='text-2xl mb-2' />
-													<Text className='block font-medium'>
-														{photoLabels[index]}
-													</Text>
+													<Text className='block font-medium'>{photoLabels[index]}</Text>
 													<Text type='secondary' className='text-sm'>
 														Нажмите или перетащите
 													</Text>
@@ -590,7 +590,7 @@ export const Registration = () => {
 							block
 							size='large'
 							loading={isLoading}
-							className='!rounded-lg !h-12 !text-base font-semibold'
+							className='rounded-lg! h-12! text-base! font-semibold'
 						>
 							Создать аккаунт
 						</Button>

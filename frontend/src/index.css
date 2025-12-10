@@ -27,7 +27,7 @@
 
 	/* Вторичный акцент - тёплый коралловый */
 	--secondary: oklch(65% 0.18 25);
-	--secondary-hover: oklch(60% 0.20 25);
+	--secondary-hover: oklch(60% 0.2 25);
 
 	/* Акцент - глубокий синий */
 	--accent: oklch(55% 0.15 250);
@@ -75,7 +75,7 @@
 
 	/* Основной акцент - яркий изумрудный */
 	--primary: oklch(70% 0.18 170);
-	--primary-hover: oklch(75% 0.20 170);
+	--primary-hover: oklch(75% 0.2 170);
 	--primary-light: oklch(30% 0.08 170);
 
 	/* Вторичный акцент - мягкий коралловый */
@@ -90,7 +90,7 @@
 	--info: oklch(70% 0.14 240);
 	--success: oklch(70% 0.18 150);
 	--warning: oklch(80% 0.18 75);
-	--danger: oklch(70% 0.20 25);
+	--danger: oklch(70% 0.2 25);
 
 	/* Градиенты */
 	--gradient-start: oklch(35% 0.12 170);
@@ -132,7 +132,12 @@ a:hover {
    TAILWIND УТИЛИТЫ
    =========================== */
 @utility gradient-bg {
-	background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
+	background: linear-gradient(
+		135deg,
+		var(--gradient-start),
+		var(--gradient-mid),
+		var(--gradient-end)
+	);
 	background-attachment: fixed;
 	min-height: 100vh;
 	background-size: 200% 200%;
@@ -140,7 +145,8 @@ a:hover {
 }
 
 @keyframes gradient-shift {
-	0%, 100% {
+	0%,
+	100% {
 		background-position: 0% 50%;
 	}
 	50% {
@@ -372,4 +378,412 @@ a:hover {
 
 .animate-scale-in {
 	animation: scale-in 0.2s ease-out forwards;
+}
+
+/* === АДАПТИВНЫЙ ЧАТ === */
+@media (max-width: 768px) {
+	.chat-container {
+		height: 90vh !important;
+		max-height: none !important;
+		margin-top: 0.5rem !important;
+		border-radius: 16px 16px 0 0 !important;
+		padding: 8px !important;
+	}
+}
+
+/* === АНИМАЦИЯ НАБОРА ТЕКСТА === */
+.typing-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.9);
+	animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot-2 {
+	animation-delay: 0.2s;
+}
+
+.typing-dot-3 {
+	animation-delay: 0.4s;
+}
+
+@keyframes typing {
+	0%,
+	60%,
+	100% {
+		transform: translateY(0);
+		opacity: 0.4;
+	}
+	30% {
+		transform: translateY(-10px);
+		opacity: 1;
+	}
+}
+
+/* === КОМПОНЕНТЫ ЧАТА === */
+
+/* Основной контейнер чата */
+.chat-main-container {
+	background: #fff;
+	border: 2px solid #b1b1b1;
+	border-radius: 24px;
+	height: 80vh;
+	max-height: 600px;
+	box-shadow: 0 6px 32px rgba(50, 50, 90, 0.1);
+	padding: 10px;
+	margin-top: 1.5rem;
+}
+
+/* Заголовок чата */
+.chat-header {
+	padding: 12px 16px;
+	border-bottom: 1px solid #dbe4ee;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.chat-header-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.chat-header-info {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+}
+
+.chat-partner-name {
+	font-weight: 500;
+	color: #1890ff;
+}
+
+.chat-offline-indicator {
+	color: #ff4d4f;
+	font-size: 12px;
+}
+
+/* Состояния загрузки и ошибок */
+.chat-loading-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 32px 0;
+}
+
+.chat-error-container {
+	padding: 16px;
+}
+
+.chat-messages-container {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	padding: 12px 16px;
+	background: #ffffff;
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+	gap: 18px;
+	max-height: 500px;
+	overflow-y: auto;
+}
+
+.chat-empty-state {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 24px;
+}
+
+.chat-empty-message {
+	text-align: center;
+	padding: 24px;
+	background: rgba(255, 255, 255, 0.9);
+	border-radius: 12px;
+	border: 1px solid #dbe4ee;
+}
+
+.chat-empty-subtitle {
+	display: block;
+	margin-top: 8px;
+	color: #8c8c8c;
+}
+
+/* Компонент сообщения */
+.message-bubble {
+	min-width: 120px;
+	max-width: 65%;
+	padding: 12px 16px;
+	border-radius: 15px;
+	box-shadow: 0 2px 8px 0 rgba(90, 120, 150, 0.04);
+	transition: background 0.2s;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+.message-bubble-own {
+	margin-left: auto;
+	margin-right: 0;
+	background: #1890ff;
+	border: 1.5px solid #1890ff;
+	color: #ffffff;
+}
+
+.message-bubble-own .message-timestamp {
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.message-bubble-other {
+	margin-right: auto;
+	margin-left: 0;
+	background: #ffffff;
+	border: 1.5px solid #dbe4ee;
+	color: #000000;
+}
+
+.message-bubble-error {
+	background: #fff2f0;
+	border-color: #ffccc7;
+	color: #000000;
+}
+
+.message-timestamp {
+	font-size: 11px;
+	color: #8d8d8d;
+	margin-top: 4px;
+	text-align: right;
+}
+
+.message-content {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.message-text {
+	flex: 1;
+}
+
+.message-status-icon {
+	margin-left: 8px;
+	font-size: 12px;
+}
+
+.message-status-sending {
+	color: #faad14;
+}
+
+.message-status-sent {
+	color: #52c41a;
+}
+
+.message-status-error {
+	color: #ff4d4f;
+}
+
+.message-image {
+	margin-top: 10px;
+	width: 120px;
+	border-radius: 8px;
+	border: 1px solid #dde4ee;
+	cursor: pointer;
+	transition: opacity 0.2s;
+}
+
+.message-image-sending {
+	opacity: 0.7;
+}
+
+/* Обертка для индикатора набора текста */
+.chat-typing-wrapper {
+	padding: 8px 24px;
+}
+
+/* Индикатор набора текста */
+.typing-indicator {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	font-size: 13px;
+	color: rgba(0, 0, 0, 0.9);
+	font-style: italic;
+	border-radius: 12px;
+	width: fit-content;
+}
+
+.typing-dots {
+	display: flex;
+	gap: 4px;
+	margin-right: 8px;
+}
+
+/* Панель ввода */
+.input-panel {
+	width: 100%;
+	padding: 20px 20px 24px 20px;
+	border-top: 1.5px solid #dbe4ee;
+	background: #f8fbff;
+	border-bottom-left-radius: 24px;
+	border-bottom-right-radius: 24px;
+	position: relative;
+}
+
+.input-panel-content {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+}
+
+.input-panel-form {
+	flex: 1;
+	margin-bottom: 0;
+	min-width: 0; /* Позволяет flex элементу сжиматься */
+}
+
+.input-panel-item {
+	margin-bottom: 0;
+	width: 100%;
+}
+
+.input-panel-input {
+	border-radius: 14px;
+	background: #eef4fc;
+	border: 1.5px solid #dbe4ee;
+	color: #222d3b;
+	font-size: 15px;
+	width: 100%;
+}
+
+.input-panel-upload-btn {
+	color: #6783b5;
+	background: transparent;
+	border: 1.5px solid #dbe4ee;
+	border-radius: 12px;
+	width: 40px;
+	height: 40px;
+	box-shadow: none;
+	flex-shrink: 0;
+}
+
+.input-panel-emoji-btn {
+	color: #6783b5;
+	background: transparent;
+	border: 1.5px solid #dbe4ee;
+	border-radius: 12px;
+	width: 40px;
+	height: 40px;
+	box-shadow: none;
+	flex-shrink: 0;
+}
+
+.input-panel-image-preview {
+	position: relative;
+	margin-right: 8px;
+}
+
+.input-panel-image-thumb {
+	width: 46px;
+	border-radius: 7px;
+	border: 1.5px solid #cfe2f7;
+	cursor: pointer;
+}
+
+.input-panel-image-remove {
+	position: absolute;
+	top: -6px;
+	right: -7px;
+	font-size: 12px;
+	color: #999;
+	background: #fff;
+	border-radius: 50%;
+	padding: 2px;
+	border: none;
+}
+
+.input-panel-send-btn {
+	border-radius: 16px;
+	padding: 0 28px;
+	font-weight: 500;
+	height: 42px;
+	background: linear-gradient(90deg, #569df4 0%, #6a86f1 100%);
+	border: none;
+	letter-spacing: 0.2px;
+	flex-shrink: 0;
+}
+
+.emoji-picker-container {
+	position: absolute;
+	bottom: 82px;
+	left: 0;
+	z-index: 1000;
+}
+
+.input-panel-image-preview {
+	position: relative;
+	margin-right: 8px;
+	flex-shrink: 0;
+}
+
+.input-panel-image-thumb {
+	width: 46px;
+	border-radius: 7px;
+	border: 1.5px solid #cfe2f7;
+	cursor: pointer;
+}
+
+.input-panel-image-remove {
+	position: absolute;
+	top: -6px;
+	right: -7px;
+	font-size: 12px;
+	color: #999;
+	background: #fff;
+	border-radius: 50%;
+	padding: 2px;
+	border: none;
+}
+
+.image-preview-modal-img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.emoji-picker-wrapper {
+	position: relative;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.emoji-picker-footer {
+	border-top: 1px solid #f0f0f0;
+	padding: 8px 12px;
+	background: #fafafa;
+}
+
+.emoji-picker-close-btn {
+	width: 100%;
+	background: #f5f5f5;
+	border: 1px solid #d9d9d9;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 14px;
+	cursor: pointer;
+	color: #666;
+	transition: all 0.2s ease;
+}
+
+.emoji-picker-close-btn:hover {
+	background: #e6e6e6;
+	border-color: #bfbfbf;
 }

@@ -1,23 +1,11 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import type { LoginRequest, AuthResponse } from '../types/auth.types'
 import { API_ENDPOINTS } from '../../config/api.config'
 
 export const authApi = createApi({
 	reducerPath: 'authApi',
-	baseQuery: fetchBaseQuery({
-		baseUrl: API_ENDPOINTS.auth,
-		credentials: 'include',
-		prepareHeaders: (headers, { endpoint }) => {
-			const token = localStorage.getItem('token')
-			if (token) {
-				headers.set('authorization', `Bearer ${token}`)
-			}
-			if (endpoint !== 'register') {
-				headers.set('Content-Type', 'application/json')
-			}
-			return headers
-		},
-	}),
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.auth),
 	tagTypes: ['Auth'],
 	endpoints: (builder) => ({
 		login: builder.mutation<AuthResponse, LoginRequest>({

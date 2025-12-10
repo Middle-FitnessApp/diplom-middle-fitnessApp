@@ -112,10 +112,10 @@ export const AddProgress = () => {
 			message.success('Отчёт о прогрессе успешно добавлен!')
 			navigate('/me/progress')
 		} catch (err) {
-			console.error('Failed to add progress:', err)
+			console.error('Не удалось добавить прогресс:', err)
 
 			const error = err as { data?: { message?: string }; status?: number }
-			
+
 			if (error.data?.message) {
 				message.error(error.data.message)
 			} else if (error.status === 400) {
@@ -141,14 +141,12 @@ export const AddProgress = () => {
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
 			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[700px]'>
-				<Card className='!border-gray-200'>
+				<Card className='border-gray-200!'>
 					<div className='text-center mb-6'>
 						<Title level={2} className='text-gray-800 font-semibold mb-1 pb-3 border-b-3 border-primary inline-block'>
 							📊 Добавить прогресс
 						</Title>
-						<Text type='secondary'>
-							Заполните данные о ваших измерениях
-						</Text>
+						<Text type='secondary'>Заполните данные о ваших измерениях</Text>
 					</div>
 
 					<Form
@@ -321,13 +319,13 @@ export const AddProgress = () => {
 							))}
 						</div>
 
-						<Form.Item className='!mb-0'>
+						<Form.Item className='mb-0!'>
 							<Button
 								type='primary'
 								htmlType='submit'
 								block
 								loading={isLoading}
-								className='!h-12 !rounded-lg !text-base !font-semibold'
+								className='h-12! rounded-lg! text-base! font-semibold!'
 							>
 								Добавить замеры
 							</Button>

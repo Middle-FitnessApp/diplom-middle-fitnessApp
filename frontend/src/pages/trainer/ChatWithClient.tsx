@@ -28,11 +28,7 @@ export const ChatWithClient = () => {
 						💬 {clientName}
 					</Title>
 				</div>
-				<Chat
-					role='trainer'
-					chatId={`trainer_${id}`}
-					partnerName={clientName}
-				/>
+				<Chat role='trainer' partnerId={id} partnerName={clientName} />
 			</div>
 		</div>
 	)

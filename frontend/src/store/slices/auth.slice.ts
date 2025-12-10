@@ -24,7 +24,7 @@ export const performLogout = createAsyncThunk(
 			await dispatch(authApi.endpoints.logout.initiate()).unwrap()
 		} catch (error) {
 			// Игнорируем ошибки - всё равно очищаем локально
-			console.log('Logout API error (ignored):', error)
+			console.error('Logout API error (ignored):', error)
 		}
 
 		// 2. Очищаем весь localStorage

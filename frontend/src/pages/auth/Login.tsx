@@ -37,11 +37,7 @@ export const Login = () => {
 				password: values.password,
 			}
 
-			console.log('Sending login request:', loginData)
-
 			const result = await login(loginData).unwrap()
-
-			console.log('Login successful:', result)
 
 			dispatch(
 				setCredentials({
@@ -94,7 +90,9 @@ export const Login = () => {
 				// Сетевая ошибка
 				setFormError('Не удалось подключиться к серверу. Проверьте интернет-соединение.')
 			} else {
-				setFormError(typeof errorMessage === 'string' ? errorMessage : 'Произошла ошибка при входе')
+				setFormError(
+					typeof errorMessage === 'string' ? errorMessage : 'Произошла ошибка при входе',
+				)
 			}
 		}
 	}
@@ -103,7 +101,7 @@ export const Login = () => {
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
 			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} max-w-[480px] w-full animate-fade-in`}>
 				<div className='text-center mb-8'>
-					<Title level={2} className={`!mb-2 ${titleClass}`}>
+					<Title level={2} className={`mb-2! ${titleClass}`}>
 						Добро пожаловать
 					</Title>
 					<Text type='secondary' className='text-lg'>
@@ -164,14 +162,14 @@ export const Login = () => {
 						/>
 					</Form.Item>
 
-					<Form.Item className='!mb-4'>
+					<Form.Item className='mb-4!'>
 						<Button
 							type='primary'
 							htmlType='submit'
 							block
 							size='large'
 							loading={isLoading}
-							className='!rounded-lg !h-12 !text-base font-semibold'
+							className='rounded-lg! h-12! text-base! font-semibold'
 						>
 							Войти
 						</Button>
@@ -182,7 +180,7 @@ export const Login = () => {
 							<Text type='secondary'>Нет аккаунта? </Text>
 							<Link
 								to='/signup'
-								className='!text-primary hover:!opacity-80 font-semibold transition-opacity'
+								className='text-primary! hover:opacity-80! font-semibold transition-opacity'
 								style={{ color: 'var(--primary)' }}
 							>
 								Зарегистрируйтесь
@@ -193,7 +191,7 @@ export const Login = () => {
 
 				{/* Демо-подсказка */}
 				<div className={`mt-8 p-4 rounded-lg border ${demoBgClass}`}>
-					<Text strong className={`${demoTitleClass} !mb-2 block`}>
+					<Text strong className={`${demoTitleClass} mb-2! block`}>
 						🚀 Для тестирования:
 					</Text>
 					<div className={`${demoTextClass} text-sm space-y-1`}>

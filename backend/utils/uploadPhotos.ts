@@ -104,10 +104,16 @@ export async function uploadPhotos(
 					const filePath = path.join(uploadsDir, filename)
 					fs.writeFileSync(filePath, buffer)
 
-					// Возвращаем относительный URL для доступа через static
+					// Возвращаем полный URL для доступа через static
+					const baseUrl =
+						process.env.NODE_ENV === 'production'
+							? process.env.BACKEND_URL ||
+							  process.env.FRONTEND_URL ||
+							  'https://your-domain.com'
+							: 'http://localhost:3000'
 					const urlPath = subfolder
-						? `/uploads/photos/${subfolder}/${filename}`
-						: `/uploads/photos/${filename}`
+						? `${baseUrl}/uploads/photos/${subfolder}/${filename}`
+						: `${baseUrl}/uploads/photos/${filename}`
 					files[part.fieldname] = urlPath
 					uploadedPaths.push(filePath)
 				} else {

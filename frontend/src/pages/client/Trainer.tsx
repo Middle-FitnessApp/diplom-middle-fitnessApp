@@ -12,7 +12,7 @@ export const Trainer = () => {
 						💬 Чат с тренером
 					</Title>
 				</div>
-				<Chat role='client' chatId='client_trainer' />
+				<Chat role='client' />
 			</div>
 		</div>
 	)

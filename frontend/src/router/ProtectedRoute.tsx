@@ -1,7 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import React from 'react'
 import { Spin } from 'antd'
-import { useAppSelector } from '../store/hooks'
+import { useAppSelector, useAppDispatch } from '../store/hooks'
 import { useGetMeQuery } from '../store/api/user.api'
+import { setUser } from '../store/slices/auth.slice'
 
 interface ProtectedRouteProps {
 	children: React.ReactNode
@@ -13,16 +15,29 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	requiredRole,
 }) => {
 	const location = useLocation()
+	const dispatch = useAppDispatch()
 	const token = useAppSelector((state) => state.auth.token)
-	
+	const user = useAppSelector((state) => state.auth.user)
+
 	// Загружаем данные пользователя если есть токен
-	const { data: meData, isLoading, error } = useGetMeQuery(undefined, {
+	const {
+		data: meData,
+		isLoading,
+		error,
+	} = useGetMeQuery(undefined, {
 		skip: !token,
 	})
 
+	// Сохраняем пользователя в Redux если он загружен
+	React.useEffect(() => {
+		if (meData?.user && !user) {
+			dispatch(setUser(meData.user))
+		}
+	}, [meData?.user, user, dispatch])
+
 	// Нет токена - редирект на логин
 	if (!token) {
-		return <Navigate to="/login" state={{ from: location }} replace />
+		return <Navigate to='/login' state={{ from: location }} replace />
 	}
 
 	// Загрузка данных пользователя
@@ -38,23 +53,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
 	// Ошибка авторизации - редирект на логин
 	if (error || !meData?.user) {
-		return <Navigate to="/login" state={{ from: location }} replace />
+		return <Navigate to='/login' state={{ from: location }} replace />
 	}
 
-	const user = meData.user
+	const currentUser = meData.user
 
 	// Проверка роли если требуется
-	if (requiredRole && user.role !== requiredRole) {
+	if (requiredRole && currentUser.role !== requiredRole) {
 		// Клиент пытается попасть на страницы тренера
-		if (requiredRole === 'TRAINER' && user.role === 'CLIENT') {
-			return <Navigate to="/me" replace />
+		if (requiredRole === 'TRAINER' && currentUser.role === 'CLIENT') {
+			return <Navigate to='/me' replace />
 		}
 		// Тренер пытается попасть на страницы клиента
-		if (requiredRole === 'CLIENT' && user.role === 'TRAINER') {
-			return <Navigate to="/admin" replace />
+		if (requiredRole === 'CLIENT' && currentUser.role === 'TRAINER') {
+			return <Navigate to='/admin' replace />
 		}
 	}
 
 	return <>{children}</>
 }
-

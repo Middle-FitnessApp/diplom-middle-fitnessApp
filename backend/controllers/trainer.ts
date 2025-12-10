@@ -503,6 +503,13 @@ export async function acceptInvite(trainerId: string, inviteId: string) {
 				status: 'REJECTED',
 			},
 		}),
+		// Создаем чат между тренером и клиентом
+		prisma.chat.create({
+			data: {
+				trainerId,
+				clientId: invite.clientId,
+			},
+		}),
 	])
 
 	return {

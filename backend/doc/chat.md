@@ -10,6 +10,7 @@ API для чата между тренерами и клиентами.
 
 - Изображения сообщений → `uploads/photos/chats/` (development) или Supabase Storage (production)
 - Максимальный размер: 500KB
+- Возвращаемый URL: полный URL (http://localhost:3000/uploads/... или https://domain.com/uploads/...)
 
 ---
 
@@ -54,17 +55,11 @@ const socket = io('ws://localhost:3000', {
 
 ## Отправка сообщения
 
-Отправляет сообщение в чат и рассылает через WebSocket.
+Отправляет сообщение в чат и рассылает через WebSocket. Если chatId не указан, автоматически создается новый чат между клиентом и его тренером.
 
-**Endpoint:** `POST /api/chat/:chatId/messages`
+**Endpoint:** `POST /api/chat/messages`
 
 **Права доступа:** `CLIENT`, `TRAINER`
-
-**Параметры пути:**
-
-| Параметр | Тип    | Описание       |
-| -------- | ------ | -------------- |
-| chatId   | string | ID чата (CUID) |
 
 ### Текстовое сообщение
 
@@ -74,7 +69,8 @@ const socket = io('ws://localhost:3000', {
 
 ```json
 {
-	"text": "Привет, как тренировка?"
+	"text": "Привет, как тренировка?",
+	"chatId": "clz456def" // опционально, если не указан - создается новый чат
 }
 ```
 
@@ -84,10 +80,11 @@ const socket = io('ws://localhost:3000', {
 
 **Тело запроса:**
 
-| Поле  | Тип    | Обязательное | Описание                  |
-| ----- | ------ | ------------ | ------------------------- |
-| text  | string | ✅           | Текст сообщения           |
-| image | file   | ❌           | Изображение (макс. 500KB) |
+| Поле   | Тип    | Обязательное | Описание                  |
+| ------ | ------ | ------------ | ------------------------- |
+| text   | string | ✅           | Текст сообщения           |
+| image  | file   | ❌           | Изображение (макс. 500KB) |
+| chatId | string | ❌           | ID чата (CUID)            |
 
 **Пример ответа (200):**
 
@@ -98,7 +95,7 @@ const socket = io('ws://localhost:3000', {
 		"chatId": "clz456def",
 		"senderId": "user123",
 		"text": "Привет, как тренировка?",
-		"imageUrl": null,
+		"imageUrl": "http://localhost:3000/uploads/photos/chats/filename.jpg",
 		"createdAt": "2025-12-10T10:00:00.000Z",
 		"isRead": false,
 		"sender": {
@@ -112,9 +109,10 @@ const socket = io('ws://localhost:3000', {
 
 **Ошибки:**
 
-- `400` - Неверные данные (пустой текст, большой файл)
+- `400` - Пустой текст или неверные данные
 - `403` - Вы не участник чата
 - `404` - Чат не найден
+- `400` - У клиента нет активного тренера (при создании нового чата)
 
 ---
 
@@ -149,7 +147,7 @@ const socket = io('ws://localhost:3000', {
 			"chatId": "clz456def",
 			"senderId": "user123",
 			"text": "Привет!",
-			"imageUrl": null,
+			"imageUrl": "http://localhost:3000/uploads/photos/chats/filename.jpg",
 			"createdAt": "2025-12-10T10:00:00.000Z",
 			"isRead": true,
 			"sender": {
@@ -179,7 +177,7 @@ const socket = io('ws://localhost:3000', {
 
 Получает список чатов пользователя с последним сообщением и счетчиком непрочитанных.
 
-**Endpoint:** `GET /api/chats`
+**Endpoint:** `GET /api/chat/`
 
 **Права доступа:** `CLIENT`, `TRAINER`
 
@@ -272,7 +270,7 @@ socket.emit('join_chat', 'chatId')
 ### Отправка сообщения
 
 ```javascript
-socket.emit('send_message', { chatId: 'chatId', text: 'Hello' })
+socket.emit('send_message', { chatId: 'chatId', text: 'Hello', image: file }) // image опционально
 ```
 
 ### Индикатор печати

@@ -15,55 +15,9 @@ interface PaginatedDaysResponse {
 		offset: number
 	}
 }
-import {
-	createApi,
-	fetchBaseQuery,
-	type BaseQueryFn,
-	type FetchArgs,
-	type FetchBaseQueryError,
-} from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import { API_ENDPOINTS } from '../../config/api.config'
-
-const rawBaseQuery = fetchBaseQuery({
-	baseUrl: API_ENDPOINTS.base,
-	credentials: 'include',
-	prepareHeaders: (headers) => {
-		const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-		if (token) {
-			headers.set('authorization', `Bearer ${token}`)
-		}
-		return headers
-	},
-})
-
-export const baseQueryWithReauth: BaseQueryFn<
-	string | FetchArgs,
-	unknown,
-	FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-	let result = await rawBaseQuery(args, api, extraOptions)
-
-	if (result.error && result.error.status === 401) {
-		const refreshResult = await rawBaseQuery(
-			{
-				url: '/../auth/refresh',
-				method: 'POST',
-				credentials: 'include',
-			},
-			api,
-			extraOptions,
-		)
-
-		if (refreshResult.data) {
-			result = await rawBaseQuery(args, api, extraOptions)
-		} else if (typeof window !== 'undefined') {
-			localStorage.removeItem('token')
-			window.location.href = '/login'
-		}
-	}
-
-	return result
-}
 
 // Типы для создания
 interface CreateDayInput {
@@ -82,7 +36,7 @@ interface CreateSubcategoryWithDaysInput {
 
 export const nutritionApi = createApi({
 	reducerPath: 'nutritionApi',
-	baseQuery: baseQueryWithReauth,
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.base),
 	tagTypes: ['Category', 'Subcategory', 'Day', 'AssignedPlan'],
 	endpoints: (builder) => ({
 		// План питания текущего клиента
@@ -91,7 +45,6 @@ export const nutritionApi = createApi({
 			{ clientId: string; period?: 'day' | 'week' | 'month'; date?: string }
 		>({
 			query: ({ clientId, period = 'day', date }) => ({
-
 				url: '/nutrition/client/plan',
 				params: {
 					clientId,

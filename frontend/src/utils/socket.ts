@@ -6,6 +6,7 @@ export interface ServerToClientEvents {
 	new_message: (message: MessageType) => void
 	user_typing: (data: { chatId: string; userId: string }) => void
 	user_stopped_typing: (data: { chatId: string; userId: string }) => void
+	chat_updated: () => void
 }
 
 export interface ClientToServerEvents {
@@ -45,13 +46,11 @@ class SocketService {
 			})
 
 			this.socket.on('connect', () => {
-				console.log('Socket connected:', this.socket?.id)
 				this.reconnectAttempts = 0
 				resolve()
 			})
 
 			this.socket.on('disconnect', (reason) => {
-				console.log('Socket disconnected:', reason)
 				if (reason === 'io server disconnect') {
 					// Сервер отключил, не переподключаемся автоматически
 					this.socket?.disconnect()
@@ -62,24 +61,10 @@ class SocketService {
 			})
 
 			this.socket.on('connect_error', (error) => {
-				console.error('Socket connection error:', error)
 				this.handleReconnect()
 				if (this.reconnectAttempts >= this.maxReconnectAttempts) {
 					reject(error)
 				}
-			})
-
-			this.socket.on('new_message', (message) => {
-				console.log('New message received:', message)
-				// Обработка нового сообщения через колбэки
-			})
-
-			this.socket.on('user_typing', (data) => {
-				console.log('User typing:', data)
-			})
-
-			this.socket.on('user_stopped_typing', (data) => {
-				console.log('User stopped typing:', data)
 			})
 		})
 	}
@@ -88,9 +73,6 @@ class SocketService {
 		if (this.reconnectAttempts < this.maxReconnectAttempts) {
 			this.reconnectAttempts++
 			setTimeout(() => {
-				console.log(
-					`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
-				)
 				this.socket?.connect()
 			}, this.reconnectDelay * this.reconnectAttempts)
 		}

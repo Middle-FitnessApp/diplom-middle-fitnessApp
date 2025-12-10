@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import { API_ENDPOINTS } from '../../config/api.config'
 import type {
 	CommentsResponse,
@@ -62,27 +63,7 @@ export interface CreateProgressResponse {
 
 export const progressApi = createApi({
 	reducerPath: 'progressApi',
-	baseQuery: fetchBaseQuery({
-		baseUrl: API_ENDPOINTS.base,
-		credentials: 'include',
-		prepareHeaders: (headers, { endpoint }) => {
-			const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-			if (token) {
-				headers.set('authorization', `Bearer ${token}`)
-			}
-
-			// Content-Type устанавливаем ТОЛЬКО для мутаций (POST/PUT/PATCH)
-			// НЕ устанавливаем для GET запросов и для мутаций с файлами
-			if (endpoint === 'addProgressReport') {
-				// Для FormData не устанавливаем Content-Type - браузер сам добавит с boundary
-				return headers
-			}
-
-			// Для остальных мутаций (не GET) устанавливаем JSON
-			// GET запросы автоматически не получат этот header
-			return headers
-		},
-	}),
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.base),
 	tagTypes: ['Progress'],
 	endpoints: (builder) => ({
 		// Получение всех отчетов прогресса для графика

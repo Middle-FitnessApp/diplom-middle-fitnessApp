@@ -7,9 +7,10 @@ export const SendMessageSchemaZod = {
 			.min(1, 'Текст сообщения не может быть пустым')
 			.max(1000, 'Максимальная длина сообщения — 1000 символов'),
 		image: z.string().url('Некорректный URL изображения').optional(),
+		chatId: z.string().cuid('Некорректный ID чата').optional(),
 	}),
 	params: z.object({
-		chatId: z.string().cuid('Некорректный ID чата'),
+		// chatId теперь в body
 	}),
 }
 

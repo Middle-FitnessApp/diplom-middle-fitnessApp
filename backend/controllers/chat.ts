@@ -13,19 +13,59 @@ import type { UserRole } from '@prisma/client'
  * @returns Созданное сообщение
  */
 export async function sendMessage(
-	chatId: string,
+	chatId: string | null,
 	senderId: string,
 	data: SendMessageDTO,
 	filesMap: Record<string, string>,
 ) {
-	// Проверяем, существует ли чат
-	const chat = await prisma.chat.findUnique({
-		where: { id: chatId },
-		include: { trainer: true, client: true },
-	})
+	// Если chatId передан, проверяем существование чата
+	let chat = null
+	if (chatId) {
+		chat = await prisma.chat.findUnique({
+			where: { id: chatId },
+			include: { trainer: true, client: true },
+		})
 
-	if (!chat) {
-		throw ApiError.notFound('Чат не найден')
+		if (!chat) {
+			throw ApiError.notFound('Чат не найден')
+		}
+	} else {
+		// chatId не передан - создаем новый чат для клиента с его тренером
+		const sender = await prisma.user.findUnique({
+			where: { id: senderId },
+		})
+
+		if (!sender) {
+			throw ApiError.notFound('Пользователь не найден')
+		}
+
+		if (sender.role !== 'CLIENT') {
+			throw ApiError.badRequest('Только клиенты могут создавать чаты автоматически')
+		}
+
+		// Находим активного тренера клиента
+		const activeTrainerRelation = await prisma.trainerClient.findFirst({
+			where: {
+				clientId: senderId,
+				status: 'ACCEPTED',
+			},
+			include: {
+				trainer: true,
+			},
+		})
+
+		if (!activeTrainerRelation) {
+			throw ApiError.badRequest('У вас нет активного тренера')
+		}
+
+		// Создаем чат
+		chat = await prisma.chat.create({
+			data: {
+				trainerId: activeTrainerRelation.trainerId,
+				clientId: senderId,
+			},
+			include: { trainer: true, client: true },
+		})
 	}
 
 	// Проверяем, что отправитель — участник чата
@@ -41,7 +81,7 @@ export async function sendMessage(
 		// Создаём сообщение
 		const newMessage = await tx.message.create({
 			data: {
-				chatId,
+				chatId: chat.id,
 				senderId,
 				text: data.text,
 				imageUrl: data.image || filesMap.image, // Используем либо переданный URL, либо загруженный файл
@@ -55,7 +95,7 @@ export async function sendMessage(
 
 		// Обновляем updatedAt чата
 		await tx.chat.update({
-			where: { id: chatId },
+			where: { id: chat.id },
 			data: { updatedAt: new Date() },
 		})
 

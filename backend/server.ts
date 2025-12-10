@@ -27,6 +27,9 @@ const start = async () => {
 			const authSocket = socket as AuthenticatedSocket
 			console.log(`Пользователь ${authSocket.user.id} подключился`)
 
+			// Присоединение к комнате пользователя для обновлений чатов
+			authSocket.join(`user_${authSocket.user.id}`)
+
 			// Присоединение к комнате чата
 			authSocket.on('join_chat', (chatId: string) => {
 				authSocket.join(`chat_${chatId}`)
@@ -35,6 +38,7 @@ const start = async () => {
 
 			// Индикатор печати
 			authSocket.on('typing_start', (chatId: string) => {
+				console.log(`User ${authSocket.user.id} started typing in chat ${chatId}`)
 				authSocket.to(`chat_${chatId}`).emit('user_typing', {
 					userId: authSocket.user.id,
 					chatId,
@@ -42,6 +46,7 @@ const start = async () => {
 			})
 
 			authSocket.on('typing_stop', (chatId: string) => {
+				console.log(`User ${authSocket.user.id} stopped typing in chat ${chatId}`)
 				authSocket.to(`chat_${chatId}`).emit('user_stopped_typing', {
 					userId: authSocket.user.id,
 					chatId,

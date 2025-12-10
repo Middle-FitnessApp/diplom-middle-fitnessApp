@@ -50,7 +50,6 @@ export const NutritionCategoryCard = ({
 	const handleDeleteClick = async (e: React.MouseEvent) => {
 		e.stopPropagation()
 		e.preventDefault()
-		console.log('delete')
 		try {
 			await deleteCategory(category.id).unwrap()
 			message.success('Категория удалена')

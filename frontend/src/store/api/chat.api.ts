@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import { API_ENDPOINTS } from '../../config/api.config'
 
 export interface Message {
@@ -37,36 +38,27 @@ export interface Chat {
 	isFavorite?: boolean
 }
 
-export interface GetMessagesResponse {
-	messages: Message[]
-	pagination: {
-		page: number
-		limit: number
-		total: number
-		totalPages: number
-	}
+export interface ChatListResponse {
+	chats: Chat[]
 }
 
 export interface SendMessageResponse {
 	message: Message
 }
 
+export interface GetMessagesResponse {
+	messages: Message[]
+	total: number
+	page: number
+	limit: number
+}
+
 export const chatApi = createApi({
 	reducerPath: 'chatApi',
-	baseQuery: fetchBaseQuery({
-		baseUrl: API_ENDPOINTS.chat,
-		credentials: 'include',
-		prepareHeaders: (headers) => {
-			const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-			if (token) {
-				headers.set('authorization', `Bearer ${token}`)
-			}
-			return headers
-		},
-	}),
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.chat),
 	tagTypes: ['Messages', 'Chats'],
 	endpoints: (builder) => ({
-		getChats: builder.query<Chat[], void>({
+		getChats: builder.query<ChatListResponse, void>({
 			query: () => '/',
 			providesTags: ['Chats'],
 		}),
@@ -84,13 +76,20 @@ export const chatApi = createApi({
 
 		sendMessage: builder.mutation<
 			SendMessageResponse,
-			{ chatId: string; text: string; image?: string }
+			{ chatId?: string; text?: string; image?: File }
 		>({
-			query: ({ chatId, ...body }) => ({
-				url: `/${chatId}/messages`,
-				method: 'POST',
-				body,
-			}),
+			query: ({ chatId, ...body }) => {
+				const formData = new FormData()
+				if (body.text) formData.append('text', body.text)
+				if (body.image) formData.append('image', body.image)
+				if (chatId) formData.append('chatId', chatId)
+
+				return {
+					url: '/messages',
+					method: 'POST',
+					body: formData,
+				}
+			},
 			invalidatesTags: ['Messages', 'Chats'],
 		}),
 	}),
