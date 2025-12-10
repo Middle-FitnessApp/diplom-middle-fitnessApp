@@ -590,7 +590,7 @@ export const Registration = () => {
 							block
 							size='large'
 							loading={isLoading}
-							className='!rounded-lg !h-12 !text-base font-semibold'
+							className='rounded-lg! h-12! text-base! font-semibold'
 						>
 							Создать аккаунт
 						</Button>
