@@ -13,7 +13,9 @@
 		"prisma:reset": "npx prisma migrate reset --force",
 		"prisma:seed": "tsx ./prisma/seed.ts",
 		"prisma:seed:light": "tsx ./prisma/seed-light.ts",
-		"prisma:studio": "npx prisma studio"
+		"prisma:studio": "npx prisma studio",
+		"test": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@faker-js/faker": "10.1.0",
@@ -33,11 +35,15 @@
 	},
 	"devDependencies": {
 		"@types/jsonwebtoken": "9.0.10",
+		"@vitest/coverage-v8": "^4.0.15",
+		"formdata-node": "^6.0.3",
 		"@types/socket.io": "3.0.2",
 		"nodemon": "3.1.11",
 		"prisma": "6.19.0",
 		"ts-node": "10.9.2",
 		"tsx": "4.19.3",
-		"typescript": "5.9.3"
+		"typescript": "5.9.3",
+		"undici": "^7.16.0",
+		"vitest": "^4.0.15"
 	}
 }
