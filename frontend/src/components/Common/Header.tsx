@@ -5,11 +5,13 @@ import { MessageOutlined, UserOutlined, LogoutOutlined, SettingOutlined } from '
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { performLogout } from '../../store/slices/auth.slice'
 import { useGetMeQuery } from '../../store/api/user.api'
+import { ThemeToggle } from './ThemeToggle'
 
 export function Header() {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const dispatch = useAppDispatch()
+	const theme = useAppSelector((state) => state.ui.theme)
 	
 	// Проверяем есть ли токен в localStorage
 	const token = useAppSelector((state) => state.auth.token)
@@ -76,15 +78,23 @@ export function Header() {
 		},
 	]
 
+	// Динамические классы для текста в зависимости от темы
+	const textPrimaryClass = theme === 'dark' ? 'text-slate-100' : 'text-gray-800'
+	const textSecondaryClass = theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+	const textActiveClass = 'text-primary'
+	const headerBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-light'
+	const borderClass = theme === 'dark' ? 'border-slate-700' : 'border-muted'
+
 	// Загрузка данных пользователя
 	if (token && isLoading) {
 		return (
-			<header className="border-b border-muted bg-light">
+			<header className={`border-b ${borderClass} ${headerBgClass} transition-colors duration-300`}>
 				<div className="flex h-16 items-center justify-between px-6">
-					<Link to="/" className="text-xl font-bold text-gray-800">
+					<Link to="/" className={`text-xl font-bold ${textPrimaryClass} transition-colors`}>
 						Fitness App
 					</Link>
 					<div className="flex items-center gap-4">
+						<ThemeToggle />
 						<Skeleton.Avatar active size={36} />
 						<Skeleton.Input active size="small" style={{ width: 80 }} />
 					</div>
@@ -96,15 +106,16 @@ export function Header() {
 	// Неавторизованный пользователь (нет токена или нет данных)
 	if (!isAuthenticated) {
 		return (
-			<header className="border-b border-muted bg-light">
+			<header className={`border-b ${borderClass} ${headerBgClass} transition-colors duration-300`}>
 				<div className="flex h-16 items-center justify-between px-6">
-					<Link to="/" className="text-xl font-bold text-gray-800">
+					<Link to="/" className={`text-xl font-bold ${textPrimaryClass} hover:text-primary transition-colors`}>
 						Fitness App
 					</Link>
 					<nav className="flex items-center gap-4">
+						<ThemeToggle />
 						<Link
 							to="/login"
-							className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+							className={`text-sm font-medium ${textSecondaryClass} hover:text-primary transition-colors`}
 						>
 							Войти
 						</Link>
@@ -124,66 +135,68 @@ export function Header() {
 		const isNutritionActive = location.pathname.startsWith('/me/nutrition')
 
 		return (
-			<header className="border-b border-muted bg-light">
+			<header className={`border-b ${borderClass} ${headerBgClass} transition-colors duration-300`}>
 				<div className="flex h-16 items-center justify-between px-6">
 					<nav className="flex items-center gap-6 h-full">
 						<Link
 							to="/"
-							className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors"
+							className={`text-xl font-bold ${textPrimaryClass} hover:text-primary transition-colors`}
 						>
 							Fitness App
 						</Link>
 						<Link
 							to="/"
-							className={`relative text-sm transition-colors h-full flex items-center ${isHomeActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+							className={`relative text-sm transition-colors h-full flex items-center ${isHomeActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 						>
 							Главная
 							{isHomeActive && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 							)}
 						</Link>
 						<Link
 							to="/me/nutrition"
-							className={`relative text-sm transition-colors h-full flex items-center ${isNutritionActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+							className={`relative text-sm transition-colors h-full flex items-center ${isNutritionActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 						>
 							Питание
 							{isNutritionActive && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 							)}
 						</Link>
 						<Link
 							to="/me/progress"
-							className={`relative text-sm transition-colors h-full flex items-center ${isProgressActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+							className={`relative text-sm transition-colors h-full flex items-center ${isProgressActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 						>
 							Прогресс
 							{isProgressActive && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 							)}
 						</Link>
 						<Link
 							to="/me/progress/reports"
-							className={`relative text-sm transition-colors h-full flex items-center ${isReportsActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+							className={`relative text-sm transition-colors h-full flex items-center ${isReportsActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 						>
 							Отчёты
 							{isReportsActive && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 							)}
 						</Link>
 					</nav>
 
 					<nav className="flex items-center gap-4 h-full">
+						<ThemeToggle />
+						
 						{/* Чат с тренером - показываем только если есть тренер */}
 						{hasTrainer && (
 							<Link
 								to="/trainer"
-								className={`relative flex items-center gap-2 text-sm transition-colors h-full ${isTrainerChatActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+								className={`relative flex items-center gap-2 text-sm transition-colors h-full ${isTrainerChatActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 							>
 								<Badge count={unreadMessages} size="small" offset={[2, -2]}>
 									<MessageOutlined className="text-lg" />
 								</Badge>
 								<span>Чат с тренером</span>
 								{isTrainerChatActive && (
-									<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+									<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 								)}
 							</Link>
 						)}
@@ -197,7 +210,7 @@ export function Header() {
 									icon={<UserOutlined />}
 									style={{ border: '2px solid var(--primary)' }}
 								/>
-								<span className="text-sm font-medium text-gray-700 hidden sm:inline">
+								<span className={`text-sm font-medium ${textSecondaryClass} hidden sm:inline`}>
 									{user.name}
 								</span>
 							</div>
@@ -210,40 +223,42 @@ export function Header() {
 
 	// Тренер
 	return (
-		<header className="border-b border-muted bg-light">
+		<header className={`border-b ${borderClass} ${headerBgClass} transition-colors duration-300`}>
 			<div className="flex h-16 items-center justify-between px-6">
 				<nav className="flex items-center gap-6 h-full">
 					<Link
 						to="/admin"
-						className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors"
+						className={`text-xl font-bold ${textPrimaryClass} hover:text-primary transition-colors`}
 					>
 						Fitness App
 					</Link>
 					<Link
 						to="/admin"
-						className={`relative text-sm transition-colors h-full flex items-center ${isAdminActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+						className={`relative text-sm transition-colors h-full flex items-center ${isAdminActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 					>
 						Панель тренера
 						{isAdminActive && (
-							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 						)}
 					</Link>
 					<Link
 						to="/admin/nutrition"
-						className={`relative text-sm transition-colors h-full flex items-center ${isNutritionTrainerActive ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
+						className={`relative text-sm transition-colors h-full flex items-center ${isNutritionTrainerActive ? `${textActiveClass} font-semibold` : `${textSecondaryClass} font-medium`}`}
 					>
 						Планы питания
 						{isNutritionTrainerActive && (
-							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							<span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t" style={{ backgroundColor: 'var(--primary)' }} />
 						)}
 					</Link>
 				</nav>
 
 				<nav className="flex items-center gap-4">
+					<ThemeToggle />
+					
 					{/* Уведомления о сообщениях */}
 					{totalUnreadForTrainer > 0 && (
 						<Badge count={totalUnreadForTrainer} size="small">
-							<MessageOutlined className="text-lg text-gray-600" />
+							<MessageOutlined className={`text-lg ${textSecondaryClass}`} />
 						</Badge>
 					)}
 
@@ -256,7 +271,7 @@ export function Header() {
 								icon={<UserOutlined />}
 								style={{ border: '2px solid var(--primary)' }}
 							/>
-							<span className="text-sm font-medium text-gray-700 hidden sm:inline">
+							<span className={`text-sm font-medium ${textSecondaryClass} hidden sm:inline`}>
 								{user.name}
 							</span>
 						</div>

@@ -2,7 +2,7 @@ import { Button, Form, Input, Typography, Alert } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLoginMutation } from '../../store/api/auth.api'
 import { setCredentials } from '../../store/slices/auth.slice'
-import { useAppDispatch } from '../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 
@@ -10,9 +10,18 @@ export const Login = () => {
 	const { Title, Text } = Typography
 	const navigate = useNavigate()
 	const dispatch = useAppDispatch()
+	const theme = useAppSelector((state) => state.ui.theme)
 
 	const [login, { isLoading }] = useLoginMutation()
 	const [formError, setFormError] = useState<string | null>(null)
+
+	// Динамические классы для темы
+	const cardBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-light'
+	const borderClass = theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
+	const titleClass = theme === 'dark' ? '!text-slate-100' : '!text-gray-800'
+	const demoBgClass = theme === 'dark' ? 'bg-teal-900/30 border-teal-700' : 'bg-teal-50 border-teal-200'
+	const demoTitleClass = theme === 'dark' ? '!text-teal-300' : '!text-teal-800'
+	const demoTextClass = theme === 'dark' ? 'text-teal-200' : 'text-teal-700'
 
 	type FieldType = {
 		login: string
@@ -92,9 +101,9 @@ export const Login = () => {
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
-			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 max-w-[480px] w-full'>
+			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} max-w-[480px] w-full animate-fade-in`}>
 				<div className='text-center mb-8'>
-					<Title level={2} className='!mb-2 !text-gray-800'>
+					<Title level={2} className={`!mb-2 ${titleClass}`}>
 						Добро пожаловать
 					</Title>
 					<Text type='secondary' className='text-lg'>
@@ -173,7 +182,8 @@ export const Login = () => {
 							<Text type='secondary'>Нет аккаунта? </Text>
 							<Link
 								to='/signup'
-								className='!text-primary hover:!text-info font-semibold transition-colors'
+								className='!text-primary hover:!opacity-80 font-semibold transition-opacity'
+								style={{ color: 'var(--primary)' }}
 							>
 								Зарегистрируйтесь
 							</Link>
@@ -182,11 +192,11 @@ export const Login = () => {
 				</Form>
 
 				{/* Демо-подсказка */}
-				<div className='mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200'>
-					<Text strong className='!text-blue-800 !mb-2 block'>
+				<div className={`mt-8 p-4 rounded-lg border ${demoBgClass}`}>
+					<Text strong className={`${demoTitleClass} !mb-2 block`}>
 						🚀 Для тестирования:
 					</Text>
-					<div className='text-blue-700 text-sm space-y-1'>
+					<div className={`${demoTextClass} text-sm space-y-1`}>
 						<div>• Используйте тестовые аккаунты из БД</div>
 						<div>• Формат: email/телефон + пароль 123456</div>
 					</div>

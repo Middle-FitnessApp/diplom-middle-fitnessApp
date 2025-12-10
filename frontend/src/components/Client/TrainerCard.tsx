@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons'
 import type { TrainerListItem } from '../../store/api/user.api'
 import type { TrainerInfo } from '../../store/types/auth.types'
+import { useAppSelector } from '../../store/hooks'
 
 const { Text, Paragraph } = Typography
 
@@ -50,6 +51,9 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 	onCancelInvite,
 	loading = false,
 }) => {
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
 	const photoUrl = trainer.photo
 		? trainer.photo.startsWith('http')
 			? trainer.photo
@@ -199,6 +203,31 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 	// Карточка тренера в списке (компактная)
 	const isPending = inviteStatus === 'PENDING'
 
+	// Стили для контентного блока в зависимости от темы
+	const contentBlockStyle = {
+		background: isDark ? '#1e293b' : '#fff',
+		borderRadius: 12,
+		padding: '16px',
+		boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.08)',
+	}
+
+	const nameStyle = {
+		fontSize: 18,
+		display: 'block' as const,
+		textAlign: 'center' as const,
+		marginBottom: 8,
+		color: isDark ? '#f1f5f9' : undefined,
+	}
+
+	const cancelButtonStyle = {
+		height: 40,
+		borderRadius: 8,
+		fontWeight: 500,
+		background: isDark ? '#78350f' : '#fff7e6',
+		borderColor: isDark ? '#92400e' : '#ffd591',
+		color: isDark ? '#fbbf24' : '#d46b08',
+	}
+
 	return (
 		<Card
 			className='trainer-list-card card-hover'
@@ -259,23 +288,8 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 
 			{/* Контент */}
 			<div style={{ padding: '20px', marginTop: -20 }}>
-				<div
-					style={{
-						background: '#fff',
-						borderRadius: 12,
-						padding: '16px',
-						boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-					}}
-				>
-					<Text
-						strong
-						style={{
-							fontSize: 18,
-							display: 'block',
-							textAlign: 'center',
-							marginBottom: 8,
-						}}
-					>
+				<div style={contentBlockStyle}>
+					<Text strong style={nameStyle}>
 						{trainer.name}
 					</Text>
 
@@ -303,14 +317,7 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 							icon={<ClockCircleOutlined />}
 							onClick={() => onCancelInvite?.(trainer.id)}
 							loading={loading}
-							style={{
-								height: 40,
-								borderRadius: 8,
-								fontWeight: 500,
-								background: '#fff7e6',
-								borderColor: '#ffd591',
-								color: '#d46b08',
-							}}
+							style={cancelButtonStyle}
 						>
 							Отменить заявку
 						</Button>

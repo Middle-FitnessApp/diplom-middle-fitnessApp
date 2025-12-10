@@ -17,6 +17,7 @@ import {
 	useGetProgressReportsQuery,
 	type ProgressReport,
 } from '../../store/api/progress.api'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text } = Typography
 
@@ -68,6 +69,15 @@ export const AllReports: FC = () => {
 	const [page, setPage] = useState(1)
 	const [period, setPeriod] = useState('all')
 	const pageSize = 5
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
+	// Динамические классы для темы
+	const cardBgClass = isDark ? 'bg-slate-800' : 'bg-light'
+	const borderClass = isDark ? 'border-slate-700' : 'border-gray-200'
+	const titleClass = isDark ? 'text-slate-100' : 'text-gray-800'
+	const textClass = isDark ? 'text-slate-300' : 'text-gray-700'
+	const textMutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
 
 	// id отчётов, для которых загрузка фото уже провалилась
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
@@ -123,7 +133,7 @@ export const AllReports: FC = () => {
 	if (isLoading) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] flex justify-center items-center min-h-[400px]'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] flex justify-center items-center min-h-[400px]`}>
 					<Spin
 						indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
 						tip='Загрузка отчетов...'
@@ -141,7 +151,7 @@ export const AllReports: FC = () => {
 
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
 					<Alert
 						message='Ошибка загрузки'
 						description={errorMessage}
@@ -156,9 +166,9 @@ export const AllReports: FC = () => {
 	if (reports.length === 0) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
 					<div className='text-center mb-8'>
-						<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+						<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							📋 Ваши отчеты
 						</Title>
 					</div>
@@ -175,15 +185,15 @@ export const AllReports: FC = () => {
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
 				<div className='text-center mb-8'>
-					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+					<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 						📋 Ваши отчеты
 					</Title>
 				</div>
 
 				<div className='flex items-center justify-between mb-8'>
-					<span className='text-lg font-semibold text-gray-700'>Период:</span>
+					<span className={`text-lg font-semibold ${textClass}`}>Период:</span>
 					<Select
 						options={periodOptions}
 						value={period}
@@ -219,10 +229,10 @@ export const AllReports: FC = () => {
 									>
 										<div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
 											<div className='flex-1'>
-												<div className='text-lg font-semibold text-gray-800 mb-2'>
+												<div className={`text-lg font-semibold ${titleClass} mb-2`}>
 													Отчет от {formatDate(report.date)}
 												</div>
-												<div className='grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-700'>
+												<div className={`grid grid-cols-2 md:grid-cols-3 gap-2 ${textClass}`}>
 													<div>Вес: {report.weight} кг</div>
 													<div>Талия: {report.waist} см</div>
 													<div>Бёдра: {report.hips} см</div>
@@ -233,7 +243,7 @@ export const AllReports: FC = () => {
 											</div>
 
 											<div className='flex flex-col items-start md:items-end gap-2'>
-												<Text className='text-gray-600 text-sm'>
+												<Text className={`${textMutedClass} text-sm`}>
 													Изменения относительно предыдущего отчёта
 												</Text>
 												<Space direction='vertical' size={4}>
@@ -276,7 +286,7 @@ export const AllReports: FC = () => {
 													<img
 														src={report.photoFront}
 														alt='Фото отчета'
-														className='w-20 h-20 object-cover rounded-full border-2 border-gray-200'
+														className={`w-20 h-20 object-cover rounded-full border-2 ${isDark ? 'border-slate-600' : 'border-gray-200'}`}
 														onError={() => handlePhotoError(report.id)}
 													/>
 												</div>

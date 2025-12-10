@@ -22,6 +22,13 @@ export const Main: React.FC = () => {
 	const dispatch = useAppDispatch()
 	const [selectingTrainerId, setSelectingTrainerId] = useState<string | null>(null)
 	const [currentPage, setCurrentPage] = useState(1)
+	const theme = useAppSelector((state) => state.ui.theme)
+
+	// Динамические классы для темы
+	const cardBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-light'
+	const borderClass = theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
+	const titleClass = theme === 'dark' ? 'text-slate-100' : 'text-gray-800'
+	const textClass = theme === 'dark' ? 'text-slate-300!' : 'text-gray-600!'
 
 	// Проверяем наличие токена в Redux
 	const token = useAppSelector((state) => state.auth.token)
@@ -192,11 +199,11 @@ export const Main: React.FC = () => {
 	if (!isAuthenticated) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] text-center'>
-					<Title level={1} className='text-6xl! font-black! mb-6! text-gray-800!'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] text-center animate-fade-in`}>
+					<Title level={1} className={`text-6xl! font-black! mb-6! ${titleClass}!`}>
 						Fitness App
 					</Title>
-					<Paragraph className='text-xl! text-gray-700! mb-8! max-w-2xl! mx-auto!'>
+					<Paragraph className={`text-xl! ${textClass} mb-8! max-w-2xl! mx-auto!`}>
 						Присоединяйтесь к сообществу профессионалов и клиентов. Достигайте целей
 						вместе с лучшими тренерами.
 					</Paragraph>
@@ -217,11 +224,11 @@ export const Main: React.FC = () => {
 	if (user?.role === 'TRAINER') {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px] text-center'>
-					<Title level={1} className='text-5xl! font-black! mb-6! text-gray-800!'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] text-center animate-fade-in`}>
+					<Title level={1} className={`text-5xl! font-black! mb-6! ${titleClass}!`}>
 						👋 Добро пожаловать, {user.name}!
 					</Title>
-					<Paragraph className='text-xl! text-gray-700! mb-8! max-w-2xl! mx-auto!'>
+					<Paragraph className={`text-xl! ${textClass} mb-8! max-w-2xl! mx-auto!`}>
 						Перейдите в панель тренера для управления клиентами и планами питания.
 					</Paragraph>
 					<Button
@@ -241,12 +248,12 @@ export const Main: React.FC = () => {
 	if (hasTrainer && user.trainer) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] animate-fade-in`}>
 					<div className='text-center mb-8'>
-						<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+						<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							🏋️ Ваш тренер
 						</Title>
-						<Paragraph className='text-gray-600! mb-0!'>
+						<Paragraph className={`${textClass} mb-0!`}>
 							Вы работаете с персональным тренером
 						</Paragraph>
 					</div>
@@ -269,7 +276,7 @@ export const Main: React.FC = () => {
 								>
 									<TeamOutlined /> Другие тренеры
 								</Title>
-								<Paragraph className='text-gray-600! mb-0!'>
+								<Paragraph className={`${textClass} mb-0!`}>
 									Вы можете отправить заявку другим тренерам
 								</Paragraph>
 							</div>
@@ -305,12 +312,12 @@ export const Main: React.FC = () => {
 	// Клиент без тренера - показываем список тренеров с пагинацией
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
+			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] animate-fade-in`}>
 				<div className='text-center mb-8'>
-					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+					<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 						🎯 Выберите тренера
 					</Title>
-					<Paragraph className='text-gray-600! mb-0!'>
+					<Paragraph className={`${textClass} mb-0!`}>
 						Найдите своего персонального тренера для достижения целей
 					</Paragraph>
 				</div>

@@ -2,6 +2,7 @@ import React from 'react'
 import { Card, List, Avatar, Button, Typography, Tag, Empty, Space } from 'antd'
 import { UserOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 import type { TrainerInvite } from '../../store/api/trainer.api'
+import { useAppSelector } from '../../store/hooks'
 
 const { Text, Paragraph } = Typography
 
@@ -22,6 +23,14 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 	acceptingId,
 	rejectingId,
 }) => {
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
+	// Hover класс в зависимости от темы
+	const hoverClass = isDark
+		? 'hover:bg-slate-700/50'
+		: 'hover:bg-slate-100'
+
 	const getPhotoUrl = (photo: string | null) => {
 		if (!photo) return undefined
 		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
@@ -69,7 +78,7 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 					dataSource={invites}
 					renderItem={(invite) => (
 						<List.Item
-							className='hover:bg-blue-50 rounded-lg px-3 py-3'
+							className={`${hoverClass} rounded-lg px-3 py-3 transition-colors duration-200`}
 							style={{ borderBottom: '1px solid var(--border)' }}
 						>
 							<div className='flex items-center gap-4 w-full'>

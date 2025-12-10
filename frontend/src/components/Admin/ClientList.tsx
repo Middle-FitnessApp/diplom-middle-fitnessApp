@@ -3,6 +3,7 @@ import { Card, Avatar, List, Tooltip, Button, Empty, Typography } from 'antd'
 import { StarFilled, StarOutlined, UserOutlined, MessageOutlined, EyeOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ClientInTrainerProfile } from '../../types'
+import { useAppSelector } from '../../store/hooks'
 
 const { Text } = Typography
 
@@ -20,6 +21,13 @@ export const ClientList: React.FC<ClientListProps> = ({
 	onToggleStar,
 }) => {
 	const navigate = useNavigate()
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
+	// Hover класс в зависимости от темы
+	const hoverClass = isDark
+		? 'hover:bg-slate-700/50'
+		: 'hover:bg-slate-100'
 
 	const getPhotoUrl = (photo?: string) => {
 		if (!photo) return undefined
@@ -53,7 +61,7 @@ export const ClientList: React.FC<ClientListProps> = ({
 					dataSource={clients}
 					renderItem={(client) => (
 						<List.Item
-							className='hover:bg-blue-50 rounded-lg px-3 py-2 transition'
+							className={`${hoverClass} rounded-lg px-3 py-2 transition-colors duration-200`}
 							style={{ borderBottom: '1px solid var(--border)' }}
 						>
 							<div className='flex items-center gap-3 w-full'>

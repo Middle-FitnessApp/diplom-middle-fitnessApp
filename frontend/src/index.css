@@ -3,33 +3,110 @@
 /* ===========================
    CSS ПЕРЕМЕННЫЕ ТЕМЫ
    =========================== */
+
+/* 🌞 СВЕТЛАЯ ТЕМА */
 :root {
 	/* Фоны */
-	--bg-dark: oklch(25% 0.02 260);
-	--bg: oklch(98% 0.005 260);
+	--bg-dark: oklch(92% 0.01 180);
+	--bg: oklch(97% 0.005 180);
 	--bg-light: oklch(100% 0 0);
 
 	/* Текст */
-	--text: oklch(25% 0.01 260);
-	--text-muted: oklch(45% 0.005 260);
+	--text: oklch(20% 0.02 180);
+	--text-muted: oklch(45% 0.01 180);
 	--highlight: oklch(100% 0 0);
 
 	/* Границы */
-	--border: oklch(85% 0.01 260);
-	--border-muted: oklch(90% 0.005 260);
+	--border: oklch(88% 0.01 180);
+	--border-muted: oklch(92% 0.005 180);
 
-	/* Цвета акцентов */
-	--primary: oklch(60% 0.18 230);
-	--secondary: oklch(70% 0.15 200);
-	--accent: oklch(65% 0.15 270);
-	--info: oklch(65% 0.15 210);
-	--success: oklch(65% 0.18 145);
-	--warning: oklch(75% 0.18 85);
-	--danger: oklch(65% 0.2 25);
+	/* Основной акцент - изумрудно-бирюзовый */
+	--primary: oklch(55% 0.16 170);
+	--primary-hover: oklch(50% 0.18 170);
+	--primary-light: oklch(92% 0.06 170);
+
+	/* Вторичный акцент - тёплый коралловый */
+	--secondary: oklch(65% 0.18 25);
+	--secondary-hover: oklch(60% 0.20 25);
+
+	/* Акцент - глубокий синий */
+	--accent: oklch(55% 0.15 250);
+	--accent-hover: oklch(50% 0.17 250);
+
+	/* Семантические цвета */
+	--info: oklch(60% 0.14 240);
+	--success: oklch(60% 0.18 150);
+	--warning: oklch(75% 0.18 75);
+	--danger: oklch(60% 0.22 25);
 
 	/* Градиенты */
-	--gradient-start: oklch(70% 0.15 230);
-	--gradient-end: oklch(65% 0.15 270);
+	--gradient-start: oklch(55% 0.14 170);
+	--gradient-mid: oklch(50% 0.15 200);
+	--gradient-end: oklch(55% 0.14 250);
+
+	/* Тени */
+	--shadow-color: 180 10% 20%;
+	--shadow-sm: 0 1px 3px oklch(20% 0.02 180 / 0.08);
+	--shadow-md: 0 4px 12px oklch(20% 0.02 180 / 0.1);
+	--shadow-lg: 0 8px 25px oklch(20% 0.02 180 / 0.12);
+	--shadow-xl: 0 20px 50px oklch(20% 0.02 180 / 0.15);
+
+	/* Карточки */
+	--card-bg: oklch(100% 0 0);
+	--card-border: oklch(90% 0.01 180);
+	--card-shadow: var(--shadow-md);
+}
+
+/* 🌙 ТЁМНАЯ ТЕМА */
+:root.dark {
+	/* Фоны - глубокие синевато-серые */
+	--bg-dark: oklch(15% 0.02 250);
+	--bg: oklch(18% 0.02 250);
+	--bg-light: oklch(22% 0.025 250);
+
+	/* Текст */
+	--text: oklch(92% 0.01 180);
+	--text-muted: oklch(65% 0.01 200);
+	--highlight: oklch(100% 0 0);
+
+	/* Границы */
+	--border: oklch(30% 0.02 250);
+	--border-muted: oklch(25% 0.015 250);
+
+	/* Основной акцент - яркий изумрудный */
+	--primary: oklch(70% 0.18 170);
+	--primary-hover: oklch(75% 0.20 170);
+	--primary-light: oklch(30% 0.08 170);
+
+	/* Вторичный акцент - мягкий коралловый */
+	--secondary: oklch(70% 0.16 25);
+	--secondary-hover: oklch(75% 0.18 25);
+
+	/* Акцент - яркий синий */
+	--accent: oklch(70% 0.15 250);
+	--accent-hover: oklch(75% 0.17 250);
+
+	/* Семантические цвета (ярче для тёмной темы) */
+	--info: oklch(70% 0.14 240);
+	--success: oklch(70% 0.18 150);
+	--warning: oklch(80% 0.18 75);
+	--danger: oklch(70% 0.20 25);
+
+	/* Градиенты */
+	--gradient-start: oklch(35% 0.12 170);
+	--gradient-mid: oklch(30% 0.12 200);
+	--gradient-end: oklch(35% 0.12 250);
+
+	/* Тени - более выраженные на тёмном */
+	--shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.3);
+	--shadow-md: 0 4px 12px oklch(0% 0 0 / 0.4);
+	--shadow-lg: 0 8px 25px oklch(0% 0 0 / 0.5);
+	--shadow-xl: 0 20px 50px oklch(0% 0 0 / 0.6);
+
+	/* Карточки */
+	--card-bg: oklch(22% 0.025 250);
+	--card-border: oklch(28% 0.02 250);
+	--card-shadow: var(--shadow-md);
 }
 
 /* ===========================
@@ -39,6 +116,7 @@ body {
 	margin: 0;
 	background-color: var(--bg);
 	color: var(--text);
+	transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a {
@@ -54,10 +132,20 @@ a:hover {
    TAILWIND УТИЛИТЫ
    =========================== */
 @utility gradient-bg {
-	background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+	background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
 	background-attachment: fixed;
 	min-height: 100vh;
-	background-size: cover;
+	background-size: 200% 200%;
+	animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+	0%, 100% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
 }
 
 @utility bg-light {
@@ -66,6 +154,10 @@ a:hover {
 
 @utility bg-main {
 	background-color: var(--bg);
+}
+
+@utility bg-card {
+	background-color: var(--card-bg);
 }
 
 @utility text-muted {
@@ -88,6 +180,10 @@ a:hover {
 	border-color: var(--primary);
 }
 
+@utility shadow-card {
+	box-shadow: var(--card-shadow);
+}
+
 /* ===========================
    СОЦИАЛЬНЫЕ ССЫЛКИ
    =========================== */
@@ -100,36 +196,99 @@ a:hover {
 	border-radius: 50%;
 	background: var(--primary);
 	color: #fff;
-	transition: all 0.2s ease;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .social-link:hover {
-	transform: scale(1.1);
+	transform: scale(1.15) translateY(-2px);
 	color: #fff;
+	box-shadow: 0 4px 15px var(--primary);
 }
 
 .social-link.telegram:hover {
 	background: #0088cc;
+	box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
 }
 
 .social-link.whatsapp:hover {
 	background: #25d366;
+	box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
 }
 
 .social-link.instagram:hover {
 	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+	box-shadow: 0 4px 15px rgba(225, 48, 108, 0.4);
+}
+
+/* ===========================
+   ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ
+   =========================== */
+.theme-toggle {
+	position: relative;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--bg-light);
+	border: 2px solid var(--border);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+.theme-toggle:hover {
+	border-color: var(--primary);
+	transform: scale(1.05);
+	box-shadow: 0 4px 15px var(--primary);
+}
+
+.theme-toggle:active {
+	transform: scale(0.95);
+}
+
+.theme-toggle-icon {
+	position: absolute;
+	font-size: 20px;
+	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Солнце - видно в светлой теме */
+.theme-toggle .sun-icon {
+	color: #f59e0b;
+	opacity: 1;
+	transform: rotate(0deg) scale(1);
+}
+
+.theme-toggle .moon-icon {
+	color: #6366f1;
+	opacity: 0;
+	transform: rotate(-90deg) scale(0.5);
+}
+
+/* Луна - видна в тёмной теме */
+:root.dark .theme-toggle .sun-icon {
+	opacity: 0;
+	transform: rotate(90deg) scale(0.5);
+}
+
+:root.dark .theme-toggle .moon-icon {
+	opacity: 1;
+	transform: rotate(0deg) scale(1);
 }
 
 /* ===========================
    ANT DESIGN МИНИМАЛЬНЫЕ ФИКСЫ
-   (только то, что нельзя настроить через ConfigProvider)
    =========================== */
 
-/* Dropdown меню - позиционирование и анимация */
+/* Dropdown меню */
 .ant-dropdown-menu {
 	border-radius: 12px !important;
-	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
-	padding: 4px !important;
+	box-shadow: var(--shadow-lg) !important;
+	padding: 6px !important;
+	background: var(--card-bg) !important;
+	border: 1px solid var(--border) !important;
 }
 
 .ant-dropdown-menu-item {
@@ -138,10 +297,12 @@ a:hover {
 	transition: all 0.2s ease !important;
 }
 
-/* Select dropdown - скругления */
+/* Select dropdown */
 .ant-select-dropdown {
 	border-radius: 12px !important;
-	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+	box-shadow: var(--shadow-lg) !important;
+	background: var(--card-bg) !important;
+	border: 1px solid var(--border) !important;
 }
 
 .ant-select-item {
@@ -154,7 +315,7 @@ a:hover {
 	border-radius: 12px !important;
 }
 
-/* Notification и Message - z-index и позиционирование */
+/* Notification и Message */
 .ant-notification {
 	z-index: 9999 !important;
 }
@@ -163,7 +324,52 @@ a:hover {
 	z-index: 9999 !important;
 }
 
-/* Collapse - убираем лишние отступы */
+/* Collapse */
 .ant-collapse-content-box > :last-child {
 	margin-bottom: 0;
+}
+
+/* Плавные переходы для всех компонентов Ant Design */
+.ant-btn,
+.ant-card,
+.ant-input,
+.ant-select,
+.ant-modal-content,
+.ant-drawer-content,
+.ant-table,
+.ant-menu {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ===========================
+   ГЛОБАЛЬНЫЕ АНИМАЦИИ
+   =========================== */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.animate-fade-in {
+	animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+	animation: scale-in 0.2s ease-out forwards;
 }

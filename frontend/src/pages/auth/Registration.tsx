@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router'
 import { useRegisterMutation } from '../../store/api/auth.api'
 import { useState } from 'react'
 import { UploadOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text } = Typography
 const { Dragger } = Upload
@@ -95,9 +96,16 @@ export const Registration = () => {
 	const [photoPreviews, setPhotoPreviews] = useState<{ [key: string]: string }>({})
 	const [photoFiles, setPhotoFiles] = useState<{ [key: string]: File }>({})
 	const [form] = Form.useForm()
+	const theme = useAppSelector((state) => state.ui.theme)
 	
 	// Используем App.useApp() для контекстного message (fix warning)
 	const { message } = App.useApp()
+
+	// Динамические классы для темы
+	const cardBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-light'
+	const borderClass = theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
+	const titleClass = theme === 'dark' ? 'text-slate-100' : 'text-gray-800'
+	const uploadBorderClass = theme === 'dark' ? 'border-slate-600 hover:border-teal-400 hover:bg-slate-700' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
 
 	const handlePhotoUpload = (file: File, fieldName: string) => {
 		const reader = new FileReader()
@@ -223,9 +231,9 @@ export const Registration = () => {
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
-			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 max-w-[800px] w-full'>
+			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} max-w-[800px] w-full animate-fade-in`}>
 				<div className='text-center mb-8'>
-					<Title>Создать аккаунт</Title>
+					<Title className={`${titleClass}!`}>Создать аккаунт</Title>
 					<Text type='secondary' className='text-lg'>
 						Присоединяйтесь к фитнес-сообществу
 					</Text>
@@ -243,7 +251,7 @@ export const Registration = () => {
 				>
 					{/* Секция фото */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							<CameraOutlined className='mr-2' />
 							Фотографии для анализа
 						</Title>
@@ -253,7 +261,7 @@ export const Registration = () => {
 
 						<div className='grid grid-cols-2 gap-4 mb-6'>
 							{photoFields.map((photoType, index) => (
-								<div key={photoType} className='border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer transition-all hover:border-primary hover:bg-gray-50'>
+								<div key={photoType} className={`border-2 border-dashed ${uploadBorderClass} rounded-xl p-5 text-center cursor-pointer transition-all`}>
 									<Form.Item
 										name={photoType}
 										valuePropName='file'
@@ -321,7 +329,7 @@ export const Registration = () => {
 
 					{/* Личная информация */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							👤 Личная информация
 						</Title>
 
@@ -365,7 +373,7 @@ export const Registration = () => {
 
 					{/* Физические параметры */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							📏 Физические параметры
 						</Title>
 
@@ -400,7 +408,7 @@ export const Registration = () => {
 
 					{/* Замеры тела */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							📐 Замеры тела (см)
 						</Title>
 
@@ -474,7 +482,7 @@ export const Registration = () => {
 
 					{/* Фитнес цели */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							🎯 Фитнес информация
 						</Title>
 
@@ -529,7 +537,7 @@ export const Registration = () => {
 
 					{/* Пароль */}
 					<div className='mb-8'>
-						<Title level={4} className='text-gray-800 font-semibold mb-4 pb-3 border-b-2 border-primary inline-block'>
+						<Title level={4} className={`${titleClass} font-semibold mb-4 pb-3 border-b-2 inline-block`} style={{ borderColor: 'var(--primary)' }}>
 							🔐 Безопасность
 						</Title>
 						<Form.Item
@@ -591,7 +599,7 @@ export const Registration = () => {
 
 				<div className='text-center mt-6'>
 					<Text type='secondary'>Уже есть аккаунт? </Text>
-					<Link to='/login' className='font-semibold transition-colors'>
+					<Link to='/login' className='font-semibold transition-colors' style={{ color: 'var(--primary)' }}>
 						Войти
 					</Link>
 				</div>
