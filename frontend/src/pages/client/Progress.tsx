@@ -110,9 +110,13 @@ export const Progress = () => {
     return `${day}.${month}.${year} ${hours}:${minutes}`
   }
 
-  const handleBlockClick = (data: ProgressReport, index: number) => {
-    setSelectedReport({ ...data, index })
-    setIsModalVisible(true)
+  const handleBlockClick = (data: { date: string; weight?: number; waist?: number; hips?: number; chest?: number; arm?: number; leg?: number }, index: number) => {
+    // Находим полный отчет по дате
+    const fullReport = reports?.find(report => report.date.split('T')[0] === data.date)
+    if (fullReport) {
+      setSelectedReport({ ...fullReport, index })
+      setIsModalVisible(true)
+    }
   }
 
   const handleModalClose = () => {
@@ -279,7 +283,7 @@ export const Progress = () => {
                           </Card>
                         </Col>
                       )}
-                      {selectedReport.chest > 0 && (
+                      {selectedReport.chest && selectedReport.chest > 0 && (
                         <Col xs={12} sm={8}>
                           <Card size="small" hoverable>
                             <Statistic
@@ -291,7 +295,7 @@ export const Progress = () => {
                           </Card>
                         </Col>
                       )}
-                      {selectedReport.arm > 0 && (
+                      {selectedReport.arm && selectedReport.arm > 0 && (
                         <Col xs={12} sm={8}>
                           <Card size="small" hoverable>
                             <Statistic
@@ -303,7 +307,7 @@ export const Progress = () => {
                           </Card>
                         </Col>
                       )}
-                      {selectedReport.leg > 0 && (
+                      {selectedReport.leg && selectedReport.leg > 0 && (
                         <Col xs={12} sm={8}>
                           <Card size="small" hoverable>
                             <Statistic
