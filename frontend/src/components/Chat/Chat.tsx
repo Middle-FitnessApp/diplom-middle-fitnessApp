@@ -1,73 +1,33 @@
 import React, { useState, useEffect } from 'react'
-import { Form, Typography } from 'antd'
+import { Form, Typography, Spin, Alert } from 'antd'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import type { MessageType, ChatUploadFile } from '../../types'
 import { MessageList } from './MessageList'
 import { InputPanel } from './InputPanel'
 import { ImagePreviewModal } from './ImagePreviewModal'
-import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { useAppDispatch } from '../../store/hooks'
 import { addMessage, markAsRead } from '../../store/slices/chat.slice'
+import { useGetMessagesQuery, useSendMessageMutation } from '../../store/api/chat.api'
+import { socketService } from '../../utils/socket'
 
 const { Text } = Typography
 
-// Демо сообщения для первого открытия
-const getInitialMessages = (role: 'client' | 'trainer'): MessageType[] => {
-	if (role === 'client') {
-		return [
-			{
-				id: 'demo-1',
-				chatId: 'demo-chat',
-				senderId: 'trainer',
-				text: 'Здравствуйте! Я ваш тренер. Готов помочь вам достичь ваших целей! 💪',
-				createdAt: '10:00',
-				isRead: true,
-				sender: {
-					id: 'trainer',
-					name: 'Тренер',
-				},
-			},
-			{
-				id: 'demo-2',
-				chatId: 'demo-chat',
-				senderId: 'trainer',
-				text: 'Как прошла ваша тренировка на этой неделе?',
-				createdAt: '10:01',
-				isRead: true,
-				sender: {
-					id: 'trainer',
-					name: 'Тренер',
-				},
-			},
-		]
-	}
-	return [
-		{
-			id: 'demo-3',
-			chatId: 'demo-chat',
-			senderId: 'client',
-			text: 'Здравствуйте! Я записался к вам на тренировки',
-			createdAt: '09:30',
-			isRead: true,
-			sender: {
-				id: 'client',
-				name: 'Клиент',
-			},
-		},
-	]
-}
-
 type ChatProps = {
 	role: 'client' | 'trainer'
-	chatId?: string // Опциональный ID чата (для тренера - ID клиента)
+	chatId: string // Обязательный ID чата
 	partnerName?: string // Имя собеседника
 }
 
-export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerName }) => {
-	// Формируем chatId
-	const chatId = propChatId || (role === 'client' ? 'client_trainer' : 'trainer_client')
-
+export const Chat: React.FC<ChatProps> = ({ role, chatId, partnerName }) => {
 	const dispatch = useAppDispatch()
-	const storedMessages = useAppSelector((state) => state.chat.messages[chatId])
+
+	// RTK Query hooks
+	const {
+		data: messagesData,
+		isLoading: messagesLoading,
+		error: messagesError,
+	} = useGetMessagesQuery({ chatId, page: 1, limit: 50 }, { skip: !chatId })
+	const [sendMessage, { isLoading: sendLoading }] = useSendMessageMutation()
 
 	const [form] = Form.useForm()
 	const [showEmoji, setShowEmoji] = useState(false)
@@ -75,8 +35,38 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 	const [previewImage, setPreviewImage] = useState<string | undefined>()
 	const [inputValue, setInputValue] = useState('')
 
-	// Используем сохранённые сообщения или демо
-	const messages = storedMessages || getInitialMessages(role)
+	// Сообщения из API или пустой массив
+	const messages = messagesData?.messages || []
+
+	// WebSocket подключение
+	useEffect(() => {
+		if (!chatId) return
+
+		const connectSocket = async () => {
+			try {
+				await socketService.connect()
+				socketService.joinChat(chatId)
+
+				// Подписка на новые сообщения
+				const socket = socketService.getSocket()
+				if (socket) {
+					socket.on('new_message', (message: MessageType) => {
+						if (message.chatId === chatId) {
+							dispatch(addMessage({ chatId, message }))
+						}
+					})
+				}
+			} catch (error) {
+				console.error('Failed to connect socket:', error)
+			}
+		}
+
+		connectSocket()
+
+		return () => {
+			socketService.leaveChat(chatId)
+		}
+	}, [chatId, dispatch])
 
 	// Отмечаем сообщения как прочитанные при открытии чата
 	useEffect(() => {
@@ -133,26 +123,24 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 			return
 		}
 
-		const newMessage: MessageType = {
-			id: 'temp-' + Date.now().toString(),
-			chatId,
-			senderId: role,
-			text,
-			createdAt: new Date().toISOString(),
-			isRead: true,
-			sender: {
-				id: role,
-				name: role === 'client' ? 'Клиент' : 'Тренер',
-			},
-			imageUrl,
+		try {
+			const result = await sendMessage({
+				chatId,
+				text,
+				image: imageUrl,
+			}).unwrap()
+
+			// Сообщение уже добавлено через WebSocket или RTK Query invalidation
+			// Но для надежности добавим локально
+			dispatch(addMessage({ chatId, message: result.message }))
+
+			form.resetFields()
+			setInputValue('')
+			setFileList([])
+		} catch (error) {
+			console.error('Failed to send message:', error)
+			// Можно показать уведомление об ошибке
 		}
-
-		// Добавляем в Redux (автоматически сохранится в localStorage)
-		dispatch(addMessage({ chatId, message: newMessage }))
-
-		form.resetFields()
-		setInputValue('')
-		setFileList([])
 	}
 
 	// Форматируем текущую дату
@@ -193,7 +181,27 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 				</Text>
 			</div>
 
-			<MessageList messages={messages} onPreview={handlePreview} role={role} />
+			{/* Loading и Error состояния */}
+			{messagesLoading && (
+				<div className='flex justify-center items-center py-8'>
+					<Spin size='large' />
+				</div>
+			)}
+			{messagesError && (
+				<div className='p-4'>
+					<Alert
+						message='Ошибка загрузки сообщений'
+						description='Не удалось загрузить историю чата. Попробуйте обновить страницу.'
+						type='error'
+						showIcon
+					/>
+				</div>
+			)}
+
+			{/* Сообщения */}
+			{!messagesLoading && !messagesError && (
+				<MessageList messages={messages} onPreview={handlePreview} role={role} />
+			)}
 
 			<InputPanel
 				form={form}
@@ -207,7 +215,8 @@ export const Chat: React.FC<ChatProps> = ({ role, chatId: propChatId, partnerNam
 				showEmoji={showEmoji}
 				onEmojiSelect={insertEmoji}
 				onSend={handleSend}
-				disabledSend={!inputValue && fileList.length === 0}
+				disabledSend={(!inputValue && fileList.length === 0) || sendLoading}
+				loading={sendLoading}
 			/>
 
 			<ImagePreviewModal imageUrl={previewImage} onClose={handleClosePreview} />

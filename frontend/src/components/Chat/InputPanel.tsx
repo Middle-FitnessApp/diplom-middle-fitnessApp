@@ -18,6 +18,7 @@ type InputPanelProps = {
 	onEmojiSelect: (emoji: string) => void
 	onSend: () => void
 	disabledSend: boolean
+	loading?: boolean
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({
@@ -33,6 +34,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 	onEmojiSelect,
 	onSend,
 	disabledSend,
+	loading = false,
 }) => (
 	<>
 		<Form
@@ -162,6 +164,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 				htmlType='submit'
 				size='large'
 				disabled={disabledSend}
+				loading={loading}
 				style={{
 					borderRadius: 16,
 					padding: '0 28px',
