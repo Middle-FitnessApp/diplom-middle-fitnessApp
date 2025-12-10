@@ -1,68 +1,20 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-	Card,
-	Pagination,
-	Select,
-	Typography,
-	Spin,
-	Alert,
-	Empty,
-	Tag,
-	Space,
-} from 'antd'
-import { LoadingOutlined } from '@ant-design/icons'
-import type { FC } from 'react'
+import { Card, Pagination, Select, Typography, Empty, Tag, Space, Spin } from 'antd'
 import {
 	useGetProgressReportsQuery,
 	type ProgressReport,
 } from '../../store/api/progress.api'
+import {
+	formatDate,
+	computeDiffs,
+	PERIOD_OPTIONS,
+} from '../../utils/progressFunctions.ts'
+import { ErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'
+import { LoadingOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
-
-const periodOptions = [
-	{ label: 'Месяц', value: 'month' },
-	{ label: 'Год', value: 'year' },
-	{ label: 'Все время', value: 'all' },
-]
-
-type MetricKey = 'weight' | 'waist' | 'hips'
-
-interface MetricDiff {
-	key: MetricKey
-	label: string
-	value: number
-	diff: number | null
-}
-
-const computeDiffs = (current: ProgressReport, prev?: ProgressReport): MetricDiff[] => {
-	const keys: Array<{ key: MetricKey; label: string }> = [
-		{ key: 'weight', label: 'Вес' },
-		{ key: 'waist', label: 'Талия' },
-		{ key: 'hips', label: 'Бёдра' },
-	]
-
-	return keys.map(({ key, label }) => {
-		const value = current[key]
-		const prevValue = prev ? prev[key] : undefined
-
-		if (prevValue == null || value == null) {
-			return { key, label, value, diff: null }
-		}
-
-		const diff = Number((value - prevValue).toFixed(1))
-		return { key, label, value, diff }
-	})
-}
-
-const formatDate = (isoDate: string): string => {
-	const date = new Date(isoDate)
-	const day = String(date.getDate()).padStart(2, '0')
-	const month = String(date.getMonth() + 1).padStart(2, '0')
-	const year = date.getFullYear()
-	return `${day}.${month}.${year}`
-}
 
 export const AllReports: FC = () => {
 	const navigate = useNavigate()
@@ -78,8 +30,7 @@ export const AllReports: FC = () => {
 	const titleClass = isDark ? 'text-slate-100' : 'text-gray-800'
 	const textClass = isDark ? 'text-slate-300' : 'text-gray-700'
 	const textMutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
-
-	// id отчётов, для которых загрузка фото уже провалилась
+	const periodOptions = PERIOD_OPTIONS
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
 
 	const { data: reports = [], isLoading, isError, error } = useGetProgressReportsQuery()
@@ -133,7 +84,9 @@ export const AllReports: FC = () => {
 	if (isLoading) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] flex justify-center items-center min-h-[400px]`}>
+				<div
+					className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px] flex justify-center items-center min-h-[400px]`}
+				>
 					<Spin
 						indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
 						tip='Загрузка отчетов...'
@@ -143,20 +96,15 @@ export const AllReports: FC = () => {
 		)
 	}
 
-	if (isError) {
-		const errorMessage =
-			'data' in error && typeof error.data === 'object' && error.data !== null
-				? (error.data as { message?: string }).message || 'Ошибка при загрузке отчетов'
-				: 'Ошибка при загрузке отчетов'
-
+	if (isError || error) {
 		return (
-			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
-					<Alert
-						message='Ошибка загрузки'
-						description={errorMessage}
-						type='error'
-						showIcon
+			<div className='page-container gradient-bg'>
+				<div className='page-card' style={{ maxWidth: '500px' }}>
+					<ErrorState
+						title='Ошибка загрузки'
+						message='Не удалось загрузить отчеты'
+						onRetry={() => window.location.reload()}
+						showRetryButton={true}
 					/>
 				</div>
 			</div>
@@ -166,9 +114,15 @@ export const AllReports: FC = () => {
 	if (reports.length === 0) {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
+				<div
+					className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}
+				>
 					<div className='text-center mb-8'>
-						<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
+						<Title
+							level={2}
+							className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`}
+							style={{ borderColor: 'var(--primary)' }}
+						>
 							📋 Ваши отчеты
 						</Title>
 					</div>
@@ -185,9 +139,15 @@ export const AllReports: FC = () => {
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}>
+			<div
+				className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}
+			>
 				<div className='text-center mb-8'>
-					<Title level={2} className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`} style={{ borderColor: 'var(--primary)' }}>
+					<Title
+						level={2}
+						className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`}
+						style={{ borderColor: 'var(--primary)' }}
+					>
 						📋 Ваши отчеты
 					</Title>
 				</div>
@@ -205,8 +165,9 @@ export const AllReports: FC = () => {
 
 				{filteredReports.length === 0 ? (
 					<Empty
-						description={`Нет отчетов за выбранный период: ${periodOptions.find((opt) => opt.value === period)?.label
-							}`}
+						description={`Нет отчетов за выбранный период: ${
+							periodOptions.find((opt) => opt.value === period)?.label
+						}`}
 						image={Empty.PRESENTED_IMAGE_SIMPLE}
 					/>
 				) : (
@@ -232,7 +193,9 @@ export const AllReports: FC = () => {
 												<div className={`text-lg font-semibold ${titleClass} mb-2`}>
 													Отчет от {formatDate(report.date)}
 												</div>
-												<div className={`grid grid-cols-2 md:grid-cols-3 gap-2 ${textClass}`}>
+												<div
+													className={`grid grid-cols-2 md:grid-cols-3 gap-2 ${textClass}`}
+												>
 													<div>Вес: {report.weight} кг</div>
 													<div>Талия: {report.waist} см</div>
 													<div>Бёдра: {report.hips} см</div>
@@ -286,7 +249,9 @@ export const AllReports: FC = () => {
 													<img
 														src={report.photoFront}
 														alt='Фото отчета'
-														className={`w-20 h-20 object-cover rounded-full border-2 ${isDark ? 'border-slate-600' : 'border-gray-200'}`}
+														className={`w-20 h-20 object-cover rounded-full border-2 ${
+															isDark ? 'border-slate-600' : 'border-gray-200'
+														}`}
 														onError={() => handlePhotoError(report.id)}
 													/>
 												</div>

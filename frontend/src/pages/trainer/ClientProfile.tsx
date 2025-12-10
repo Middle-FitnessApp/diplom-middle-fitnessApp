@@ -95,11 +95,10 @@ export const ClientProfile = () => {
 											reports={clientData.lastProgress}
 											photo={clientData.client.photo}
 										/>
-										{/* Куда должна вести кнопка "Все отчеты"? */}
 										<div className='mt-4'>
 											<Button
 												type='primary'
-												onClick={() => navigate(`/me/progress/reports`)}
+												onClick={() => navigate(`/admin/progress/${clientId}/reports`)}
 												className='!rounded-lg'
 											>
 												Все отчеты

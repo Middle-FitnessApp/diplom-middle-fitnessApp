@@ -13,6 +13,7 @@ import {
 import {
 	AddNutritionTrainer,
 	Admin,
+	AllReportsAdmin,
 	ClientProfile,
 	CreateNutritionTrainer,
 	NutritionPlanTrainer,
@@ -42,10 +43,8 @@ export const AppRouter = () => {
 					</GuestRoute>
 				}
 			/>
-
 			{/* Главная страница (доступна всем, но показывает разный контент) */}
 			<Route path='/' element={<Main />} />
-
 			{/* Client routes - защищённые, требуют авторизации */}
 			<Route
 				path='/me'
@@ -103,7 +102,6 @@ export const AppRouter = () => {
 					</ProtectedRoute>
 				}
 			/>
-
 			{/* Trainer routes - защищённые, требуют роль TRAINER */}
 			<Route
 				path='/admin'
@@ -161,7 +159,22 @@ export const AppRouter = () => {
 					</ProtectedRoute>
 				}
 			/>
-
+			<Route
+				path='/admin/progress/:clientId/reports'
+				element={
+					<ProtectedRoute requiredRole='TRAINER'>
+						<AllReportsAdmin />
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path='/admin/progress/:clientId/reports/:reportId'
+				element={
+					<ProtectedRoute requiredRole='TRAINER'>
+						<Report />
+					</ProtectedRoute>
+				}
+			/>
 			{/* Fallback */}
 			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>

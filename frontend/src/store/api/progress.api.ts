@@ -6,18 +6,6 @@ import type {
 	ProgressAnalyticsResponse,
 } from '../types/progress.types'
 
-// Комментарий тренера к отчёту
-export interface TrainerComment {
-	id: string
-	text: string
-	createdAt: string
-	trainer: {
-		id: string
-		name: string
-		photo?: string
-	}
-}
-
 export interface ProgressReport {
 	id: string
 	date: string
@@ -31,7 +19,7 @@ export interface ProgressReport {
 	photoFront?: string
 	photoSide?: string
 	photoBack?: string
-	comments?: TrainerComment[]
+	comments?: Comment[]
 	createdAt: string
 	updatedAt: string
 }
@@ -121,9 +109,47 @@ export const progressApi = createApi({
 			transformResponse: (response: ProgressReportsResponse) => response.data,
 		}),
 
+		// Получение всех отчетов для тренера по конкретному клиенту с пагинацией и фильтрацией по дате
+		getTrainerClientReports: builder.query<
+			ProgressReportsResponse,
+			{
+				clientId: string // обязательно!
+				page?: number
+				limit?: number
+				startDate?: string // формат: 'DD/MM/YYYY'
+				endDate?: string
+			}
+		>({
+			query: ({ clientId, page = 1, limit = 5, startDate, endDate }) => {
+				const params = new URLSearchParams()
+				params.append('clientId', clientId)
+				params.append('page', page.toString())
+				params.append('limit', limit.toString())
+
+				if (startDate) params.append('startDate', startDate)
+				if (endDate) params.append('endDate', endDate)
+
+				return `/progress?${params.toString()}`
+			},
+			providesTags: ['Progress'],
+		}),
+
 		// Получение конкретного отчета по ID
 		getProgressReport: builder.query<ProgressReport, string>({
 			query: (id) => `/progress/${id}`,
+			providesTags: ['Progress'],
+			transformResponse: (response: ProgressReportResponse) => response.progress,
+		}),
+
+		// Получение конкретного отчета по ID для тренера с указанием clientId
+		getTrainerProgressReport: builder.query<
+			ProgressReport,
+			{ reportId: string; clientId: string }
+		>({
+			query: ({ reportId, clientId }) => ({
+				url: `/progress/${reportId}`,
+				params: { clientId }, // → /progress/123?clientId=abc
+			}),
 			providesTags: ['Progress'],
 			transformResponse: (response: ProgressReportResponse) => response.progress,
 		}),
@@ -188,7 +214,9 @@ export const progressApi = createApi({
 export const {
 	useGetProgressChartDataQuery,
 	useGetProgressReportsQuery,
+	useGetTrainerClientReportsQuery,
 	useGetProgressReportQuery,
+	useGetTrainerProgressReportQuery,
 	useAddProgressReportMutation,
 	useGetLatestProgressQuery,
 	useGetProgressAnalyticsQuery,
