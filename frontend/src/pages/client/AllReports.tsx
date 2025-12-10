@@ -1,42 +1,177 @@
-import { useState } from 'react'
-import { Card, Pagination, Select } from 'antd'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+	Card,
+	Pagination,
+	Select,
+	Typography,
+	Spin,
+	Alert,
+	Empty,
+	Tag,
+	Space,
+} from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import type { FC } from 'react'
-import 'antd/dist/reset.css'
-import type { ReportType } from '../../types'
-import Title from 'antd/es/skeleton/Title'
+import {
+	useGetProgressReportsQuery,
+	type ProgressReport,
+} from '../../store/api/progress.api'
+
+const { Title, Text } = Typography
 
 const periodOptions = [
 	{ label: 'Месяц', value: 'month' },
 	{ label: 'Год', value: 'year' },
 	{ label: 'Все время', value: 'all' },
-	{ label: 'Выбрать интервал', value: 'custom' },
 ]
 
-const reportsMock: ReportType[] = Array.from({ length: 12 }, (_, index) => ({
-	id: String(index + 1),
-	date: '15.04.2024',
-	weight: 74,
-	waist: 81,
-	chest: 80,
-	hips: 74,
-	leg: 70,
-	arm: 40,
-	photoUrl: undefined,
-}))
+type MetricKey = 'weight' | 'waist' | 'hips'
+
+interface MetricDiff {
+	key: MetricKey
+	label: string
+	value: number
+	diff: number | null
+}
+
+const computeDiffs = (current: ProgressReport, prev?: ProgressReport): MetricDiff[] => {
+	const keys: Array<{ key: MetricKey; label: string }> = [
+		{ key: 'weight', label: 'Вес' },
+		{ key: 'waist', label: 'Талия' },
+		{ key: 'hips', label: 'Бёдра' },
+	]
+
+	return keys.map(({ key, label }) => {
+		const value = current[key]
+		const prevValue = prev ? prev[key] : undefined
+
+		if (prevValue == null || value == null) {
+			return { key, label, value, diff: null }
+		}
+
+		const diff = Number((value - prevValue).toFixed(1))
+		return { key, label, value, diff }
+	})
+}
+
+const formatDate = (isoDate: string): string => {
+	const date = new Date(isoDate)
+	const day = String(date.getDate()).padStart(2, '0')
+	const month = String(date.getMonth() + 1).padStart(2, '0')
+	const year = date.getFullYear()
+	return `${day}.${month}.${year}`
+}
 
 export const AllReports: FC = () => {
+	const navigate = useNavigate()
 	const [page, setPage] = useState(1)
-	const [period, setPeriod] = useState('month')
+	const [period, setPeriod] = useState('all')
 	const pageSize = 5
 
-	const filteredReports = reportsMock
+	// id отчётов, для которых загрузка фото уже провалилась
+	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
 
-	const handlePeriodChange = (value: string) => {
+	const { data: reports = [], isLoading, isError, error } = useGetProgressReportsQuery()
+
+	const sortedReports = useMemo(
+		() =>
+			[...reports].sort(
+				(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+			),
+		[reports],
+	)
+
+	const getFilteredReports = (): ProgressReport[] => {
+		if (period === 'all') return sortedReports
+
+		const now = new Date()
+		const filterDate = new Date()
+
+		if (period === 'month') {
+			filterDate.setDate(now.getDate() - 30)
+		} else if (period === 'year') {
+			filterDate.setDate(now.getDate() - 365)
+		}
+
+		filterDate.setHours(0, 0, 0, 0)
+
+		return sortedReports.filter((report) => {
+			const reportDate = new Date(report.date)
+			reportDate.setHours(0, 0, 0, 0)
+			return reportDate >= filterDate
+		})
+	}
+
+	const filteredReports = getFilteredReports()
+
+	const handlePeriodChange = (value: string): void => {
 		setPeriod(value)
 		setPage(1)
 	}
 
-	const handlePageChange = (value: number) => setPage(value)
+	const handlePageChange = (value: number): void => setPage(value)
+
+	const handleReportClick = (reportId: string): void => {
+		navigate(`/me/progress/reports/${reportId}`)
+	}
+
+	const handlePhotoError = (reportId: string): void => {
+		setFailedPhotoIds((prev) => new Set(prev).add(reportId))
+	}
+
+	if (isLoading) {
+		return (
+			<div className='page-container gradient-bg'>
+				<div className='page-card flex justify-center items-center min-h-[400px]'>
+					<Spin
+						indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+						tip='Загрузка отчетов...'
+					/>
+				</div>
+			</div>
+		)
+	}
+
+	if (isError) {
+		const errorMessage =
+			'data' in error && typeof error.data === 'object' && error.data !== null
+				? (error.data as { message?: string }).message || 'Ошибка при загрузке отчетов'
+				: 'Ошибка при загрузке отчетов'
+
+		return (
+			<div className='page-container gradient-bg'>
+				<div className='page-card'>
+					<Alert
+						message='Ошибка загрузки'
+						description={errorMessage}
+						type='error'
+						showIcon
+					/>
+				</div>
+			</div>
+		)
+	}
+
+	if (reports.length === 0) {
+		return (
+			<div className='page-container gradient-bg'>
+				<div className='page-card'>
+					<div className='section-header'>
+						<Title level={2} className='section-title'>
+							📋 Ваши отчеты
+						</Title>
+					</div>
+					<Empty
+						description='У вас пока нет отчетов о прогрессе'
+						image={Empty.PRESENTED_IMAGE_SIMPLE}
+					/>
+				</div>
+			</div>
+		)
+	}
+
+	const paginated = filteredReports.slice((page - 1) * pageSize, page * pageSize)
 
 	return (
 		<div className='page-container gradient-bg'>
@@ -58,55 +193,112 @@ export const AllReports: FC = () => {
 					/>
 				</div>
 
-				<div className='space-y-4 mb-8'>
-					{filteredReports.slice((page - 1) * pageSize, page * pageSize).map((report) => (
-						<Card
-							key={report.id}
-							className='report-card'
-							onClick={() => (window.location.href = `/me/progress/reports/${report.id}`)}
-						>
-							<div className='flex justify-between items-center'>
-								<div>
-									<div className='text-lg font-semibold text-gray-800 mb-2'>
-										Отчет от {report.date}
-									</div>
-									<div className='grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-700'>
-										<div>Вес: {report.weight} кг</div>
-										<div>Талия: {report.waist} см</div>
-										<div>Грудь: {report.chest} см</div>
-										<div>Бёдра: {report.hips} см</div>
-										<div>Нога: {report.leg} см</div>
-										<div>Рука: {report.arm} см</div>
-									</div>
-								</div>
-								<div className='flex-shrink-0'>
-									{report.photoUrl ? (
-										<img
-											src={report.photoUrl}
-											alt='Фото отчета'
-											className='w-20 h-20 object-cover rounded-full border-2 border-gray-200'
-										/>
-									) : (
-										<div className='w-20 h-20 flex items-center justify-center rounded-full border-2 border-gray-200 bg-gray-100'>
-											<span className='text-2xl text-gray-400'>📊</span>
-										</div>
-									)}
-								</div>
-							</div>
-						</Card>
-					))}
-				</div>
-
-				<div className='flex justify-center'>
-					<Pagination
-						current={page}
-						pageSize={pageSize}
-						total={filteredReports.length}
-						onChange={handlePageChange}
-						showSizeChanger={false}
-						className='[&_.ant-pagination-item]:rounded-lg [&_.ant-pagination-item]:border-gray-300'
+				{filteredReports.length === 0 ? (
+					<Empty
+						description={`Нет отчетов за выбранный период: ${periodOptions.find((opt) => opt.value === period)?.label
+							}`}
+						image={Empty.PRESENTED_IMAGE_SIMPLE}
 					/>
-				</div>
+				) : (
+					<>
+						<div className='space-y-4 mb-8'>
+							{paginated.map((report, indexInPage) => {
+								const globalIndex = (page - 1) * pageSize + indexInPage
+								const prev =
+									globalIndex > 0 ? filteredReports[globalIndex - 1] : undefined
+								const diffs = computeDiffs(report, prev)
+								const shouldShowPhoto =
+									!!report.photoFront && !failedPhotoIds.has(report.id)
+
+								return (
+									<Card
+										key={report.id}
+										style={{ marginBottom: 8 }}
+										className='report-card cursor-pointer hover:shadow-lg transition-shadow mb-4'
+										onClick={() => handleReportClick(report.id)}
+									>
+										<div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
+											<div className='flex-1'>
+												<div className='text-lg font-semibold text-gray-800 mb-2'>
+													Отчет от {formatDate(report.date)}
+												</div>
+												<div className='grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-700'>
+													<div>Вес: {report.weight} кг</div>
+													<div>Талия: {report.waist} см</div>
+													<div>Бёдра: {report.hips} см</div>
+													{report.chest && <div>Грудь: {report.chest} см</div>}
+													{report.leg && <div>Нога: {report.leg} см</div>}
+													{report.arm && <div>Рука: {report.arm} см</div>}
+												</div>
+											</div>
+
+											<div className='flex flex-col items-start md:items-end gap-2'>
+												<Text className='text-gray-600 text-sm'>
+													Изменения относительно предыдущего отчёта
+												</Text>
+												<Space direction='vertical' size={4}>
+													{diffs.map(({ key, label, diff }) => {
+														if (diff === null) {
+															return (
+																<Text key={key} type='secondary' className='text-xs'>
+																	{label}: нет данных для сравнения
+																</Text>
+															)
+														}
+
+														if (diff === 0) {
+															return (
+																<Tag key={key} className='text-xs'>
+																	{label}: 0 (без изменений)
+																</Tag>
+															)
+														}
+
+														const isIncrease = diff > 0
+														const color = isIncrease ? 'red' : 'green'
+														const sign = diff > 0 ? '+' : ''
+
+														return (
+															<Tag key={key} color={color} className='text-xs'>
+																{label}: {sign}
+																{diff}
+															</Tag>
+														)
+													})}
+												</Space>
+											</div>
+
+											{shouldShowPhoto && (
+												<div
+													className='flex-shrink-0 md:ml-4'
+													onClick={(e) => e.stopPropagation()}
+												>
+													<img
+														src={report.photoFront}
+														alt='Фото отчета'
+														className='w-20 h-20 object-cover rounded-full border-2 border-gray-200'
+														onError={() => handlePhotoError(report.id)}
+													/>
+												</div>
+											)}
+										</div>
+									</Card>
+								)
+							})}
+						</div>
+
+						<div className='flex justify-center'>
+							<Pagination
+								current={page}
+								pageSize={pageSize}
+								total={filteredReports.length}
+								onChange={handlePageChange}
+								showSizeChanger={false}
+								className='[&_.ant-pagination-item]:rounded-lg [&_.ant-pagination-item]:border-gray-300'
+							/>
+						</div>
+					</>
+				)}
 			</div>
 		</div>
 	)

@@ -1,11 +1,15 @@
 import { useState } from 'react'
-import { Typography, Button, Form, Input, message, Modal } from 'antd'
+import { Typography, Button, Form, Input, message, Modal, Card, Empty } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
-import { PlusOutlined } from '@ant-design/icons'
-import type { NutritionDay, NutritionSubcategory } from '../../types/nutritions'
+import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import type { NutritionDay, MealType } from '../../types/nutritions'
 import { CreateDayForm } from '../../components/Admin/CreateDayForm'
+import {
+	useCreateSubcategoryWithDaysMutation,
+	useGetCategoriesQuery,
+} from '../../store/api/nutrition.api'
 
-const { Title } = Typography
+const { Title, Text } = Typography
 const { TextArea } = Input
 
 interface ProgramFormData {
@@ -13,43 +17,73 @@ interface ProgramFormData {
 	description?: string
 }
 
+// Тип для локальных данных дня (до сохранения в БД)
+interface LocalDay {
+	id: string // временный ID
+	dayTitle: string
+	dayOrder: number
+	meals: LocalMeal[]
+}
+
+interface LocalMeal {
+	type: MealType
+	name: string
+	mealOrder: number
+	items: string[]
+}
+
 export const CreateNutritionTrainer = () => {
-	const { categoryId } = useParams()
+	const { category: categoryId } = useParams()
 	const navigate = useNavigate()
 	const [form] = Form.useForm()
 	const [isDayFormVisible, setIsDayFormVisible] = useState(false)
-	const [days, setDays] = useState<NutritionDay[]>([])
+	const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
+	const [days, setDays] = useState<LocalDay[]>([])
+
+	// API
+	const [createSubcategoryWithDays, { isLoading: isCreating }] =
+		useCreateSubcategoryWithDaysMutation()
+	const { data: categories = [] } = useGetCategoriesQuery()
+
+	// Находим текущую категорию для отображения имени
+	const currentCategory = categories.find((cat) => cat.id === categoryId)
 
 	const handleSubmit = async (values: ProgramFormData) => {
+		if (!categoryId) {
+			message.error('Категория не найдена')
+			return
+		}
+
+		if (days.length === 0) {
+			message.warning('Добавьте хотя бы один день в план питания')
+			return
+		}
+
 		try {
-			// 1. Сначала создаем подкатегорию
-			const nutritionSubcategoryData: Omit<
-				NutritionSubcategory,
-				'id' | 'createdAt' | 'updatedAt'
-			> = {
-				categoryId: categoryId || '',
-				name: values.name,
-				description: values.description,
-				days: [], // пока пустой массив
-			}
-
-			console.log('Создание подкатегории:', nutritionSubcategoryData)
-			const mockSubcategoryId = 'subcat_' + Date.now()
-
-			// 2. Создаем дни
-			const daysWithSubcatId = days.map((day) => ({
-				...day,
-				subcatId: mockSubcategoryId,
-				id: 'day_' + Date.now() + '_' + Math.random(),
+			// Подготавливаем данные для API
+			const daysForApi = days.map((day, index) => ({
+				dayTitle: day.dayTitle,
+				dayOrder: index + 1,
+				meals: day.meals.map((meal, mealIndex) => ({
+					type: meal.type,
+					name: meal.name,
+					mealOrder: mealIndex + 1,
+					items: meal.items.filter((item) => item.trim() !== ''),
+				})),
 			}))
 
-			console.log('Дни для создания:', daysWithSubcatId)
+			await createSubcategoryWithDays({
+				categoryId,
+				name: values.name.trim(),
+				description: values.description?.trim() || undefined,
+				days: daysForApi,
+			}).unwrap()
 
-			message.success('Подкатегория успешно создана')
-			navigate(`/admin/nutrition`)
-		} catch (error) {
-			message.error('Ошибка при создании подкатегории')
-			console.log(error)
+			message.success('План питания успешно создан!')
+			navigate('/admin/nutrition')
+		} catch (error: any) {
+			console.error('Ошибка при создании плана:', error)
+			message.error(error?.data?.message || 'Ошибка при создании плана питания')
 		}
 	}
 
@@ -58,163 +92,298 @@ export const CreateNutritionTrainer = () => {
 	}
 
 	const handleAddDay = () => {
+		setEditingDayIndex(null)
+		setIsDayFormVisible(true)
+	}
+
+	const handleEditDay = (index: number) => {
+		setEditingDayIndex(index)
 		setIsDayFormVisible(true)
 	}
 
 	const handleDayFormCancel = () => {
 		setIsDayFormVisible(false)
+		setEditingDayIndex(null)
 	}
 
 	const handleDayFormSubmit = (
-		dayData: Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'>,
+		dayData:
+			| Omit<NutritionDay, 'id' | 'subcatId' | 'createdAt' | 'updatedAt'>
+			| NutritionDay,
 	) => {
-		// Создаем день с временными ID
-		const correctedDay: NutritionDay = {
-			...dayData,
-			id: 'day_temp_' + Date.now() + '_' + Math.random(),
-			subcatId: '',
-			dayOrder: days.length + 1,
-			meals: dayData.meals.map((meal, index) => ({
-				...meal,
-				id: 'meal_temp_' + Date.now() + '_' + index,
-				dayId: 'day_temp_' + Date.now() + '_' + Math.random(),
+		// Преобразуем в локальный формат
+		const localDay: LocalDay = {
+			id: 'id' in dayData && dayData.id ? dayData.id : `temp_${Date.now()}`,
+			dayTitle: dayData.dayTitle,
+			dayOrder: dayData.dayOrder,
+			meals: dayData.meals.map((meal) => ({
+				type: meal.type,
+				name: meal.name,
+				mealOrder: meal.mealOrder,
 				items: meal.items.filter((item) => item.trim() !== ''),
+			})),
+		}
+
+		if (editingDayIndex !== null) {
+			// Редактирование существующего дня
+			setDays((prev) => {
+				const updated = [...prev]
+				updated[editingDayIndex] = localDay
+				return updated
+			})
+			message.success('День обновлён')
+		} else {
+			// Добавление нового дня
+			setDays((prev) => [
+				...prev,
+				{
+					...localDay,
+					dayOrder: prev.length + 1,
+				},
+			])
+			message.success('День добавлен')
+		}
+
+		setIsDayFormVisible(false)
+		setEditingDayIndex(null)
+	}
+
+	const handleRemoveDay = (index: number) => {
+		setDays((prev) => {
+			const filtered = prev.filter((_, i) => i !== index)
+			// Пересчитываем порядок дней
+			return filtered.map((day, i) => ({
+				...day,
+				dayOrder: i + 1,
+			}))
+		})
+		message.success('День удалён')
+	}
+
+	const getMealTypeLabel = (type: MealType): string => {
+		const labels: Record<MealType, string> = {
+			BREAKFAST: 'Завтрак',
+			SNACK: 'Перекус',
+			LUNCH: 'Обед',
+			DINNER: 'Ужин',
+		}
+		return labels[type] || type
+	}
+
+	const getMealTypeColor = (type: MealType): string => {
+		const colors: Record<MealType, string> = {
+			BREAKFAST: '#fa8c16',
+			SNACK: '#52c41a',
+			LUNCH: '#1890ff',
+			DINNER: '#722ed1',
+		}
+		return colors[type] || '#666'
+	}
+
+	// Преобразуем LocalDay в NutritionDay для формы редактирования
+	const getEditingDay = (): NutritionDay | null => {
+		if (editingDayIndex === null) return null
+		const day = days[editingDayIndex]
+		if (!day) return null
+
+		return {
+			id: day.id,
+			subcatId: '',
+			dayTitle: day.dayTitle,
+			dayOrder: day.dayOrder,
+			meals: day.meals.map((meal, index) => ({
+				id: `meal_${index}`,
+				dayId: day.id,
+				...meal,
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			})),
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		}
-
-		setDays((prev) => [...prev, correctedDay])
-		message.success('День добавлен')
-		setIsDayFormVisible(false)
-	}
-
-	const handleRemoveDay = (dayId: string) => {
-		setDays((prev) => {
-			const filtered = prev.filter((day) => day.id !== dayId)
-			// Обновляем порядок дней
-			return filtered.map((day, index) => ({
-				...day,
-				dayOrder: index + 1,
-			}))
-		})
 	}
 
 	return (
 		<div className='page-container gradient-bg'>
-			<div className='page-card max-w-4xl'>
-				<div className='section-header'>
-					<Title level={2} className='section-title'>
-						➕ Создание новой подкатегории
-					</Title>
-					<p className='text-gray-600 mt-2'>Категория: {categoryId}</p>
+			<div className='page-card max-w-4xl mx-auto'>
+				{/* Header */}
+				<div className='flex items-center gap-4 mb-6'>
+					<Button
+						type='text'
+						icon={<ArrowLeftOutlined />}
+						onClick={handleCancel}
+						className='text-gray-500 hover:text-gray-700'
+					/>
+					<div>
+						<Title level={2} className='m-0'>
+							Создание плана питания
+						</Title>
+						{currentCategory && (
+							<Text type='secondary' className='text-sm'>
+								Категория: {currentCategory.name}
+							</Text>
+						)}
+					</div>
 				</div>
 
-				<Form form={form} layout='vertical' onFinish={handleSubmit} className='mt-6'>
-					<Form.Item
-						name='name'
-						label='Название подкатегории'
-						rules={[
-							{ required: true, message: 'Введите название подкатегории' },
-							{ min: 2, message: 'Название должно быть не менее 2 символов' },
-						]}
-					>
-						<Input
-							placeholder='Например: Низкоуглеводная диета, Массонабор...'
-							size='large'
-						/>
-					</Form.Item>
+				<Form form={form} layout='vertical' onFinish={handleSubmit}>
+					{/* Основная информация */}
+					<Card className='mb-6' title='Основная информация'>
+						<Form.Item
+							name='name'
+							label='Название плана'
+							rules={[
+								{ required: true, message: 'Введите название плана' },
+								{ min: 2, message: 'Название должно быть не менее 2 символов' },
+							]}
+						>
+							<Input
+								placeholder='Например: Низкоуглеводная диета, План для набора массы...'
+								size='large'
+							/>
+						</Form.Item>
 
-					<Form.Item name='description' label='Описание подкатегории'>
-						<TextArea placeholder='Опишите подкатегорию питания...' rows={3} />
-					</Form.Item>
+						<Form.Item name='description' label='Описание плана'>
+							<TextArea
+								placeholder='Подробное описание плана питания, для кого подходит, особенности...'
+								rows={3}
+							/>
+						</Form.Item>
+					</Card>
 
 					{/* Секция дней */}
-					<div className='mb-6'>
-						<div className='flex justify-between items-center mb-4'>
-							<Title level={4} className='m-0'>
-								Дни подкатегории ({days.length})
-							</Title>
-							<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
-								Добавить день
-							</Button>
-						</div>
-
+					<Card
+						className='mb-6'
+						title={
+							<div className='flex justify-between items-center'>
+								<span>Дни плана ({days.length})</span>
+								<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
+									Добавить день
+								</Button>
+							</div>
+						}
+					>
 						{days.length > 0 ? (
-							<div className='space-y-3'>
-								{days.map((day) => (
-									<div
+							<div className='space-y-4'>
+								{days.map((day, index) => (
+									<Card
 										key={day.id}
-										className='p-4 border border-gray-200 rounded-lg bg-white shadow-sm'
+										size='small'
+										className='bg-gray-50 border border-gray-200'
+										hoverable
+										onClick={() => handleEditDay(index)}
 									>
 										<div className='flex justify-between items-start'>
-											<div>
-												<div className='font-medium text-lg'>{day.dayTitle}</div>
-												<div className='text-sm text-gray-600 mt-1'>
-													Приемов пищи: {day.meals.length} • Порядок: {day.dayOrder}
+											<div className='flex-1'>
+												<div className='flex items-center gap-3 mb-2'>
+													<span className='inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white font-medium text-sm'>
+														{day.dayOrder}
+													</span>
+													<Text strong className='text-lg'>
+														{day.dayTitle}
+													</Text>
 												</div>
-												<div className='text-xs text-gray-500 mt-2'>
-													{day.meals.map((meal) => (
-														<div key={meal.id} className='mb-1'>
-															<span className='font-medium'>{meal.name}</span> (
-															{meal.type.toLowerCase()}):
-															{meal.items.map((item, idx) => (
-																<span key={idx} className='ml-2'>
-																	{item}
-																</span>
-															))}
-														</div>
-													))}
+
+												<div className='ml-11'>
+													<Text type='secondary' className='text-sm'>
+														{day.meals.length} приёмов пищи
+													</Text>
+
+													<div className='flex flex-wrap gap-2 mt-2'>
+														{day.meals.map((meal, mealIndex) => (
+															<span
+																key={mealIndex}
+																className='inline-flex items-center px-2 py-1 rounded text-xs'
+																style={{
+																	backgroundColor: getMealTypeColor(meal.type) + '20',
+																	color: getMealTypeColor(meal.type),
+																}}
+															>
+																{getMealTypeLabel(meal.type)}
+																{meal.items.length > 0 && (
+																	<span className='ml-1 opacity-70'>
+																		({meal.items.length})
+																	</span>
+																)}
+															</span>
+														))}
+													</div>
 												</div>
 											</div>
-											<Button type='text' danger onClick={() => handleRemoveDay(day.id)}>
-												Удалить
-											</Button>
+
+											<Button
+												type='text'
+												danger
+												icon={<DeleteOutlined />}
+												onClick={(e) => {
+													e.stopPropagation()
+													handleRemoveDay(index)
+												}}
+											/>
 										</div>
-									</div>
+									</Card>
 								))}
 							</div>
 						) : (
-							<div className='text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50'>
-								<p className='text-gray-500 mb-3'>Пока нет добавленных дней</p>
-								<Button type='primary' onClick={handleAddDay}>
+							<Empty
+								image={Empty.PRESENTED_IMAGE_SIMPLE}
+								description='Дни ещё не добавлены'
+								className='py-8'
+							>
+								<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
 									Добавить первый день
 								</Button>
-							</div>
+							</Empty>
 						)}
-					</div>
+					</Card>
 
-					<Form.Item className='mt-8 mb-0'>
-						<div className='flex gap-3 justify-end'>
-							<Button size='large' onClick={handleCancel}>
-								Отмена
-							</Button>
-							<Button
-								type='primary'
-								htmlType='submit'
-								size='large'
-								disabled={days.length === 0}
-							>
-								Создать подкатегорию ({days.length} дней)
-							</Button>
-						</div>
-					</Form.Item>
+					{/* Кнопки действий */}
+					<div className='flex justify-end gap-3'>
+						<Button size='large' onClick={handleCancel}>
+							Отмена
+						</Button>
+						<Button
+							type='primary'
+							htmlType='submit'
+							size='large'
+							loading={isCreating}
+							disabled={days.length === 0}
+						>
+							{isCreating ? 'Создание...' : `Создать план (${days.length} дней)`}
+						</Button>
+					</div>
 				</Form>
 
+				{/* Модальное окно для добавления/редактирования дня */}
 				<Modal
-					title='Добавление нового дня'
+					title={
+						editingDayIndex !== null ? 'Редактирование дня' : 'Добавление нового дня'
+					}
 					open={isDayFormVisible}
 					onCancel={handleDayFormCancel}
 					footer={null}
 					width={800}
+					destroyOnClose
 				>
-					{/* Исправленный пропс: programDays -> existingDays */}
 					<CreateDayForm
+						day={getEditingDay()}
+						existingDays={days.map((d) => ({
+							id: d.id,
+							subcatId: '',
+							dayTitle: d.dayTitle,
+							dayOrder: d.dayOrder,
+							meals: d.meals.map((m, i) => ({
+								id: `meal_${i}`,
+								dayId: d.id,
+								...m,
+								createdAt: new Date().toISOString(),
+								updatedAt: new Date().toISOString(),
+							})),
+							createdAt: new Date().toISOString(),
+							updatedAt: new Date().toISOString(),
+						}))}
 						onSubmit={handleDayFormSubmit}
 						onCancel={handleDayFormCancel}
-						existingDays={days}
 					/>
 				</Modal>
 			</div>

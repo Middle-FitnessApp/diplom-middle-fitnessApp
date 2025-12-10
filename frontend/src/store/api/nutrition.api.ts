@@ -2,9 +2,19 @@ import type {
 	NutritionCategory,
 	NutritionSubcategory,
 	NutritionDay,
+	NutritionMeal,
 	AssignedNutritionPlan,
 	ClientNutritionPlanResponse,
 } from '../types/nutrition.types'
+
+interface PaginatedDaysResponse {
+	days: NutritionDay[]
+	pagination: {
+		total: number
+		limit: number
+		offset: number
+	}
+}
 import {
 	createApi,
 	fetchBaseQuery,
@@ -22,19 +32,6 @@ const rawBaseQuery = fetchBaseQuery({
 		if (token) {
 			headers.set('authorization', `Bearer ${token}`)
 		}
-
-		// const isFormDataEndpoint = [
-		// 	'updateClientProfileWithPhoto',
-		// 	'updateTrainerProfileWithPhoto',
-		// ].includes(endpoint)
-
-		// const isJsonMutation =
-		// 	!isFormDataEndpoint && type === 'mutation' && !endpoint.includes('WithPhoto')
-
-		// if (isJsonMutation) {
-		// 	headers.set('Content-Type', 'application/json')
-		// }
-
 		return headers
 	},
 })
@@ -68,16 +65,39 @@ export const baseQueryWithReauth: BaseQueryFn<
 	return result
 }
 
+// Типы для создания
+interface CreateDayInput {
+	subcatId: string
+	dayTitle: string
+	dayOrder: number
+	meals: Omit<NutritionMeal, 'id' | 'dayId' | 'createdAt' | 'updatedAt'>[]
+}
+
+interface CreateSubcategoryWithDaysInput {
+	categoryId: string
+	name: string
+	description?: string
+	days: Omit<CreateDayInput, 'subcatId'>[]
+}
+
 export const nutritionApi = createApi({
 	reducerPath: 'nutritionApi',
 	baseQuery: baseQueryWithReauth,
 	tagTypes: ['Category', 'Subcategory', 'Day', 'AssignedPlan'],
 	endpoints: (builder) => ({
 		// План питания текущего клиента
-		getClientNutritionPlan: builder.query<ClientNutritionPlanResponse, { period?: 'day' | 'week' | 'month'; date?: string } | void>({
-			query: (params) => ({
+		getClientNutritionPlan: builder.query<
+			ClientNutritionPlanResponse,
+			{ clientId: string; period?: 'day' | 'week' | 'month'; date?: string }
+		>({
+			query: ({ clientId, period = 'day', date }) => ({
+
 				url: '/nutrition/client/plan',
-				params: params || undefined,
+				params: {
+					clientId,
+					period,
+					...(date && { date }),
+				},
 			}),
 			providesTags: ['AssignedPlan', 'Day'],
 		}),
@@ -120,7 +140,7 @@ export const nutritionApi = createApi({
 			invalidatesTags: ['Category'],
 		}),
 
-		// === ПРОГРАММЫ ===
+		// === ПОДКАТЕГОРИИ ===
 		getSubcategories: builder.query<NutritionSubcategory[], string>({
 			query: (categoryId) => `/nutrition/categories/${categoryId}/subcategories`,
 			providesTags: ['Subcategory'],
@@ -136,6 +156,19 @@ export const nutritionApi = createApi({
 				body: subcategory,
 			}),
 			invalidatesTags: ['Subcategory', 'Category'],
+		}),
+
+		// Создание подкатегории с днями (полная форма)
+		createSubcategoryWithDays: builder.mutation<
+			NutritionSubcategory,
+			CreateSubcategoryWithDaysInput
+		>({
+			query: ({ categoryId, ...data }) => ({
+				url: `/nutrition/categories/${categoryId}/subcategories/full`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: ['Subcategory', 'Category', 'Day'],
 		}),
 
 		updateSubcategory: builder.mutation<
@@ -159,40 +192,46 @@ export const nutritionApi = createApi({
 		}),
 
 		// === ДНИ ===
-		getSubcategoryDays: builder.query<NutritionDay[], string>({
-			query: (subcategoryId) => `/nutrition/subcategories/${subcategoryId}/days`,
+		getSubcategoryDays: builder.query<
+			PaginatedDaysResponse,
+			{ subcategoryId: string; page: number; limit: number }
+		>({
+			query: ({ subcategoryId, page, limit }) =>
+				`/nutrition/subcategories/${subcategoryId}/days?limit=${limit}&offset=${
+					(page - 1) * limit
+				}`,
 			providesTags: ['Day'],
 		}),
 
 		getDay: builder.query<NutritionDay, string>({
-			query: (dayId) => `/days/${dayId}`,
+			query: (dayId) => `/nutrition/days/${dayId}`,
 			providesTags: ['Day'],
 		}),
 
-		createDay: builder.mutation<NutritionDay, Omit<NutritionDay, 'id'>>({
-			query: (day) => ({
-				url: '/days',
+		createDay: builder.mutation<NutritionDay, CreateDayInput>({
+			query: ({ subcatId, ...day }) => ({
+				url: `/nutrition/subcategories/${subcatId}/days`,
 				method: 'POST',
 				body: day,
 			}),
-			invalidatesTags: ['Day'],
+			invalidatesTags: ['Day', 'Subcategory', 'Category'],
 		}),
 
-		updateDay: builder.mutation<NutritionDay, NutritionDay>({
-			query: (day) => ({
-				url: `/days/${day.id}`,
-				method: 'PUT',
-				body: day,
+		updateDay: builder.mutation<NutritionDay, { id: string } & Partial<CreateDayInput>>({
+			query: ({ id, ...updates }) => ({
+				url: `/nutrition/days/${id}`,
+				method: 'PATCH',
+				body: updates,
 			}),
 			invalidatesTags: ['Day'],
 		}),
 
 		deleteDay: builder.mutation<void, string>({
 			query: (dayId) => ({
-				url: `/days/${dayId}`,
+				url: `/nutrition/days/${dayId}`,
 				method: 'DELETE',
 			}),
-			invalidatesTags: ['Day'],
+			invalidatesTags: ['Day', 'Subcategory', 'Category'],
 		}),
 
 		// === НАЗНАЧЕНИЕ ПЛАНОВ ===
@@ -215,17 +254,18 @@ export const nutritionApi = createApi({
 })
 
 export const {
-	//категории
+	// категории
 	useGetCategoriesQuery,
 	useCreateCategoryMutation,
 	useUpdateCategoryMutation,
 	useDeleteCategoryMutation,
-	//программы
+	// подкатегории
 	useGetSubcategoriesQuery,
 	useCreateSubcategoryMutation,
+	useCreateSubcategoryWithDaysMutation,
 	useUpdateSubcategoryMutation,
 	useDeleteSubcategoryMutation,
-	//дни
+	// дни
 	useGetSubcategoryDaysQuery,
 	useGetDayQuery,
 	useCreateDayMutation,

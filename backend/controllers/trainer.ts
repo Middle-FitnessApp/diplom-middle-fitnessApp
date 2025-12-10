@@ -387,11 +387,25 @@ export async function getTrainerInvites(
 ) {
 	const skip = (page - 1) * limit
 
+	// Для PENDING приглашений фильтруем клиентов, которые уже работают с другим тренером
+	const whereClause: any = {
+		trainerId,
+		status,
+	}
+
+	// Если запрашиваем PENDING приглашения, исключаем клиентов с активным тренером
+	if (status === 'PENDING') {
+		whereClause.client = {
+			asClientOf: {
+				none: {
+					status: 'ACCEPTED',
+				},
+			},
+		}
+	}
+
 	const invites = await prisma.trainerClient.findMany({
-		where: {
-			trainerId,
-			status,
-		},
+		where: whereClause,
 		select: {
 			id: true,
 			status: true,

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Badge, Button, Dropdown, Avatar, Skeleton } from 'antd'
 import type { MenuProps } from 'antd'
 import { MessageOutlined, UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons'
@@ -8,6 +8,7 @@ import { useGetMeQuery } from '../../store/api/user.api'
 
 export function Header() {
 	const navigate = useNavigate()
+	const location = useLocation()
 	const dispatch = useAppDispatch()
 	
 	// Проверяем есть ли токен в localStorage
@@ -37,6 +38,13 @@ export function Header() {
 	})
 
 	const unreadMessages = user?.role === 'CLIENT' ? unreadCount : totalUnreadForTrainer
+
+	// Проверка активности для специфичных путей
+	const isProgressActive = location.pathname === '/me/progress' || location.pathname === '/me/progress/new-report'
+	const isReportsActive = location.pathname === '/me/progress/reports'
+	const isTrainerChatActive = location.pathname === '/trainer'
+	const isAdminActive = location.pathname === '/admin'
+	const isNutritionTrainerActive = location.pathname.startsWith('/admin/nutrition')
 
 	const handleLogout = async () => {
 		await dispatch(performLogout())
@@ -112,11 +120,13 @@ export function Header() {
 	// Клиент
 	if (user.role === 'CLIENT') {
 		const hasTrainer = !!user.trainer
+		const isHomeActive = location.pathname === '/'
+		const isNutritionActive = location.pathname.startsWith('/me/nutrition')
 
 		return (
 			<header className="border-b border-muted background-light">
 				<div className="flex h-16 items-center justify-between px-6">
-					<nav className="flex items-center gap-6">
+					<nav className="flex items-center gap-6 h-full">
 						<Link
 							to="/"
 							className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors"
@@ -125,35 +135,76 @@ export function Header() {
 						</Link>
 						<Link
 							to="/"
-							className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+							className="relative text-sm font-medium transition-colors h-full flex items-center"
+							style={{
+								color: isHomeActive ? '#2563eb' : '#4b5563',
+								fontWeight: isHomeActive ? 600 : 500,
+							}}
 						>
 							Главная
+							{isHomeActive && (
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							)}
 						</Link>
 						<Link
 							to="/me/nutrition"
-							className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+							className="relative text-sm font-medium transition-colors h-full flex items-center"
+							style={{
+								color: isNutritionActive ? '#2563eb' : '#4b5563',
+								fontWeight: isNutritionActive ? 600 : 500,
+							}}
 						>
 							Питание
+							{isNutritionActive && (
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							)}
 						</Link>
 						<Link
 							to="/me/progress"
-							className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+							className="relative text-sm font-medium transition-colors h-full flex items-center"
+							style={{
+								color: isProgressActive ? '#2563eb' : '#4b5563',
+								fontWeight: isProgressActive ? 600 : 500,
+							}}
 						>
 							Прогресс
+							{isProgressActive && (
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							)}
+						</Link>
+						<Link
+							to="/me/progress/reports"
+							className="relative text-sm font-medium transition-colors h-full flex items-center"
+							style={{
+								color: isReportsActive ? '#2563eb' : '#4b5563',
+								fontWeight: isReportsActive ? 600 : 500,
+							}}
+						>
+							Отчёты
+							{isReportsActive && (
+								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+							)}
 						</Link>
 					</nav>
 
-					<nav className="flex items-center gap-4">
+					<nav className="flex items-center gap-4 h-full">
 						{/* Чат с тренером - показываем только если есть тренер */}
 						{hasTrainer && (
 							<Link
 								to="/trainer"
-								className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+								className="relative flex items-center gap-2 text-sm font-medium transition-colors h-full"
+								style={{
+									color: isTrainerChatActive ? '#2563eb' : '#4b5563',
+									fontWeight: isTrainerChatActive ? 600 : 500,
+								}}
 							>
 								<Badge count={unreadMessages} size="small" offset={[2, -2]}>
 									<MessageOutlined className="text-lg" />
 								</Badge>
 								<span>Чат с тренером</span>
+								{isTrainerChatActive && (
+									<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+								)}
 							</Link>
 						)}
 
@@ -181,7 +232,7 @@ export function Header() {
 	return (
 		<header className="border-b border-muted background-light">
 			<div className="flex h-16 items-center justify-between px-6">
-				<nav className="flex items-center gap-6">
+				<nav className="flex items-center gap-6 h-full">
 					<Link
 						to="/admin"
 						className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors"
@@ -190,15 +241,29 @@ export function Header() {
 					</Link>
 					<Link
 						to="/admin"
-						className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+						className="relative text-sm font-medium transition-colors h-full flex items-center"
+						style={{
+							color: isAdminActive ? '#2563eb' : '#4b5563',
+							fontWeight: isAdminActive ? 600 : 500,
+						}}
 					>
 						Панель тренера
+						{isAdminActive && (
+							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+						)}
 					</Link>
 					<Link
 						to="/admin/nutrition"
-						className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+						className="relative text-sm font-medium transition-colors h-full flex items-center"
+						style={{
+							color: isNutritionTrainerActive ? '#2563eb' : '#4b5563',
+							fontWeight: isNutritionTrainerActive ? 600 : 500,
+						}}
 					>
 						Планы питания
+						{isNutritionTrainerActive && (
+							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+						)}
 					</Link>
 				</nav>
 

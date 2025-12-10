@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client'
-import { hash } from 'bcryptjs'
 import { faker } from '@faker-js/faker'
+import { hash } from 'bcryptjs'
 import fs from 'fs'
-import https from 'https'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import https from 'https'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -505,65 +505,97 @@ async function downloadImage(url: string, filepath: string, retries = 3): Promis
 	if (fs.existsSync(filepath)) {
 		const stats = fs.statSync(filepath)
 		if (stats.size > 0) {
-			return Promise.resolve()
+			return
 		}
 	}
 
 	return new Promise((resolve, reject) => {
-		https
-			.get(url, (response) => {
-				// Обрабатываем редиректы (301, 302, 307, 308)
-				if (
-					response.statusCode &&
-					response.statusCode >= 300 &&
-					response.statusCode < 400 &&
-					response.headers.location
-				) {
-					// Следуем редиректу
-					downloadImage(response.headers.location, filepath).then(resolve).catch(reject)
-					return
-				}
+		const file = fs.createWriteStream(filepath)
 
-				// Проверяем успешный статус
-				if (response.statusCode !== 200) {
-					reject(new Error(`Failed to download image: status ${response.statusCode}`))
-					return
-				}
-
-				const file = fs.createWriteStream(filepath)
-				response.pipe(file)
-				file.on('finish', () => {
+		const request = https.get(url, (response) => {
+			// Обработка редиректов
+			if (response.statusCode === 302 || response.statusCode === 301) {
+				const redirectUrl = response.headers.location
+				if (redirectUrl) {
 					file.close()
-					resolve()
-				})
-				file.on('error', (err) => {
-					fs.unlink(filepath, () => {})
-					reject(err)
-				})
+					fs.unlinkSync(filepath) // Удаляем пустой файл
+					downloadImage(redirectUrl, filepath, retries).then(resolve).catch(reject)
+					return
+				}
+			}
+
+			if (response.statusCode !== 200) {
+				file.close()
+				fs.unlinkSync(filepath)
+				if (retries > 0) {
+					setTimeout(() => {
+						downloadImage(url, filepath, retries - 1)
+							.then(resolve)
+							.catch(reject)
+					}, 1000)
+				} else {
+					reject(new Error(`Failed to download ${url}: ${response.statusCode}`))
+				}
+				return
+			}
+
+			response.pipe(file)
+
+			file.on('finish', () => {
+				file.close()
+				resolve()
 			})
-			.on('error', async (err) => {
-				// Повторная попытка при ошибке соединения
-				if (
-					retries > 0 &&
-					(err.message.includes('ECONNRESET') || err.message.includes('ETIMEDOUT'))
-				) {
-					await delay(1000) // задержка 1 секунда
-					try {
-						await downloadImage(url, filepath, retries - 1)
-						resolve()
-					} catch (retryErr) {
-						reject(retryErr)
-					}
+
+			file.on('error', (err) => {
+				file.close()
+				fs.unlinkSync(filepath)
+				if (retries > 0) {
+					setTimeout(() => {
+						downloadImage(url, filepath, retries - 1)
+							.then(resolve)
+							.catch(reject)
+					}, 1000)
 				} else {
 					reject(err)
 				}
 			})
+		})
+
+		request.on('error', (err) => {
+			file.close()
+			fs.unlinkSync(filepath)
+			if (retries > 0) {
+				setTimeout(() => {
+					downloadImage(url, filepath, retries - 1)
+						.then(resolve)
+						.catch(reject)
+				}, 1000)
+			} else {
+				reject(err)
+			}
+		})
+
+		request.setTimeout(30000, () => {
+			file.close()
+			fs.unlinkSync(filepath)
+			if (retries > 0) {
+				setTimeout(() => {
+					downloadImage(url, filepath, retries - 1)
+						.then(resolve)
+						.catch(reject)
+				}, 1000)
+			} else {
+				reject(new Error(`Timeout downloading ${url}`))
+			}
+		})
 	})
 }
 
 // Функция для форматирования времени
 function formatTime(seconds: number): string {
-	if (seconds < 60) return `${Math.round(seconds)}с`
+	if (seconds < 60) {
+		return `${Math.round(seconds)}с`
+	}
 	const minutes = Math.floor(seconds / 60)
 	const secs = Math.round(seconds % 60)
 	return `${minutes}м ${secs}с`
@@ -587,7 +619,7 @@ console.log('  - clients:', clientsDir)
 console.log('  - progress:', progressDir)
 
 async function main() {
-	console.log('🌱 Начинаем заполнение базы данных...')
+	console.log('🌱 Начинаем заполнение базы данных облегчёнными данными...')
 
 	// Очищаем базу данных от предыдущих данных
 	console.log('🧹 Очищаем базу данных...')
@@ -604,149 +636,190 @@ async function main() {
 	// Пароль для всех тестовых пользователей
 	const passwordHash = await hash('123456', 10)
 
-	// Создаём 20 тренеров
-	console.log('📥 Скачиваем фото для 20 тренеров...')
+	// Создаём 10 тренеров
+	console.log('📥 Скачиваем фото для 10 тренеров...')
 	const trainers = []
-	const trainersTotal = 20
+	const trainersTotal = 10
 	let trainersStartTime = Date.now()
 
 	for (let i = 0; i < trainersTotal; i++) {
-		const photoUrl = `https://picsum.photos/450?random=${i + 100}`
-		const photoPath = `/uploads/photos/trainers/trainer_${i + 1}.jpg`
-		const fullPhotoPath = path.join(trainersDir, `trainer_${i + 1}.jpg`)
-
-		const progress = Math.round(((i + 1) / trainersTotal) * 100)
-		const elapsed = (Date.now() - trainersStartTime) / 1000
-		const avgTime = elapsed / (i + 1)
-		const remaining = avgTime * (trainersTotal - i - 1)
-		process.stdout.write(
-			`\r  Тренер ${i + 1}/${trainersTotal} (${progress}%) - осталось ~${formatTime(
-				remaining,
-			)}`,
-		)
-
-		await downloadImage(photoUrl, fullPhotoPath)
-		await delay(20) // небольшая задержка между запросами
-
-		const isMale = Math.random() > 0.5
+		const isMale = faker.datatype.boolean()
 		const firstName = isMale
-			? maleNames[Math.floor(Math.random() * maleNames.length)]
-			: femaleNames[Math.floor(Math.random() * femaleNames.length)]
-		const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
-		const fullName = `${firstName} ${lastName}${isMale ? '' : 'а'}`
+			? faker.helpers.arrayElement(maleNames)
+			: faker.helpers.arrayElement(femaleNames)
+		const lastName = faker.helpers.arrayElement(lastNames)
+		const name = `${firstName} ${lastName}`
 
-		// 50/50 создаём либо по email, либо по телефону
-		const useEmail = Math.random() > 0.5
-		const email = useEmail ? `trainer${i + 1}@mail.ru` : null
-		const phone = !useEmail ? `+7916${String(i + 1).padStart(7, '0')}` : null
+		const email = `trainer${i + 1}@mail.ru`
+		const phone = '+7' + faker.phone.number().replace(/\D/g, '').slice(-10)
+
+		// Генерируем контактные данные (не всегда заполнены)
+		const telegram = faker.datatype.boolean(0.7) ? `@${faker.internet.username()}` : null
+		const whatsapp = faker.datatype.boolean(0.6)
+			? '+7' + faker.phone.number().replace(/\D/g, '').slice(-10)
+			: null
+		const instagram = faker.datatype.boolean(0.8) ? faker.internet.username() : null
+
+		// Скачиваем фото тренера
+		const photoFilename = `trainer_${i + 1}.jpg`
+		const photoPath = path.join(trainersDir, photoFilename)
+		try {
+			await downloadImage(`https://picsum.photos/400/400?random=${i + 100}`, photoPath)
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			console.log(`⚠️  Не удалось скачать фото для тренера ${i + 1}:`, errorMessage)
+		}
 
 		const trainer = await prisma.user.upsert({
-			where: useEmail ? { email: email! } : { phone: phone! },
+			where: { email },
 			update: {},
 			create: {
-				name: fullName,
+				name,
 				email,
 				phone,
 				password: passwordHash,
-				age: faker.number.int({ min: 25, max: 50 }),
 				role: 'TRAINER',
-				telegram: `@${firstName.toLowerCase()}_fit`,
-				whatsapp: faker.phone.number(),
-				instagram: `@${firstName.toLowerCase()}_fitness`,
-				bio: trainerBios[i % trainerBios.length],
 				photo: photoPath,
+				age: faker.number.int({ min: 25, max: 50 }),
+				telegram,
+				whatsapp,
+				instagram,
+				bio: faker.helpers.arrayElement(trainerBios),
 			},
 		})
-		trainers.push(trainer)
-	}
 
-	// Создаём 100 клиентов
-	console.log('\n📥 Скачиваем фото для 100 клиентов...')
+		trainers.push(trainer)
+
+		// Прогресс-бар для тренеров
+		const progress = (((i + 1) / trainersTotal) * 100).toFixed(1)
+		const elapsed = (Date.now() - trainersStartTime) / 1000
+		const eta = (elapsed / (i + 1)) * (trainersTotal - i - 1)
+		process.stdout.write(
+			`\r📥 Тренеры: ${progress}% (${i + 1}/${trainersTotal}) | Время: ${formatTime(
+				elapsed,
+			)} | Осталось: ${formatTime(eta)}`,
+		)
+	}
+	console.log('\n✅ Тренеры созданы')
+
+	// Создаём 30 клиентов
+	console.log('\n📥 Скачиваем фото для 30 клиентов...')
 	const clients = []
-	const clientsTotal = 100
+	const clientsTotal = 30
 	let clientsStartTime = Date.now()
 
 	for (let i = 0; i < clientsTotal; i++) {
-		const photoUrl = `https://picsum.photos/450?random=${i + 200}`
-		const photoPath = `/uploads/photos/clients/client_${i + 1}.jpg`
-		const fullPhotoPath = path.join(clientsDir, `client_${i + 1}.jpg`)
-
-		const progress = Math.round(((i + 1) / clientsTotal) * 100)
-		const elapsed = (Date.now() - clientsStartTime) / 1000
-		const avgTime = elapsed / (i + 1)
-		const remaining = avgTime * (clientsTotal - i - 1)
-		process.stdout.write(
-			`\r  Клиент ${i + 1}/${clientsTotal} (${progress}%) - осталось ~${formatTime(
-				remaining,
-			)}`,
-		)
-
-		await downloadImage(photoUrl, fullPhotoPath)
-		await delay(20) // небольшая задержка между запросами
-
-		const isMale = Math.random() > 0.4 // 60% женщин, 40% мужчин
+		const isMale = faker.datatype.boolean()
 		const firstName = isMale
-			? maleNames[Math.floor(Math.random() * maleNames.length)]
-			: femaleNames[Math.floor(Math.random() * femaleNames.length)]
-		const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
-		const fullName = `${firstName} ${lastName}${isMale ? '' : 'а'}`
+			? faker.helpers.arrayElement(maleNames)
+			: faker.helpers.arrayElement(femaleNames)
+		const lastName = faker.helpers.arrayElement(lastNames)
+		const name = `${firstName} ${lastName}`
 
-		// 50/50 создаём либо по email, либо по телефону
-		const useEmail = Math.random() > 0.5
-		const email = useEmail ? `client${i + 1}@mail.ru` : null
-		const phone = !useEmail ? `+7917${String(i + 1).padStart(7, '0')}` : null
+		const email = `client${i + 1}@mail.ru`
+		const phone = '+7' + faker.phone.number().replace(/\D/g, '').slice(-10)
+
+		// Генерируем профиль клиента
+		const goal = faker.helpers.arrayElement(clientGoals)
+		const clientRestrictions = faker.helpers.arrayElement(restrictions)
+		const experience = faker.helpers.arrayElement(experiences)
+		const diet = faker.helpers.arrayElement(diets)
+
+		// Скачиваем фото клиента
+		const photoFilename = `client_${i + 1}.jpg`
+		const photoPath = path.join(clientsDir, photoFilename)
+		try {
+			await downloadImage(`https://picsum.photos/400/400?random=${i + 200}`, photoPath)
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			console.log(`⚠️  Не удалось скачать фото для клиента ${i + 1}:`, errorMessage)
+		}
+
+		// Скачиваем регистрационные фото (front, side, back)
+		const photoFrontFilename = `client_${i + 1}_front.jpg`
+		const photoFrontPath = path.join(clientsDir, photoFrontFilename)
+		const photoSideFilename = `client_${i + 1}_side.jpg`
+		const photoSidePath = path.join(clientsDir, photoSideFilename)
+		const photoBackFilename = `client_${i + 1}_back.jpg`
+		const photoBackPath = path.join(clientsDir, photoBackFilename)
+
+		try {
+			await Promise.all([
+				downloadImage(`https://picsum.photos/400/400?random=${i + 300}`, photoFrontPath),
+				downloadImage(`https://picsum.photos/400/400?random=${i + 400}`, photoSidePath),
+				downloadImage(`https://picsum.photos/400/400?random=${i + 500}`, photoBackPath),
+			])
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			console.log(
+				`⚠️  Не удалось скачать регистрационные фото для клиента ${i + 1}:`,
+				errorMessage,
+			)
+		}
 
 		const client = await prisma.user.upsert({
-			where: useEmail ? { email: email! } : { phone: phone! },
+			where: { email },
 			update: {},
 			create: {
-				name: fullName,
+				name,
 				email,
 				phone,
 				password: passwordHash,
-				age: faker.number.int({ min: 18, max: 60 }),
 				role: 'CLIENT',
-				goal: clientGoals[Math.floor(Math.random() * clientGoals.length)],
-				restrictions: restrictions[Math.floor(Math.random() * restrictions.length)],
-				experience: experiences[Math.floor(Math.random() * experiences.length)],
-				diet: diets[Math.floor(Math.random() * diets.length)],
 				photo: photoPath,
+				age: faker.number.int({ min: 18, max: 60 }),
+				goal,
+				restrictions: clientRestrictions,
+				experience,
+				diet,
 			},
 		})
+
 		clients.push(client)
+
+		// Прогресс-бар для клиентов
+		const progress = (((i + 1) / clientsTotal) * 100).toFixed(1)
+		const elapsed = (Date.now() - clientsStartTime) / 1000
+		const eta = (elapsed / (i + 1)) * (clientsTotal - i - 1)
+		process.stdout.write(
+			`\r📥 Клиенты: ${progress}% (${i + 1}/${clientsTotal}) | Время: ${formatTime(
+				elapsed,
+			)} | Осталось: ${formatTime(eta)}`,
+		)
 	}
+	console.log('\n✅ Клиенты созданы')
 
 	// Создаём планы питания для каждого тренера
 	const subcategories = []
 	for (const trainer of trainers) {
-		const numCategories = faker.number.int({ min: 1, max: 3 })
-		for (let c = 0; c < numCategories; c++) {
-			const catData = nutritionCategories[c % nutritionCategories.length]
+		for (const categoryData of nutritionCategories) {
 			const category = await prisma.nutritionCategory.upsert({
-				where: { name: `${catData.name} - ${trainer.name}` },
+				where: { name: `${categoryData.name} - ${trainer.name}` },
 				update: {},
 				create: {
-					name: `${catData.name} - ${trainer.name}`,
+					name: `${categoryData.name} - ${trainer.name}`,
 					trainerId: trainer.id,
-					description: catData.desc,
+					description: categoryData.desc,
 				},
 			})
-			const numSubcats = faker.number.int({ min: 1, max: 3 })
-			for (let s = 0; s < numSubcats; s++) {
-				const subcatName = nutritionSubcategories[s % nutritionSubcategories.length]
+
+			// Создаём подкатегории для каждой категории
+			for (const subName of nutritionSubcategories) {
 				const subcategory = await prisma.nutritionSubcategory.upsert({
-					where: { name: `${catData.name} - ${subcatName} (${trainer.name})` },
+					where: { name: `${categoryData.name} - ${subName} (${trainer.name})` },
 					update: {},
 					create: {
-						name: `${catData.name} - ${subcatName} (${trainer.name})`,
-						description: `${subcatName} вариант плана питания для категории "${catData.name}"`,
 						categoryId: category.id,
+						name: `${categoryData.name} - ${subName} (${trainer.name})`,
+						description: `${subName} вариант плана питания для категории "${categoryData.name}"`,
 					},
 				})
+
 				subcategories.push(subcategory)
-				// Создаём 30 дней для каждой подкатегории
-				const dayIds = []
-				for (let dayNum = 1; dayNum <= 30; dayNum++) {
+
+				// Создаём дни для каждой подкатегории (7 дней)
+				const days = []
+				for (let dayNum = 1; dayNum <= 7; dayNum++) {
 					const day = await prisma.nutritionDay.create({
 						data: {
 							subcatId: subcategory.id,
@@ -755,101 +828,74 @@ async function main() {
 							meals: {
 								create: [
 									{
+										mealOrder: 1,
 										type: 'BREAKFAST',
 										name: 'Завтрак',
-										mealOrder: 1,
-										items: [
-											breakfasts[Math.floor(Math.random() * breakfasts.length)],
-											'Чай/кофе без сахара',
-										],
+										items: [faker.helpers.arrayElement(breakfasts)],
 									},
 									{
-										type: 'SNACK',
-										name: 'Перекус 1',
 										mealOrder: 2,
-										items: [snacks[Math.floor(Math.random() * snacks.length)]],
+										type: 'SNACK',
+										name: 'Перекус',
+										items: [faker.helpers.arrayElement(snacks)],
 									},
 									{
+										mealOrder: 3,
 										type: 'LUNCH',
 										name: 'Обед',
-										mealOrder: 3,
-										items: [
-											lunches[Math.floor(Math.random() * lunches.length)],
-											'Овощной салат 150г',
-										],
+										items: [faker.helpers.arrayElement(lunches)],
 									},
 									{
-										type: 'SNACK',
-										name: 'Перекус 2',
 										mealOrder: 4,
-										items: [snacks[Math.floor(Math.random() * snacks.length)]],
+										type: 'SNACK',
+										name: 'Перекус',
+										items: [faker.helpers.arrayElement(snacks)],
 									},
 									{
+										mealOrder: 5,
 										type: 'DINNER',
 										name: 'Ужин',
-										mealOrder: 5,
-										items: [
-											dinners[Math.floor(Math.random() * dinners.length)],
-											'Зелёный чай',
-										],
+										items: [faker.helpers.arrayElement(dinners)],
 									},
 								],
 							},
 						},
 					})
-					dayIds.push(day.id)
-				}
-				// Назначаем план случайным клиентам
-				const assignedClients = faker.helpers.arrayElements(
-					clients,
-					faker.number.int({ min: 5, max: 15 }),
-				)
-				for (const client of assignedClients) {
-					await prisma.clientNutritionPlan.create({
-						data: {
-							clientId: client.id,
-							subcatId: subcategory.id,
-							dayIds,
-						},
-					})
+					days.push(day)
 				}
 			}
 		}
 	}
+	console.log('✅ Планы питания созданы')
 
 	// Создаём связи Trainer-Client с реалистичной логикой
 	// Клиент может отправить до 5 приглашений, но иметь только ОДНОГО ACCEPTED тренера
 	for (const client of clients) {
-		// Выбираем количество приглашений для клиента (1-5)
-		const numInvitations = faker.number.int({ min: 1, max: 5 })
-		const invitedTrainers = faker.helpers.arrayElements(trainers, numInvitations)
+		// Случайное количество приглашений (0-5)
+		const invitesCount = faker.number.int({ min: 0, max: 5 })
 
-		// Решаем, будет ли у клиента принятое приглашение
-		const hasAcceptedInvitation = faker.datatype.boolean()
+		for (let i = 0; i < invitesCount; i++) {
+			const trainer = faker.helpers.arrayElement(trainers)
 
-		let acceptedTrainer = null
-		if (hasAcceptedInvitation) {
-			// Если есть принятое приглашение, выбираем одного тренера как ACCEPTED
-			acceptedTrainer = faker.helpers.arrayElement(invitedTrainers)
-		}
-
-		// Создаём приглашения для каждого выбранного тренера
-		for (const trainer of invitedTrainers) {
-			let status: 'PENDING' | 'ACCEPTED' | 'REJECTED'
-			let acceptedAt: Date | null = null
-			let isFavorite = false
-
-			if (trainer.id === acceptedTrainer?.id) {
-				// Этот тренер принял приглашение
+			// Случайный статус приглашения
+			let status: 'PENDING' | 'ACCEPTED' | 'REJECTED' = 'PENDING'
+			if (faker.datatype.boolean(0.3)) {
 				status = 'ACCEPTED'
-				acceptedAt = new Date()
-				isFavorite = true // Принятый тренер автоматически в избранном
-			} else if (hasAcceptedInvitation) {
-				// Если есть принятое приглашение, остальные отклоняются
+			} else if (faker.datatype.boolean(0.5)) {
 				status = 'REJECTED'
-			} else {
-				// Все приглашения в ожидании
-				status = 'PENDING'
+			}
+
+			// Проверяем, что у клиента нет другого ACCEPTED тренера
+			if (status === 'ACCEPTED') {
+				const existingAccepted = await prisma.trainerClient.findFirst({
+					where: {
+						clientId: client.id,
+						status: 'ACCEPTED',
+					},
+				})
+				if (existingAccepted) {
+					status = faker.datatype.boolean() ? 'PENDING' : 'REJECTED'
+				}
 			}
 
 			await prisma.trainerClient.upsert({
@@ -859,218 +905,195 @@ async function main() {
 						trainerId: trainer.id,
 					},
 				},
-				update: {
-					status,
-					isFavorite,
-					acceptedAt,
-				},
+				update: {},
 				create: {
-					trainerId: trainer.id,
 					clientId: client.id,
+					trainerId: trainer.id,
 					status,
-					isFavorite,
-					acceptedAt,
+					isFavorite: faker.datatype.boolean(0.2), // 20% шансов быть в избранном
 				},
 			})
 		}
 	}
+	console.log('✅ Связи тренер-клиент созданы')
 
 	// Дополнительно: некоторые тренеры могут добавить клиентов в избранное
 	// Но только для уже ACCEPTED связей
 	for (const trainer of trainers) {
-		// Находим клиентов с ACCEPTED статусом у этого тренера
-		const acceptedRelations = await prisma.trainerClient.findMany({
+		const acceptedClients = await prisma.trainerClient.findMany({
 			where: {
 				trainerId: trainer.id,
 				status: 'ACCEPTED',
 			},
-			select: { clientId: true },
 		})
 
-		// Случайно помечаем некоторых как избранных (уже помечены выше, но на всякий случай)
-		for (const relation of acceptedRelations) {
-			// 70% шанс что ACCEPTED клиент будет в избранном
-			if (faker.datatype.boolean(0.7)) {
-				await prisma.trainerClient.updateMany({
-					where: {
-						trainerId: trainer.id,
-						clientId: relation.clientId,
-						status: 'ACCEPTED',
-					},
-					data: { isFavorite: true },
-				})
-			}
+		// Добавляем в избранное до 3 клиентов
+		const toFavorite = faker.helpers.arrayElements(
+			acceptedClients,
+			faker.number.int({ min: 0, max: 3 }),
+		)
+
+		for (const relation of toFavorite) {
+			await prisma.trainerClient.update({
+				where: {
+					id: relation.id,
+				},
+				data: {
+					isFavorite: true,
+				},
+			})
 		}
 	}
+	console.log('✅ Избранные клиенты добавлены')
 
 	// Создаём прогресс для клиентов (несколько отчетов на клиента)
 	console.log('\n📊 Создаём прогресс-отчёты с фото для клиентов...')
 	let progressCounter = 0
-	const estimatedProgressTotal = clients.length * 5 // примерно 5 отчётов на клиента
+	const estimatedProgressTotal = clients.length * 5
 	let progressStartTime = Date.now()
 
 	for (const client of clients) {
-		const numProgress = faker.number.int({ min: 3, max: 7 })
-		for (let p = 0; p < numProgress; p++) {
-			const photoFrontUrl = `https://picsum.photos/450?random=${
-				progressCounter * 3 + 10000
-			}`
-			const photoSideUrl = `https://picsum.photos/450?random=${
-				progressCounter * 3 + 10001
-			}`
-			const photoBackUrl = `https://picsum.photos/450?random=${
-				progressCounter * 3 + 10002
-			}`
-			const photoFrontPath = `/uploads/photos/progress/progress_front_${progressCounter}.jpg`
-			const photoSidePath = `/uploads/photos/progress/progress_side_${progressCounter}.jpg`
-			const photoBackPath = `/uploads/photos/progress/progress_back_${progressCounter}.jpg`
+		// Создаём 3-7 отчетов прогресса для каждого клиента
+		const reportsCount = faker.number.int({ min: 3, max: 7 })
 
-			const progressPercent = Math.round((progressCounter / estimatedProgressTotal) * 100)
-			const elapsed = (Date.now() - progressStartTime) / 1000
-			const avgTime = elapsed / (progressCounter + 1)
-			const remaining = avgTime * (estimatedProgressTotal - progressCounter)
-			process.stdout.write(
-				`\r  Прогресс ${
-					progressCounter + 1
-				}/${estimatedProgressTotal} (${progressPercent}%) - осталось ~${formatTime(
-					remaining,
-				)}`,
-			)
+		for (let reportNum = 0; reportNum < reportsCount; reportNum++) {
+			// Генерируем реалистичные измерения
+			const weight = faker.number.float({ min: 50, max: 120, fractionDigits: 1 })
+			const height = faker.number.int({ min: 150, max: 200 })
+			const waist = faker.number.float({ min: 60, max: 120, fractionDigits: 1 })
+			const chest = faker.number.float({ min: 80, max: 130, fractionDigits: 1 })
+			const hips = faker.number.float({ min: 80, max: 130, fractionDigits: 1 })
+			const arm = faker.number.float({ min: 20, max: 40, fractionDigits: 1 })
+			const leg = faker.number.float({ min: 40, max: 70, fractionDigits: 1 })
 
-			// Загружаем 3 фото параллельно
-			await Promise.all([
-				downloadImage(
-					photoFrontUrl,
-					path.join(progressDir, `progress_front_${progressCounter}.jpg`),
-				),
-				downloadImage(
-					photoSideUrl,
-					path.join(progressDir, `progress_side_${progressCounter}.jpg`),
-				),
-				downloadImage(
-					photoBackUrl,
-					path.join(progressDir, `progress_back_${progressCounter}.jpg`),
-				),
-			])
-			await delay(30) // небольшая задержка между прогресс-отчётами
+			// Скачиваем фото прогресса
+			const photoFrontFilename = `progress_front_${progressCounter}.jpg`
+			const photoFrontPath = path.join(progressDir, photoFrontFilename)
+			const photoSideFilename = `progress_side_${progressCounter}.jpg`
+			const photoSidePath = path.join(progressDir, photoSideFilename)
+			const photoBackFilename = `progress_back_${progressCounter}.jpg`
+			const photoBackPath = path.join(progressDir, photoBackFilename)
+
+			try {
+				await Promise.all([
+					downloadImage(
+						`https://picsum.photos/400/400?random=${progressCounter + 1000}`,
+						photoFrontPath,
+					),
+					downloadImage(
+						`https://picsum.photos/400/400?random=${progressCounter + 2000}`,
+						photoSidePath,
+					),
+					downloadImage(
+						`https://picsum.photos/400/400?random=${progressCounter + 3000}`,
+						photoBackPath,
+					),
+				])
+			} catch (error) {
+				console.log(
+					`⚠️  Не удалось скачать фото прогресса для клиента ${client.name}:`,
+					(error as Error).message,
+				)
+			}
 
 			await prisma.progress.create({
 				data: {
 					userId: client.id,
-					height: faker.number.int({ min: 150, max: 200 }),
-					weight: Math.round(faker.number.float({ min: 50, max: 100 }) * 10) / 10,
-					waist: faker.number.int({ min: 60, max: 120 }),
-					chest: faker.number.int({ min: 80, max: 110 }),
-					hips: faker.number.int({ min: 80, max: 120 }),
-					arm: faker.number.int({ min: 25, max: 40 }),
-					leg: faker.number.int({ min: 45, max: 65 }),
-					date: faker.date.past(),
+					weight,
+					waist,
+					hips,
+					height,
+					chest,
+					arm,
+					leg,
 					photoFront: photoFrontPath,
 					photoSide: photoSidePath,
 					photoBack: photoBackPath,
 				},
 			})
+
 			progressCounter++
+
+			// Прогресс-бар
+			const progress = ((progressCounter / estimatedProgressTotal) * 100).toFixed(1)
+			const elapsed = (Date.now() - progressStartTime) / 1000
+			const eta = (elapsed / progressCounter) * (estimatedProgressTotal - progressCounter)
+			process.stdout.write(
+				`\r📊 Прогресс: ${progress}% (${progressCounter}/${estimatedProgressTotal}) | Время: ${formatTime(
+					elapsed,
+				)} | Осталось: ${formatTime(eta)}`,
+			)
 		}
 	}
+	console.log('\n✅ Прогресс-отчёты созданы')
 
-	// Создаём 30-40 комментариев к прогрессам от тренеров
+	// Создаём 10-15 комментариев к прогрессам от тренеров
 	const progresses = await prisma.progress.findMany()
-	const numComments = faker.number.int({ min: 30, max: 40 })
+	const numComments = faker.number.int({ min: 10, max: 15 })
 	const trainerComments = [
 		'Отличный прогресс! Продолжай в том же духе 💪',
 		'Вижу результаты, молодец! Давай ещё усерднее на следующей неделе',
 		'Супер! Объёмы уходят, форма улучшается 👍',
 		'Хороший результат, но не забывай про питьевой режим',
-		'Отлично работаешь! Рельеф становится заметнее',
+		'Отлично! Рельеф становится заметнее',
 		'Прогресс налицо! Продолжаем в том же темпе',
 		'Вес стабилен, это хорошо. Давай увеличим нагрузку на пресс',
 		'Замечательные изменения! Видно, что работаешь над собой',
-		'Молодец! Но обрати внимание на осанку на фото',
-		'Результат впечатляет! Так держать 🔥',
+		'Продолжай! Ещё немного и достигнешь цели',
+		'Круто! Мышечная масса растёт, жир уходит',
 		'Хороший темп снижения веса, не торопись',
 		'Отличная форма! Попробуй добавить кардио',
 		'Вижу прогресс в области плеч и рук, супер!',
-		'Продолжай! Ещё немного и достигнешь цели',
-		'Круто! Мышечная масса растёт, жир уходит',
-		'Хорошая работа! Давай увеличим количество повторений',
-		'Отлично! Но не забывай про день отдыха',
-		'Прогресс заметен! Следи за техникой выполнения упражнений',
-		'Молодец! Рекомендую добавить растяжку после тренировок',
-		'Супер результат! Продолжай следовать плану питания',
-		'Видны изменения! Талия уменьшается, продолжаем работу',
-		'Хорошие показатели! Давай добавим силовые упражнения',
-		'Отлично! Но следи за калорийностью рациона',
-		'Прекрасная динамика! Так держать 👏',
-		'Молодец! Вижу, что придерживаешься плана',
-		'Супер! Ноги и ягодицы подтягиваются',
-		'Отличная работа! Продолжаем в том же ключе',
-		'Вижу старание! Результат не заставит себя ждать',
-		'Хорошо! Но не забывай про разминку перед тренировкой',
-		'Прогресс есть! Давай усилим работу над прессом',
-		'Замечательно! Руки стали более рельефными',
-		'Отлично выглядишь! Продолжай тренировки',
-		'Хороший темп! Не забывай про белок в рационе',
-		'Молодец! Спина стала крепче, осанка улучшилась',
-		'Супер! Вижу результаты твоих усилий',
-		'Отлично! Грудные мышцы прорисовываются',
-		'Хорошая работа! Давай добавим упражнения на гибкость',
-		'Прогресс заметен! Жировая прослойка уменьшается',
-		'Молодец! Но следи за техникой в приседаниях',
-		'Отлично! Продолжай придерживаться режима',
-		'Хорошо! Вижу, что тренируешься регулярно',
-		'Супер результат! Фигура преображается 🎉',
-		'Отлично! Бицепсы стали более объёмными',
-		'Хорошая динамика! Давай поработаем над выносливостью',
-		'Молодец! Результат говорит сам за себя',
-		'Прогресс есть! Не снижай темп',
-		'Отлично! Плечи стали шире, это заметно',
-		'Хорошо! Но не забывай пить достаточно воды',
-		'Супер! Трицепсы подтянулись',
-		'Молодец! Продолжай работать над собой',
-		'Отличная работа! Вижу, что соблюдаешь диету',
-		'Хорошо! Давай добавим планку в программу',
-		'Прогресс виден! Ягодицы стали более округлыми',
-		'Молодец! Икры укрепились',
-		'Отлично! Продолжаем сушиться',
-		'Хорошо! Но не забывай про день ног',
-		'Супер! Пресс начинает прорисовываться',
-		'Отлично! Вес снижается равномерно',
-		'Хорошая работа! Продолжай в том же духе',
-		'Молодец! Результат впечатляет за такой срок',
+		'Продолжай придерживаться плана питания',
+		'Супер результат! Так держать 🔥',
 	]
 	for (let c = 0; c < numComments; c++) {
 		const progress = faker.helpers.arrayElement(progresses)
 		const trainer = faker.helpers.arrayElement(trainers)
-		await prisma.comment.create({
-			data: {
-				progressId: progress.id,
+
+		// Проверяем, что тренер работает с этим клиентом
+		const relation = await prisma.trainerClient.findFirst({
+			where: {
 				trainerId: trainer.id,
-				text: faker.helpers.arrayElement(trainerComments),
-				createdAt: faker.date.recent(),
+				clientId: progress.userId,
+				status: 'ACCEPTED',
 			},
 		})
+
+		if (relation) {
+			await prisma.comment.create({
+				data: {
+					progressId: progress.id,
+					trainerId: trainer.id,
+					text: faker.helpers.arrayElement(trainerComments),
+				},
+			})
+		}
 	}
+	console.log('✅ Комментарии к прогрессам созданы')
 
 	// Подсчёт фото
 	const trainerPhotos = fs.readdirSync(trainersDir).length
 	const clientPhotos = fs.readdirSync(clientsDir).length
 	const progressPhotos = fs.readdirSync(progressDir).length
 
-	console.log('\n\n✅ База данных успешно заполнена!')
-	console.log('\n📊 Статистика:')
-	console.log(`  👤 Тренеров: ${trainers.length}`)
-	console.log(`  👥 Клиентов: ${clients.length}`)
-	console.log(`  📸 Фото тренеров: ${trainerPhotos}`)
-	console.log(`  📸 Фото клиентов: ${clientPhotos}`)
-	console.log(`  📸 Фото прогресса: ${progressPhotos}`)
-	console.log(`  📈 Прогресс-отчётов: ${progressCounter}`)
-	console.log(`  💬 Комментариев: ${numComments}`)
-	console.log('\n📁 Структура фото:')
-	console.log(`  - ${trainersDir}`)
-	console.log(`  - ${clientsDir}`)
-	console.log(`  - ${progressDir}`)
-	console.log('\n⏳ Закрываем соединение с БД (это может занять ~30 секунд)...')
+	console.log('\n📸 Статистика фото:')
+	console.log(`  - Тренеры: ${trainerPhotos} фото`)
+	console.log(`  - Клиенты: ${clientPhotos} фото (включая регистрационные)`)
+	console.log(`  - Прогресс: ${progressPhotos} фото`)
+
+	console.log('\n🎉 Облегчённое заполнение базы данных завершено!')
+	console.log('📊 Итоговая статистика:')
+	console.log(`  - Тренеров: ${trainers.length}`)
+	console.log(`  - Клиентов: ${clients.length}`)
+	console.log(`  - Категорий питания: ${nutritionCategories.length}`)
+	console.log(`  - Подкатегорий: ${subcategories.length}`)
+	console.log(`  - Прогресс-отчётов: ~${clients.length * 4}`)
+	console.log(`  - Комментариев: ${numComments}`)
+	console.log('\n🔑 Тестовые аккаунты:')
+	console.log('  Клиенты: client1@mail.ru до client30@mail.ru')
+	console.log('  Тренеры: trainer1@mail.ru до trainer10@mail.ru')
+	console.log('  Пароль для всех: 123456')
 }
 
 main()
@@ -1079,6 +1102,7 @@ main()
 		process.exit(1)
 	})
 	.finally(async () => {
+		console.log('\n🏁 Скрипт seed-light.ts завершён. Закрываем соединение с БД...')
 		await prisma.$disconnect()
-		console.log('✅ Готово! Можно закрывать терминал.')
+		console.log('✅ Соединение с БД закрыто. Можно закрывать терминал.')
 	})

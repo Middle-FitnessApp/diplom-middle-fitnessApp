@@ -40,38 +40,39 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 	return (
 		<Card
 			title={
-				<span className="text-lg font-semibold tracking-tight">
+				<span className='text-lg font-semibold tracking-tight'>
 					📨 Новые заявки
 					{invites.length > 0 && (
-						<Tag color="blue" style={{ marginLeft: 8 }}>
+						<Tag color='blue' style={{ marginLeft: 8 }}>
 							{invites.length}
 						</Tag>
 					)}
 				</span>
 			}
-			className="shadow-lg"
+			className='shadow-lg h-full'
 			styles={{
-				body: { padding: '18px 14px 10px 14px', background: 'var(--bg-light)' },
+				body: {
+					padding: '18px 14px 10px 14px',
+					background: 'var(--bg-light)',
+				},
 			}}
 		>
 			{invites.length === 0 ? (
 				<Empty
 					image={Empty.PRESENTED_IMAGE_SIMPLE}
-					description={
-						<Text type="secondary">Нет новых заявок от клиентов</Text>
-					}
+					description={<Text type='secondary'>Нет новых заявок от клиентов</Text>}
 				/>
 			) : (
 				<List
 					loading={loading}
-					itemLayout="horizontal"
+					itemLayout='horizontal'
 					dataSource={invites}
 					renderItem={(invite) => (
 						<List.Item
-							className="hover:bg-blue-50 rounded-lg px-3 py-3"
+							className='hover:bg-blue-50 rounded-lg px-3 py-3'
 							style={{ borderBottom: '1px solid var(--border)' }}
 						>
-							<div className="flex items-center gap-4 w-full">
+							<div className='flex items-center gap-4 w-full'>
 								<Avatar
 									size={48}
 									src={getPhotoUrl(invite.client.photo)}
@@ -80,26 +81,26 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 										border: '2px solid var(--primary)',
 									}}
 								/>
-								<div className="flex-1 min-w-0">
-									<Text strong className="block text-base">
+								<div className='flex-1 min-w-0'>
+									<Text strong className='block text-base'>
 										{invite.client.name}
 									</Text>
 									{invite.client.goal && (
 										<Paragraph
-											type="secondary"
-											className="!mb-0 !text-sm"
+											type='secondary'
+											className='mb-0! text-sm!'
 											ellipsis={{ rows: 1 }}
 										>
 											Цель: {invite.client.goal}
 										</Paragraph>
 									)}
-									<Text type="secondary" className="text-xs">
+									<Text type='secondary' className='text-xs'>
 										{formatDate(invite.createdAt)}
 									</Text>
 								</div>
 								<Space>
 									<Button
-										type="primary"
+										type='primary'
 										icon={<CheckOutlined />}
 										onClick={() => onAccept(invite.id)}
 										loading={acceptingId === invite.id}
@@ -127,4 +128,3 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 		</Card>
 	)
 }
-

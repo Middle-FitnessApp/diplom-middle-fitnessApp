@@ -196,20 +196,51 @@ export default async function progressRoutes(app: FastifyInstance) {
 	)
 
 	// Получение ВСЕХ отчетов прогресса пользователя с пагинацией и фильтрацией
-	app.get('/', { preHandler: [authGuard, hasRole(['CLIENT'])] }, async (req, reply) => {
-		const { getAllProgress } = await import('../controllers/progress.js')
-		const { ApiError } = await import('../utils/ApiError.js')
+	app.get(
+		'/',
+		{ preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])] },
+		async (req, reply) => {
+			const { getAllProgress } = await import('../controllers/progress.js')
+			const { ApiError } = await import('../utils/ApiError.js')
+			const { PrismaClient } = await import('@prisma/client')
+			const prisma = new PrismaClient()
 
-		// Валидация query параметров
-		const validation = GetAllProgressQuerySchema.safeParse(req.query)
-		if (!validation.success) {
-			const firstError = validation.error.issues[0]
-			throw ApiError.badRequest(firstError.message)
-		}
+			// Валидация query параметров
+			const validation = GetAllProgressQuerySchema.safeParse(req.query)
+			if (!validation.success) {
+				const firstError = validation.error.issues[0]
+				throw ApiError.badRequest(firstError.message)
+			}
 
-		const result = await getAllProgress(req.user.id, validation.data)
-		return reply.status(200).send(result)
-	})
+			let userId = req.user.id
+
+			// Для тренера - получаем отчеты клиента
+			if (req.user.role === 'TRAINER') {
+				const { clientId } = req.query as { clientId?: string }
+				if (!clientId) {
+					throw ApiError.badRequest('Тренер должен указать clientId в query параметрах')
+				}
+
+				// Проверяем, что клиент связан с тренером и статус ACCEPTED
+				const trainerClient = await prisma.trainerClient.findFirst({
+					where: {
+						trainerId: req.user.id,
+						clientId: clientId,
+						status: 'ACCEPTED',
+					},
+				})
+
+				if (!trainerClient) {
+					throw ApiError.forbidden('У вас нет доступа к отчетам этого клиента')
+				}
+
+				userId = clientId
+			}
+
+			const result = await getAllProgress(userId, validation.data)
+			return reply.status(200).send(result)
+		},
+	)
 
 	// Получение комментариев к отчету о прогрессе
 	app.get(

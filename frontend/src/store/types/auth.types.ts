@@ -22,6 +22,7 @@ export interface ClientFields {
 	restrictions?: string
 	experience?: string
 	diet?: string
+	photo?: string
 	photoFront?: string
 	photoSide?: string
 	photoBack?: string
@@ -103,3 +104,5 @@ export interface ApiError {
 		statusCode?: number
 	}
 }
+
+export type ClientUser = Omit<AuthUser, 'role'> & ClientFields

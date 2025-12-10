@@ -10,7 +10,7 @@ import type {
 	UpdateProfileResponse,
 	UpdateTrainerProfileRequest,
 } from '../types/user.types'
-import type { AuthUser, TrainerInfo } from '../types/auth.types'
+import type { AuthUser } from '../types/auth.types'
 import { API_ENDPOINTS } from '../../config/api.config'
 
 // Тип для тренера в списке (с опциональным статусом приглашения)
@@ -46,7 +46,12 @@ export interface InviteTrainerResponse {
 // Ответ на отмену сотрудничества
 export interface CancelTrainerResponse {
 	message: string
-	deletedNutritionPlans: number
+	deactivatedNutritionPlans: number
+}
+
+// Ответ на отмену приглашения
+export interface CancelInviteResponse {
+	message: string
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -87,6 +92,12 @@ export const baseQueryWithReauth: BaseQueryFn<
 		)
 
 		if (refreshResult.data) {
+			// Сохраняем новый access token в localStorage
+			const data = refreshResult.data as { token?: { accessToken?: string } }
+			if (data.token?.accessToken) {
+				localStorage.setItem('token', data.token.accessToken)
+			}
+			// Повторяем оригинальный запрос с новым токеном
 			result = await rawBaseQuery(args, api, extraOptions)
 		} else {
 			if (typeof window !== 'undefined') {
@@ -137,7 +148,26 @@ export const userApi = createApi({
 				url: '/client/trainer',
 				method: 'DELETE',
 			}),
-			invalidatesTags: ['User'],
+			// Инвалидируем и User и Trainers, чтобы обновить статусы приглашений
+			invalidatesTags: ['User', 'Trainers'],
+		}),
+
+		// Отменить приглашение тренеру
+		cancelInvite: builder.mutation<CancelInviteResponse, { inviteId: string }>({
+			query: ({ inviteId }) => ({
+				url: `/client/invites/${inviteId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['User', 'Trainers'],
+		}),
+
+		// Отменить приглашение тренеру по ID тренера
+		cancelInviteByTrainer: builder.mutation<CancelInviteResponse, { trainerId: string }>({
+			query: ({ trainerId }) => ({
+				url: `/client/invites/trainer/${trainerId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['User', 'Trainers'],
 		}),
 
 		updateClientProfile: builder.mutation<
@@ -190,6 +220,8 @@ export const {
 	useGetTrainerByIdQuery,
 	useInviteTrainerMutation,
 	useCancelTrainerMutation,
+	useCancelInviteMutation,
+	useCancelInviteByTrainerMutation,
 	useUpdateClientProfileMutation,
 	useUpdateTrainerProfileMutation,
 	useUpdateClientProfileWithPhotoMutation,

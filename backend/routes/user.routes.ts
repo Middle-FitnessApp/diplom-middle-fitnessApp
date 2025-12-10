@@ -3,6 +3,7 @@ import {
 	inviteTrainer,
 	cancelTrainerCooperation,
 	cancelInvite,
+	cancelInviteByTrainer,
 } from '../controllers/client.js'
 import { FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
@@ -144,6 +145,19 @@ export default async function userRoutes(app: FastifyInstance) {
 			const { id } = CancelInviteParamsSchema.parse(req.params)
 
 			const result = await cancelInvite(req.user.id, id)
+
+			return reply.status(200).send(result)
+		},
+	)
+
+	// Отмена приглашения тренеру по ID тренера (альтернативный метод)
+	app.delete(
+		'/client/invites/trainer/:trainerId',
+		{ preHandler: [authGuard, hasRole(['CLIENT'])] },
+		async (req, reply) => {
+			const { trainerId } = req.params as { trainerId: string }
+
+			const result = await cancelInviteByTrainer(req.user.id, trainerId)
 
 			return reply.status(200).send(result)
 		},

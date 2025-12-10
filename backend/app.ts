@@ -16,6 +16,21 @@ const app = Fastify()
 
 errorHandler(app)
 
+// Разрешаем пустое тело для application/json
+app.addContentTypeParser(
+	'application/json',
+	{ parseAs: 'string' },
+	function (req, body, done) {
+		try {
+			const json = body === '' ? {} : JSON.parse(body as string)
+			done(null, json)
+		} catch (err: any) {
+			err.statusCode = 400
+			done(err, undefined)
+		}
+	},
+)
+
 app.register(fastifyCors, {
 	origin: process.env.FRONTEND_URL || 'http://localhost:5173',
 	credentials: true,

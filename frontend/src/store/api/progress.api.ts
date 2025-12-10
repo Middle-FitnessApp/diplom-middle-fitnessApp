@@ -1,5 +1,22 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { API_ENDPOINTS } from '../../config/api.config'
+import type {
+	CommentsResponse,
+	Comment,
+	ProgressAnalyticsResponse,
+} from '../types/progress.types'
+
+// Комментарий тренера к отчёту
+export interface TrainerComment {
+	id: string
+	text: string
+	createdAt: string
+	trainer: {
+		id: string
+		name: string
+		photo?: string
+	}
+}
 
 export interface ProgressReport {
 	id: string
@@ -14,8 +31,7 @@ export interface ProgressReport {
 	photoFront?: string
 	photoSide?: string
 	photoBack?: string
-	trainerComment?: string
-	commentedAt?: string
+	comments?: TrainerComment[]
 	createdAt: string
 	updatedAt: string
 }
@@ -28,6 +44,32 @@ export interface ProgressChartData {
 	chest?: number
 	arm?: number
 	leg?: number
+	[key: string]: string | number | boolean | undefined
+}
+
+// Типы для пагинации (согласно документации API)
+export interface PaginationMeta {
+	page: number
+	limit: number
+	total: number
+	totalPages: number
+}
+
+// Ответ от API с пагинацией
+export interface ProgressReportsResponse {
+	data: ProgressReport[]
+	meta: PaginationMeta
+}
+
+// Ответ от API для одного отчёта
+export interface ProgressReportResponse {
+	progress: ProgressReport
+}
+
+// Ответ от API при создании отчёта
+export interface CreateProgressResponse {
+	message: string
+	progress: ProgressReport
 }
 
 export const progressApi = createApi({
@@ -41,10 +83,15 @@ export const progressApi = createApi({
 				headers.set('authorization', `Bearer ${token}`)
 			}
 
-			// Для мутации с файлами не устанавливаем Content-Type
-			if (endpoint !== 'addProgressReport') {
-				headers.set('Content-Type', 'application/json')
+			// Content-Type устанавливаем ТОЛЬКО для мутаций (POST/PUT/PATCH)
+			// НЕ устанавливаем для GET запросов и для мутаций с файлами
+			if (endpoint === 'addProgressReport') {
+				// Для FormData не устанавливаем Content-Type - браузер сам добавит с boundary
+				return headers
 			}
+
+			// Для остальных мутаций (не GET) устанавливаем JSON
+			// GET запросы автоматически не получат этот header
 			return headers
 		},
 	}),
@@ -54,7 +101,7 @@ export const progressApi = createApi({
 		getProgressChartData: builder.query<ProgressChartData[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { data: ProgressReport[]; meta: any }) => {
+			transformResponse: (response: ProgressReportsResponse) => {
 				return response.data.map((item) => ({
 					date: item.date.split('T')[0],
 					weight: item.weight,
@@ -71,14 +118,14 @@ export const progressApi = createApi({
 		getProgressReports: builder.query<ProgressReport[], void>({
 			query: () => '/progress',
 			providesTags: ['Progress'],
-			transformResponse: (response: { data: ProgressReport[]; meta: any }) => response.data,
+			transformResponse: (response: ProgressReportsResponse) => response.data,
 		}),
 
 		// Получение конкретного отчета по ID
 		getProgressReport: builder.query<ProgressReport, string>({
 			query: (id) => `/progress/${id}`,
 			providesTags: ['Progress'],
-			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+			transformResponse: (response: ProgressReportResponse) => response.progress,
 		}),
 
 		// Создание нового отчета
@@ -87,14 +134,53 @@ export const progressApi = createApi({
 				url: '/progress/new-report',
 				method: 'PUT',
 				body: formData,
+				// Для FormData НЕ устанавливаем Content-Type
 			}),
 			invalidatesTags: ['Progress'],
+			transformResponse: (response: CreateProgressResponse) => response.progress,
 		}),
 
 		// Получение последнего отчета
 		getLatestProgress: builder.query<ProgressReport, void>({
 			query: () => '/progress/latest',
-			transformResponse: (response: { progress: ProgressReport }) => response.progress,
+			transformResponse: (response: ProgressReportResponse) => response.progress,
+		}),
+
+		getProgressAnalytics: builder.query<
+			ProgressAnalyticsResponse,
+			{
+				period: string
+				metrics: string[]
+				startDate?: string
+				endDate?: string
+				clientId?: string
+			}
+		>({
+			query: (params) => ({
+				url: '/progress/analytics',
+				method: 'GET',
+				params,
+			}),
+		}),
+
+		getProgressComments: builder.query<
+			CommentsResponse,
+			{ progressId: string; page?: number; limit?: number }
+		>({
+			query: ({ progressId, page = 1, limit = 10 }) => ({
+				url: `/progress/${progressId}/comments`,
+				params: { page, limit },
+			}),
+			providesTags: ['Progress'],
+		}),
+
+		addProgressComment: builder.mutation<Comment, { progressId: string; text: string }>({
+			query: ({ progressId, text }) => ({
+				url: `/progress/${progressId}/comments`,
+				method: 'POST',
+				body: { text },
+			}),
+			invalidatesTags: ['Progress'],
 		}),
 	}),
 })
@@ -105,4 +191,7 @@ export const {
 	useGetProgressReportQuery,
 	useAddProgressReportMutation,
 	useGetLatestProgressQuery,
+	useGetProgressAnalyticsQuery,
+	useGetProgressCommentsQuery,
+	useAddProgressCommentMutation,
 } = progressApi

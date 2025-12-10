@@ -20,13 +20,28 @@ import {
 } from '../pages/trainer'
 import { ChatWithClient } from '../pages/trainer/'
 import { ProtectedRoute } from './ProtectedRoute'
+import { GuestRoute } from './GuestRoute'
 
 export const AppRouter = () => {
 	return (
 		<Routes>
-			{/* Public routes */}
-			<Route path='/login' element={<Login />} />
-			<Route path='/signup' element={<Registration />} />
+			{/* Guest routes - только для неавторизованных пользователей */}
+			<Route
+				path='/login'
+				element={
+					<GuestRoute>
+						<Login />
+					</GuestRoute>
+				}
+			/>
+			<Route
+				path='/signup'
+				element={
+					<GuestRoute>
+						<Registration />
+					</GuestRoute>
+				}
+			/>
 
 			{/* Главная страница (доступна всем, но показывает разный контент) */}
 			<Route path='/' element={<Main />} />

@@ -1,4 +1,4 @@
-import type { UserProfile } from '../types/user.types'
+import type { ClientData, UserProfile } from '../types/user.types'
 import type { ProgressReport } from '../types/progress.types'
 import {
 	createApi,
@@ -169,6 +169,12 @@ export const baseQueryWithReauth: BaseQueryFn<
 		)
 
 		if (refreshResult.data) {
+			// Сохраняем новый access token в localStorage
+			const data = refreshResult.data as { token?: { accessToken?: string } }
+			if (data.token?.accessToken) {
+				localStorage.setItem('token', data.token.accessToken)
+			}
+			// Повторяем оригинальный запрос с новым токеном
 			result = await rawBaseQuery(args, api, extraOptions)
 		} else {
 			if (typeof window !== 'undefined') {
@@ -204,13 +210,13 @@ export const trainerApi = createApi({
 			query: () => '/clients',
 			transformResponse: (resp: { clients: ExtendedClient[] } | ExtendedClient[]) => {
 				// Обрабатываем разные форматы ответа
-				const clients = Array.isArray(resp) ? resp : (resp?.clients || [])
-				
+				const clients = Array.isArray(resp) ? resp : resp?.clients || []
+
 				if (!Array.isArray(clients)) {
 					console.error('Unexpected clients format:', clients)
 					return []
 				}
-				
+
 				return clients.map((client) => ({
 					id: client.id,
 					name: client.name,
@@ -261,12 +267,10 @@ export const trainerApi = createApi({
 			invalidatesTags: ['Clients'],
 		}),
 
-		getClientProfile: builder.query<UserProfile, { trainerId: string; clientId: string }>(
-			{
-				query: ({ trainerId, clientId }) => `/${trainerId}/clients/${clientId}/profile`,
-				providesTags: ['Client'],
-			},
-		),
+		getClientProfile: builder.query<ClientData, { clientId: string }>({
+			query: ({ clientId }) => `/clients/${clientId}`,
+			providesTags: ['Client'],
+		}),
 
 		getClientProgress: builder.query<
 			ProgressReport[],

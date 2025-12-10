@@ -6,7 +6,7 @@ import { customTheme } from '../theme-config'
 function App() {
 	return (
 		<ConfigProvider theme={customTheme}>
-			<AntApp>
+			<AntApp className='max-w-[2600px] mx-auto'>
 				<Layout className='min-h-screen flex flex-col'>
 					<Header />
 					<AppRouter />
