@@ -1,6 +1,7 @@
 import { Socket } from 'socket.io'
 import { verifyAccessToken } from '../services/token.service.js'
 import { prisma } from '../prisma.js'
+import cookie from 'cookie'
 
 export interface AuthenticatedSocket extends Socket {
 	user: {
@@ -22,8 +23,9 @@ export const socketAuthMiddleware = async (
 	try {
 		const payload = verifyAccessToken(token)
 
-		// Проверяем refreshToken в БД
-		const refreshToken = socket.handshake.auth.refreshToken
+		// Проверяем refreshToken из cookies
+		const cookies = cookie.parse(socket.handshake.headers.cookie || '')
+		const refreshToken = cookies.refreshToken
 		if (!refreshToken) {
 			return next(new Error('Refresh токен отсутствует'))
 		}
