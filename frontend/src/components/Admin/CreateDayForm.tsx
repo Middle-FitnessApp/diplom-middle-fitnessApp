@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Form, Input, Button, Card, Space, Select } from 'antd'
+import { Form, Input, Button, Card, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { NutritionMeal, NutritionDay, MealType } from '../../types/nutritions'
 import { mealTypes } from '../../constants/mealTypes'
