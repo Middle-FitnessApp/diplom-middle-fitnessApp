@@ -20,7 +20,7 @@ export default async function chatRoutes(app: FastifyInstance) {
 	app.register(multipart)
 
 	// Получение списка чатов
-	app.get('/chats', { preHandler: [authGuard] }, async (req, reply) => {
+	app.get('/', { preHandler: [authGuard] }, async (req, reply) => {
 		const chats = await getChats(req.user.id, req.user.role)
 
 		return reply.status(200).send({ chats })
@@ -28,20 +28,15 @@ export default async function chatRoutes(app: FastifyInstance) {
 
 	// Получение истории сообщений чата
 	app.get(
-		'/chat/:chatId/messages',
+		'/:chatId/messages',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])],
-			schema: {
-				querystring: GetMessagesSchemaZod.querystring,
-				params: GetMessagesSchemaZod.params,
-			},
 		},
 		async (req, reply) => {
-			const result = await getMessages(
-				(req.params as GetMessagesParamsDTO).chatId,
-				req.user.id,
-				req.query as GetMessagesQueryDTO,
-			)
+			const { chatId } = GetMessagesSchemaZod.params.parse(req.params)
+			const query = GetMessagesSchemaZod.querystring.parse(req.query)
+
+			const result = await getMessages(chatId, req.user.id, query)
 
 			return reply.status(200).send(result)
 		},
@@ -49,13 +44,9 @@ export default async function chatRoutes(app: FastifyInstance) {
 
 	// Отправка сообщения в чат
 	app.post(
-		'/chat/:chatId/messages',
+		'/:chatId/messages',
 		{
 			preHandler: [authGuard, hasRole(['CLIENT', 'TRAINER'])],
-			schema: {
-				body: SendMessageSchemaZod.body,
-				params: SendMessageSchemaZod.params,
-			},
 			onError: cleanupFilesOnError,
 		},
 		async (req, reply) => {
@@ -78,21 +69,16 @@ export default async function chatRoutes(app: FastifyInstance) {
 				body = req.body as Record<string, string>
 			}
 
-			const message = await sendMessage(
-				(req.params as SendMessageParamsDTO).chatId,
-				req.user.id,
-				body as SendMessageDTO,
-				filesMap,
-			)
+			const { chatId } = SendMessageSchemaZod.params.parse(req.params)
+			const messageData = SendMessageSchemaZod.body.parse(body)
+
+			const message = await sendMessage(chatId, req.user.id, messageData, filesMap)
 
 			// Отправка через Socket.IO (если подключены)
 			// Предполагаем, что io доступен глобально или через app
 			const io = app.io
 			if (io) {
-				io.to(`chat_${(req.params as SendMessageParamsDTO).chatId}`).emit(
-					'new_message',
-					message,
-				)
+				io.to(`chat_${chatId}`).emit('new_message', message)
 			}
 
 			return reply.status(201).send({ message })
