@@ -1,8 +1,7 @@
-import { useRef, useState, useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text } from '@react-three/drei'
+import { useState, useMemo } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, Html } from '@react-three/drei'
 import { Card, Typography, Space, Tag } from 'antd'
-import * as THREE from 'three'
 
 const { Text: AntText } = Typography
 
@@ -44,63 +43,198 @@ interface TowerBlockProps {
 	position: [number, number, number]
 	data: ProgressDataPoint
 	index: number
-	totalBlocks: number
 	onClick: () => void
 	onHover: (hovered: boolean) => void
 }
 
-// Компонент одного "этажа" башни
-const TowerBlock = ({ position, data, index, totalBlocks, onClick, onHover }: TowerBlockProps) => {
-	const meshRef = useRef<THREE.Mesh>(null)
+// Компонент карточки с информацией о прогрессе
+const ProgressCard = ({ data, index, hovered }: { data: ProgressDataPoint; index: number; hovered: boolean }) => {
+	const formatDate = (dateStr: string) => {
+		const date = new Date(dateStr)
+		return date.toLocaleDateString('ru-RU', {
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric'
+		})
+	}
+
+	return (
+		<div
+			style={{
+				width: '300px',
+				background: hovered 
+					? 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,248,255,0.98) 100%)'
+					: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,248,255,0.95) 100%)',
+				borderRadius: '16px',
+				padding: '16px',
+				boxShadow: hovered 
+					? '0 8px 32px rgba(0,0,0,0.3), 0 0 20px rgba(100,200,255,0.4)'
+					: '0 4px 16px rgba(0,0,0,0.2)',
+				border: hovered 
+					? '2px solid rgba(100,200,255,0.8)'
+					: '2px solid rgba(200,200,200,0.5)',
+				transition: 'all 0.2s ease',
+				transform: hovered ? 'scale(1.02)' : 'scale(1)',
+			}}
+		>
+			{/* Заголовок */}
+			<div style={{
+				display: 'flex',
+				justifyContent: 'space-between',
+				alignItems: 'center',
+				marginBottom: '12px',
+				paddingBottom: '10px',
+				borderBottom: '2px solid rgba(100,150,255,0.3)'
+			}}>
+				<span style={{
+					fontSize: '18px',
+					fontWeight: 'bold',
+					color: '#1a1a2e',
+					display: 'flex',
+					alignItems: 'center',
+					gap: '6px'
+				}}>
+					<span style={{ fontSize: '20px' }}>📊</span>
+					Отчет #{index + 1}
+				</span>
+				<span style={{
+					fontSize: '11px',
+					color: '#666',
+					background: 'rgba(100,150,255,0.15)',
+					padding: '4px 10px',
+					borderRadius: '12px',
+					fontWeight: '600'
+				}}>
+					{formatDate(data.date)}
+				</span>
+			</div>
+
+			{/* Основные метрики */}
+			<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+				{data.weight && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(255,107,107,0.15) 0%, rgba(255,107,107,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #ff6b6b'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>⚖️ Вес</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff6b6b' }}>
+							{data.weight} кг
+						</span>
+					</div>
+				)}
+
+				{data.waist && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(74,144,226,0.15) 0%, rgba(74,144,226,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #4a90e2'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>📏 Талия</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#4a90e2' }}>
+							{data.waist} см
+						</span>
+					</div>
+				)}
+
+				{data.hips && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(149,117,205,0.15) 0%, rgba(149,117,205,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #9575cd'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>📐 Бедра</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#9575cd' }}>
+							{data.hips} см
+						</span>
+					</div>
+				)}
+
+				{data.chest && data.chest > 0 && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(255,167,38,0.15) 0%, rgba(255,167,38,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #ffa726'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>💪 Грудь</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffa726' }}>
+							{data.chest} см
+						</span>
+					</div>
+				)}
+
+				{data.arm && data.arm > 0 && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(102,187,106,0.15) 0%, rgba(102,187,106,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #66bb6a'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>💪 Рука</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#66bb6a' }}>
+							{data.arm} см
+						</span>
+					</div>
+				)}
+
+				{data.leg && data.leg > 0 && (
+					<div style={{
+						display: 'flex',
+						justifyContent: 'space-between',
+						alignItems: 'center',
+						padding: '8px 12px',
+						background: 'linear-gradient(90deg, rgba(38,198,218,0.15) 0%, rgba(38,198,218,0.05) 100%)',
+						borderRadius: '10px',
+						borderLeft: '3px solid #26c6da'
+					}}>
+						<span style={{ fontSize: '14px', color: '#333', fontWeight: '600' }}>🦵 Нога</span>
+						<span style={{ fontSize: '16px', fontWeight: 'bold', color: '#26c6da' }}>
+							{data.leg} см
+						</span>
+					</div>
+				)}
+			</div>
+
+			{/* Подсказка */}
+			{hovered && (
+				<div style={{
+					marginTop: '12px',
+					paddingTop: '10px',
+					borderTop: '1px solid rgba(100,150,255,0.2)',
+					textAlign: 'center',
+					fontSize: '11px',
+					color: '#666',
+					fontStyle: 'italic'
+				}}>
+					Кликните для подробностей
+				</div>
+			)}
+		</div>
+	)
+}
+
+// Компонент одного "этажа" башни - только HTML карточка
+const TowerBlock = ({ position, data, index, onClick, onHover }: TowerBlockProps) => {
 	const [hovered, setHovered] = useState(false)
-	const [appeared, setAppeared] = useState(false)
-
-	// Анимация появления
-	useFrame((state) => {
-		if (meshRef.current) {
-			// Анимация появления блока
-			if (!appeared && state.clock.elapsedTime > index * 0.1) {
-				setAppeared(true)
-			}
-
-			if (appeared) {
-				if (hovered) {
-					meshRef.current.rotation.y += 0.02
-					// Небольшое покачивание вверх-вниз
-					meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.05
-				} else {
-					meshRef.current.position.y = position[1]
-				}
-			} else {
-				// Анимация появления снизу
-				const targetY = position[1]
-				const currentY = meshRef.current.position.y
-				meshRef.current.position.y = THREE.MathUtils.lerp(currentY, targetY, 0.1)
-				meshRef.current.scale.setScalar(THREE.MathUtils.lerp(meshRef.current.scale.x, 1, 0.1))
-			}
-		}
-	})
-
-	// Вычисляем цвет на основе прогресса (от красного к зеленому)
-	const color = useMemo(() => {
-		const progress = index / Math.max(totalBlocks - 1, 1)
-		const hue = progress * 120 // 0 (красный) -> 120 (зеленый)
-		return `hsl(${hue}, 70%, ${hovered ? 60 : 50}%)`
-	}, [index, totalBlocks, hovered])
-
-	// Размер блока зависит от веса (если есть)
-	const scale = useMemo(() => {
-		const baseScale = 1
-		if (data.weight && typeof data.weight === 'number') {
-			// Нормализуем вес (предполагаем диапазон 50-150 кг)
-			const normalized = Math.max(0.7, Math.min(1.3, data.weight / 100))
-			return baseScale * normalized
-		}
-		return baseScale
-	}, [data.weight])
-
-	// Высота блока
-	const height = 0.8
 
 	const handlePointerOver = () => {
 		setHovered(true)
@@ -114,47 +248,23 @@ const TowerBlock = ({ position, data, index, totalBlocks, onClick, onHover }: To
 
 	return (
 		<group position={position}>
-			<mesh
-				ref={meshRef}
-				onClick={onClick}
-				onPointerOver={handlePointerOver}
-				onPointerOut={handlePointerOut}
-				castShadow
-				receiveShadow
-				scale={0.1} // Начальный размер для анимации
+			{/* HTML карточка */}
+			<Html
+				transform
+				position={[0, 0, 0]}
+				style={{
+					pointerEvents: 'auto',
+				}}
 			>
-				<boxGeometry args={[scale, height, scale]} />
-				<meshStandardMaterial
-					color={color}
-					roughness={0.3}
-					metalness={0.6}
-					emissive={hovered ? color : '#000000'}
-					emissiveIntensity={hovered ? 0.3 : 0}
-				/>
-
-				{/* Светящаяся рамка при наведении - внутри mesh */}
-				{hovered && (
-					<mesh>
-						<boxGeometry args={[scale * 1.05, height * 1.05, scale * 1.05]} />
-						<meshBasicMaterial color={color} wireframe transparent opacity={0.3} />
-					</mesh>
-				)}
-			</mesh>
-
-			{/* Индикатор наведения - только номер этажа */}
-			{hovered && (
-				<Text
-					position={[0, height / 2 + 0.3, 0]}
-					fontSize={0.2}
-					color="white"
-					anchorX="center"
-					anchorY="middle"
-					outlineWidth={0.02}
-					outlineColor="#000000"
+				<div
+					onClick={onClick}
+					onMouseEnter={handlePointerOver}
+					onMouseLeave={handlePointerOut}
+					style={{ cursor: 'pointer' }}
 				>
-					#{index + 1}
-				</Text>
-			)}
+					<ProgressCard data={data} index={index} hovered={hovered} />
+				</div>
+			</Html>
 		</group>
 	)
 }
@@ -178,23 +288,17 @@ const StarField = () => {
 
 // Основная сцена с башней
 const TowerScene = ({ data, onBlockClick, onHover }: ProgressTower3DProps & { onHover: (info: HoveredBlockInfo | null) => void }) => {
-	const groupRef = useRef<THREE.Group>(null)
-
 	const handleBlockHover = (hovered: boolean, point: ProgressDataPoint, index: number) => {
 		onHover(hovered ? { data: point, index } : null)
 	}
-
-	// Медленное вращение всей башни
-	useFrame((state) => {
-		if (groupRef.current) {
-			groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.3
-		}
-	})
 
 	// Сортируем данные по дате
 	const sortedData = useMemo(() => {
 		return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 	}, [data])
+
+	// Вычисляем центр башни для камеры
+	const towerCenter = (sortedData.length - 1) * 2
 
 	return (
 		<>
@@ -202,47 +306,42 @@ const TowerScene = ({ data, onBlockClick, onHover }: ProgressTower3DProps & { on
 			<StarField />
 
 			{/* Освещение */}
-			<ambientLight intensity={0.5} />
-			<directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-			<pointLight position={[-10, -10, -5]} intensity={0.5} color="#4080ff" />
-			<spotLight position={[0, 15, 0]} angle={0.3} penumbra={1} intensity={0.5} castShadow />
-			<pointLight position={[5, 5, 5]} intensity={0.3} color="#ff80ff" />
+			<ambientLight intensity={0.8} />
+			<directionalLight position={[10, 10, 5]} intensity={0.5} />
 
-			{/* Башня из блоков */}
-			<group ref={groupRef}>
-			{sortedData.map((point, index) => (
-				<TowerBlock
-					key={`${point.date}-${index}`}
-					position={[0, index * 0.9, 0]}
-					data={point}
-					index={index}
-					totalBlocks={sortedData.length}
-					onClick={() => onBlockClick?.(point, index)}
-					onHover={(hovered) => handleBlockHover(hovered, point, index)}
-				/>
-			))}
+			{/* Башня из карточек */}
+			<group>
+				{sortedData.map((point, index) => (
+					<TowerBlock
+						key={`${point.date}-${index}`}
+						position={[0, index * 4, 0]}
+						data={point}
+						index={index}
+						onClick={() => onBlockClick?.(point, index)}
+						onHover={(hovered) => handleBlockHover(hovered, point, index)}
+					/>
+				))}
 
 				{/* Основание башни */}
-				<mesh position={[0, -0.5, 0]} receiveShadow>
-					<cylinderGeometry args={[2, 2, 0.2, 32]} />
+				<mesh position={[0, -1.5, 0]} receiveShadow>
+					<cylinderGeometry args={[3, 3, 0.3, 32]} />
 					<meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.2} />
 				</mesh>
 
 				{/* Светящееся кольцо вокруг основания */}
-				<mesh position={[0, -0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
-					<torusGeometry args={[2.1, 0.05, 16, 100]} />
+				<mesh position={[0, -1.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
+					<torusGeometry args={[3.2, 0.08, 16, 100]} />
 					<meshBasicMaterial color="#00ffff" transparent opacity={0.5} />
 				</mesh>
 			</group>
 
 			{/* Контроллер камеры */}
 			<OrbitControls
-				enablePan={false}
+				enablePan={true}
 				enableZoom={true}
 				minDistance={8}
-				maxDistance={30}
-				maxPolarAngle={Math.PI / 2.2}
-				target={[0, sortedData.length * 0.35, 0]}
+				maxDistance={50}
+				target={[0, towerCenter, 0]}
 			/>
 		</>
 	)
@@ -352,7 +451,7 @@ export const ProgressTower3D = ({ data, onBlockClick }: ProgressTower3DProps) =>
 							<strong>Отчетов:</strong> {data.length}
 						</AntText>
 						<AntText style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', display: 'block' }}>
-							<strong>Высота башни:</strong> {data.length * 1}м
+							<strong>Высота башни:</strong> {data.length * 3}м
 						</AntText>
 						{stats && stats.firstWeight && stats.lastWeight && (
 							<>
@@ -380,14 +479,13 @@ export const ProgressTower3D = ({ data, onBlockClick }: ProgressTower3DProps) =>
 				</Space>
 			</div>
 
-			<div style={{ width: '100%', height: '700px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+			<div style={{ width: '100%', height: '700px', position: 'relative', zIndex: 0 }}>
 				<Canvas
-					camera={{ position: [6, 5, 10], fov: 60 }}
-					shadows
+					camera={{ position: [0, 4, 15], fov: 50 }}
 					gl={{ antialias: true, alpha: false }}
+					style={{ position: 'relative', zIndex: 0 }}
 				>
-					<color attach="background" args={['#0f0f1e']} />
-					<fog attach="fog" args={['#0f0f1e', 15, 35]} />
+					<color attach="background" args={['#1a1a2e']} />
 					<TowerScene data={data} onBlockClick={onBlockClick} onHover={setHoveredBlock} />
 				</Canvas>
 			</div>
