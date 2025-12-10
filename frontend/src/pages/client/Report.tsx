@@ -1,10 +1,10 @@
 import { useState, type FC } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Typography, Spin, Alert, Button, Row, Col, Image } from 'antd'
-import { LoadingOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { Card, Typography, Spin, Alert, Button, Row, Col, Image, List, Avatar, Divider, Empty } from 'antd'
+import { LoadingOutlined, ArrowLeftOutlined, CommentOutlined, UserOutlined } from '@ant-design/icons'
 import { useGetProgressReportQuery } from '../../store/api/progress.api'
 
-const { Title } = Typography
+const { Title, Text } = Typography
 
 export const Report: FC = () => {
     const { id } = useParams<{ id: string }>()
@@ -30,13 +30,23 @@ export const Report: FC = () => {
         skip: !id,
     })
 
-    const formatDate = (isoDate: string): string => {
-        const date = new Date(isoDate)
-        const day = String(date.getDate()).padStart(2, '0')
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const year = date.getFullYear()
-        return `${day}.${month}.${year}`
-    }
+	const formatDate = (isoDate: string): string => {
+		const date = new Date(isoDate)
+		const day = String(date.getDate()).padStart(2, '0')
+		const month = String(date.getMonth() + 1).padStart(2, '0')
+		const year = date.getFullYear()
+		return `${day}.${month}.${year}`
+	}
+
+	const formatDateTime = (isoDate: string): string => {
+		const date = new Date(isoDate)
+		const day = String(date.getDate()).padStart(2, '0')
+		const month = String(date.getMonth() + 1).padStart(2, '0')
+		const year = date.getFullYear()
+		const hours = String(date.getHours()).padStart(2, '0')
+		const minutes = String(date.getMinutes()).padStart(2, '0')
+		return `${day}.${month}.${year} ${hours}:${minutes}`
+	}
 
     const handleBack = (): void => {
         navigate('/me/progress/reports')
@@ -264,19 +274,62 @@ export const Report: FC = () => {
                         </div>
                     </div>
 
-                    {report.trainerComment && (
-                        <div className='mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded'>
-                            <Title level={5} className='mb-2 text-blue-700'>
-                                💬 Комментарий тренера
-                            </Title>
-                            <p className='text-gray-800 mb-2'>{report.trainerComment}</p>
-                            {report.commentedAt && (
-                                <p className='text-sm text-gray-500'>
-                                    {formatDate(report.commentedAt)}
-                                </p>
-                            )}
-                        </div>
-                    )}
+					{/* Комментарии тренера */}
+					{report.comments && report.comments.length > 0 && (
+						<>
+							<Divider />
+							<div className='mt-6'>
+								<Title level={4} className='flex items-center gap-2 mb-4'>
+									<CommentOutlined />
+									Комментарии тренера ({report.comments.length})
+								</Title>
+								<List
+									itemLayout="horizontal"
+									dataSource={report.comments}
+									renderItem={(comment) => (
+										<List.Item className='!border-b !border-gray-100 !py-4'>
+											<List.Item.Meta
+												avatar={
+													<Avatar 
+														src={comment.trainer.photo} 
+														icon={!comment.trainer.photo && <UserOutlined />}
+														size="large"
+													/>
+												}
+												title={
+													<div className='flex items-center justify-between flex-wrap gap-2'>
+														<Text strong>{comment.trainer.name}</Text>
+														<Text type="secondary" className="text-xs">
+															{formatDateTime(comment.createdAt)}
+														</Text>
+													</div>
+												}
+												description={
+													<Text className="text-gray-700 whitespace-pre-wrap">
+														{comment.text}
+													</Text>
+												}
+											/>
+										</List.Item>
+									)}
+								/>
+							</div>
+						</>
+					)}
+
+					{/* Если комментариев нет */}
+					{(!report.comments || report.comments.length === 0) && (
+						<div className='mt-6 text-center py-4'>
+							<Empty
+								image={Empty.PRESENTED_IMAGE_SIMPLE}
+								description={
+									<Text type="secondary">
+										Тренер ещё не оставил комментариев к этому отчёту
+									</Text>
+								}
+							/>
+						</div>
+					)}
                 </Card>
             </div>
         </div>
