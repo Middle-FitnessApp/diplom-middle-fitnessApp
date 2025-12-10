@@ -45,7 +45,6 @@ export const PersonalAccount = () => {
 	const borderClass = isDark ? 'border-slate-700' : 'border-gray-200'
 	const titleClass = isDark ? 'text-slate-100' : 'text-gray-800'
 	const textLightClass = isDark ? 'text-slate-200' : 'text-gray-700'
-	const textMutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
 
 	const {
 		data,
