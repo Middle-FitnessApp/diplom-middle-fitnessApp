@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { createBaseQueryWithReauth } from './baseQuery'
 import { API_ENDPOINTS } from '../../config/api.config'
 
 export interface Message {
@@ -54,17 +55,7 @@ export interface GetMessagesResponse {
 
 export const chatApi = createApi({
 	reducerPath: 'chatApi',
-	baseQuery: fetchBaseQuery({
-		baseUrl: API_ENDPOINTS.chat,
-		credentials: 'include',
-		prepareHeaders: (headers) => {
-			const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-			if (token) {
-				headers.set('authorization', `Bearer ${token}`)
-			}
-			return headers
-		},
-	}),
+	baseQuery: createBaseQueryWithReauth(API_ENDPOINTS.chat),
 	tagTypes: ['Messages', 'Chats'],
 	endpoints: (builder) => ({
 		getChats: builder.query<ChatListResponse, void>({
