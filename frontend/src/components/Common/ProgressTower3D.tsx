@@ -479,10 +479,11 @@ export const ProgressTower3D = ({ data, onBlockClick }: ProgressTower3DProps) =>
 				</Space>
 			</div>
 
-			<div style={{ width: '100%', height: '700px' }}>
+			<div style={{ width: '100%', height: '700px', position: 'relative', zIndex: 0 }}>
 				<Canvas
 					camera={{ position: [0, 4, 15], fov: 50 }}
 					gl={{ antialias: true, alpha: false }}
+					style={{ position: 'relative', zIndex: 0 }}
 				>
 					<color attach="background" args={['#1a1a2e']} />
 					<TowerScene data={data} onBlockClick={onBlockClick} onHover={setHoveredBlock} />
