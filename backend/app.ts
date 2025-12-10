@@ -3,6 +3,7 @@ import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import path from 'path'
+import { Server as SocketIOServer } from 'socket.io'
 
 import { errorHandler } from './middleware/globalErrorHandler.js'
 

@@ -57,6 +57,11 @@ model User {
   // 🔽 связи для питания
   nutritionCategories  NutritionCategory[]   @relation("UserNutritionCategories")
   clientNutritionPlans ClientNutritionPlan[]
+
+  // 🔽 связи для чата
+  chatsAsTrainer Chat[]    @relation("ChatTrainer")
+  chatsAsClient  Chat[]    @relation("ChatClient")
+  messages       Message[]
 }
 
 model RefreshToken {
@@ -231,4 +236,39 @@ model ClientNutritionPlan {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+//
+// ======= Чат =======
+//
+
+model Chat {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("ChatTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ChatClient", fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([trainerId, clientId])
+  @@index([trainerId])
+  @@index([clientId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  text      String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+
+  @@index([chatId])
+  @@index([senderId])
 }
