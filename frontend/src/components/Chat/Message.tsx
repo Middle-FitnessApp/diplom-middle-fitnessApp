@@ -1,5 +1,10 @@
 import React from 'react'
 import clsx from 'clsx'
+import {
+	CheckCircleOutlined,
+	ClockCircleOutlined,
+	ExclamationCircleOutlined,
+} from '@ant-design/icons'
 import type { MessageType } from '../../types'
 
 type MessageProps = {
@@ -8,48 +13,52 @@ type MessageProps = {
 	role: 'client' | 'trainer'
 }
 
-export const Message: React.FC<MessageProps> = ({ msg, onPreview, role }) => (
-	<div
-		className={clsx(
-			'w-fit min-w-[120px] max-w-[65%] px-4 py-3',
-			msg.sender.id === role ? 'ml-auto' : 'mr-auto',
-		)}
-		style={{
-			borderRadius: 15,
-			background: '#ffffff',
-			border: '1.5px solid #dbe4ee',
-			boxShadow: '0 2px 8px 0 rgba(90,120,150,0.04)',
-			color: '#000000',
-			transition: 'background 0.2s',
-			position: 'relative',
-		}}
-	>
+export const Message: React.FC<MessageProps> = ({ msg, onPreview, role }) => {
+	const renderStatusIcon = () => {
+		if (msg.sender.id !== role) return null // Показывать статус только для своих сообщений
+
+		switch (msg.status) {
+			case 'sending':
+				return (
+					<ClockCircleOutlined className='message-status-icon message-status-sending' />
+				)
+			case 'sent':
+				return <CheckCircleOutlined className='message-status-icon message-status-sent' />
+			case 'error':
+				return (
+					<ExclamationCircleOutlined className='message-status-icon message-status-error' />
+				)
+			default:
+				return null
+		}
+	}
+
+	return (
 		<div
-			style={{
-				fontSize: 12,
-				color: '#8d8d8d',
-				position: 'absolute',
-				top: 8,
-				right: 16,
-			}}
+			className={clsx(
+				'message-bubble',
+				msg.sender.id === role ? 'message-bubble-own' : 'message-bubble-other',
+				msg.status === 'error' && 'message-bubble-error',
+			)}
 		>
-			{msg.createdAt}
-		</div>
-		<div style={{ marginTop: 18 }}>{msg?.text}</div>
-		{msg?.imageUrl && (
-			<div style={{ marginTop: 10 }}>
-				<img
-					src={msg?.imageUrl}
-					alt='attachment'
-					style={{
-						width: 120,
-						borderRadius: 8,
-						border: '1px solid #dde4ee',
-						cursor: 'pointer',
-					}}
-					onClick={() => onPreview(msg.imageUrl!)}
-				/>
+			<div className='message-timestamp'>{msg.createdAt}</div>
+			<div className='message-content'>
+				<span className='message-text'>{msg?.text}</span>
+				{renderStatusIcon()}
 			</div>
-		)}
-	</div>
-)
+			{msg?.imageUrl && (
+				<div>
+					<img
+						src={msg?.imageUrl}
+						alt='attachment'
+						className={clsx(
+							'message-image',
+							msg.status === 'sending' && 'message-image-sending',
+						)}
+						onClick={() => onPreview(msg.imageUrl!)}
+					/>
+				</div>
+			)}
+		</div>
+	)
+}

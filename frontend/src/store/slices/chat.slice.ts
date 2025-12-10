@@ -164,6 +164,24 @@ export const chatSlice = createSlice({
 			saveToStorage(state)
 		},
 
+		// Обновить статус сообщения
+		updateMessageStatus: (
+			state,
+			action: PayloadAction<{
+				chatId: string
+				messageId: string
+				status: 'sending' | 'sent' | 'error'
+			}>,
+		) => {
+			const { chatId, messageId, status } = action.payload
+			if (state.messages[chatId]) {
+				const message = state.messages[chatId].find((msg) => msg.id === messageId)
+				if (message) {
+					message.status = status
+				}
+			}
+		},
+
 		// Полный сброс всех чатов (при logout)
 		resetAllChats: (state) => {
 			state.chats = []
@@ -186,6 +204,7 @@ export const {
 	incrementUnread,
 	markAsRead,
 	markMessagesAsRead,
+	updateMessageStatus,
 	clearChat,
 	resetAllChats,
 } = chatSlice.actions

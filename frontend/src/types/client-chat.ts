@@ -18,6 +18,8 @@ export type MessageType = {
 		name: string
 		photo?: string
 	}
+	// Статус отправки сообщения (для локальных сообщений)
+	status?: 'sending' | 'sent' | 'error'
 }
 
 export type ChatType = {
