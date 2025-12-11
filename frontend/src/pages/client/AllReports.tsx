@@ -13,6 +13,7 @@ import {
 import { ErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'
 import { LoadingOutlined } from '@ant-design/icons'
+import { API_BASE_URL } from '../../config/api.config'
 
 const { Title, Text } = Typography
 
@@ -98,8 +99,8 @@ export const AllReports: FC = () => {
 
 	if (isError || error) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg'>
+				<div style={{ maxWidth: '500px' }}>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='Не удалось загрузить отчеты'
@@ -247,7 +248,7 @@ export const AllReports: FC = () => {
 													onClick={(e) => e.stopPropagation()}
 												>
 													<img
-														src={report.photoFront}
+														src={`${API_BASE_URL}${report.photoFront}`}
 														alt='Фото отчета'
 														className={`w-20 h-20 object-cover rounded-full border-2 ${
 															isDark ? 'border-slate-600' : 'border-gray-200'

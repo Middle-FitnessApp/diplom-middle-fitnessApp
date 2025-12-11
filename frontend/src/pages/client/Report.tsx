@@ -11,12 +11,15 @@ import { formatDate } from '../../utils/progressFunctions.ts'
 import { AddCommentForm, CommentsList, MeasurementsCard } from '../../components/Admin'
 import { ErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
+import { API_BASE_URL } from '../../config/api.config'
+import { useThemeClasses } from '../../store/hooks.ts'
 
 const { Title } = Typography
 
 export const Report: FC = () => {
 	const location = useLocation()
 	const navigate = useNavigate()
+	const classes = useThemeClasses()
 
 	const { clientId, reportId } = useParams<{ clientId?: string; reportId?: string }>()
 	const { id } = useParams<{ id?: string }>()
@@ -90,8 +93,8 @@ export const Report: FC = () => {
 
 	if (!reportIdToUse) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg'>
+				<div style={{ maxWidth: '500px' }}>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='ID отчета не указан или указан неверно'
@@ -109,8 +112,8 @@ export const Report: FC = () => {
 
 	if (isError || error || !report) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg'>
+				<div style={{ maxWidth: '500px' }}>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='Не удалось загрузить отчет'
@@ -159,9 +162,9 @@ export const Report: FC = () => {
 								{showFront && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className='mb-2 font-semibold text-gray-600'>Спереди</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Спереди</div>
 											<Image
-												src={report.photoFront}
+												src={`${API_BASE_URL}${report.photoFront}`}
 												alt='Фото спереди'
 												className='rounded-lg'
 												style={{
@@ -177,9 +180,9 @@ export const Report: FC = () => {
 								{showSide && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className='mb-2 font-semibold text-gray-600'>Сбоку</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сбоку</div>
 											<Image
-												src={report.photoSide}
+												src={`${API_BASE_URL}${report.photoSide}`}
 												alt='Фото сбоку'
 												className='rounded-lg'
 												style={{
@@ -195,9 +198,9 @@ export const Report: FC = () => {
 								{showBack && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className='mb-2 font-semibold text-gray-600'>Сзади</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сзади</div>
 											<Image
-												src={report.photoBack}
+												src={`${API_BASE_URL}${report.photoBack}`}
 												alt='Фото сзади'
 												className='rounded-lg'
 												style={{

@@ -13,6 +13,8 @@ import {
 } from '../../utils/progressFunctions.ts'
 import { ErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
+import { useThemeClasses } from '../../store/hooks.ts'
+import { API_BASE_URL } from '../../config/api.config'
 
 const { Title, Text } = Typography
 
@@ -23,6 +25,7 @@ export const AllReportsAdmin: FC = () => {
 	const [period, setPeriod] = useState('all')
 	const pageSize = 5
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
+	const classes = useThemeClasses()
 
 	const { data, isLoading, isError, error } = useGetTrainerClientReportsQuery(
 		clientId ? { clientId, page, limit: pageSize } : skipToken,
@@ -70,8 +73,8 @@ export const AllReportsAdmin: FC = () => {
 
 	if (!clientId) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg'>
+				<div className='max-w-[500px]'>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='ID клиента не указан или указан неверно'
@@ -89,8 +92,8 @@ export const AllReportsAdmin: FC = () => {
 
 	if (isError || error) {
 		return (
-			<div className='page-container gradient-bg'>
-				<div className='page-card' style={{ maxWidth: '500px' }}>
+			<div className='gradient-bg'>
+				<div className='max-w-[500px]'>
 					<ErrorState
 						title='Ошибка загрузки'
 						message='Не удалось загрузить отчеты'
@@ -104,9 +107,12 @@ export const AllReportsAdmin: FC = () => {
 
 	if (reports.length === 0) {
 		return (
-			<div className='page-container gradient-bg p-6'>
+			<div className='gradient-bg p-6'>
 				<div className='section-header'>
-					<Title level={2} className='section-title'>
+					<Title
+						level={2}
+						className='section-title border-b-3 border-primary inline-block pb-3 mb-8'
+					>
 						📋 Отчёты клиента
 					</Title>
 				</div>
@@ -116,16 +122,28 @@ export const AllReportsAdmin: FC = () => {
 	}
 
 	return (
-		<div className='page-container gradient-bg'>
-			<div className='page-card'>
+		<div
+			className={` ${classes.cardBg} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
+		>
+			<div
+				className={`rounded-2xl p-10 shadow-xl ${classes.border} w-full max-w-[1200px]`}
+			>
 				<div className='section-header'>
-					<Title level={2} className='section-title'>
+					<Title
+						level={2}
+						className={`section-title border-b-3 border-primary inline-block pb-3 mb-8 ${classes.title}`}
+					>
 						📋 Отчёты клиента
 					</Title>
 				</div>
 
-				<div className='flex items-center justify-between mb-8'>
-					<span className='text-lg font-semibold text-gray-700'>Период:</span>
+				<div className={`flex items-center justify-between mb-8 ${classes.textLight}`}>
+					<div>
+						<span className={`text-lg font-semibold ${classes.textLight}`}>Период:</span>
+						<p className='mt-2 md:hidden'>
+							(на мобильных устройствах фильтрация по периоду недоступна)
+						</p>
+					</div>
 					<Select
 						options={periodOptions}
 						value={period}
@@ -159,10 +177,14 @@ export const AllReportsAdmin: FC = () => {
 									>
 										<div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
 											<div className='flex-1'>
-												<div className='text-lg font-semibold text-gray-800 mb-2'>
+												<div
+													className={`text-lg font-semibold ${classes.textLight} mb-2`}
+												>
 													Отчёт от {formatDate(report.date)}
 												</div>
-												<div className='grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-700'>
+												<div
+													className={`grid grid-cols-2 md:grid-cols-3 gap-2 ${classes.textLight}`}
+												>
 													<div>Вес: {report.weight} кг</div>
 													<div>Талия: {report.waist} см</div>
 													<div>Бёдра: {report.hips} см</div>
@@ -173,7 +195,7 @@ export const AllReportsAdmin: FC = () => {
 											</div>
 
 											<div className='flex flex-col items-start md:items-end gap-2'>
-												<Text className='text-gray-600 text-sm'>
+												<Text className={` ${classes.textSecondary} text-sm`}>
 													Изменения от предыдущего:
 												</Text>
 												<Space direction='vertical' size={4}>
@@ -205,13 +227,10 @@ export const AllReportsAdmin: FC = () => {
 											</div>
 
 											{showPhoto && (
-												<div
-													className='flex-shrink-0 md:ml-4'
-													onClick={(e) => e.stopPropagation()}
-												>
+												<div className={`md:ml-4`} onClick={(e) => e.stopPropagation()}>
 													<img
-														src={report.photoFront}
-														alt=''
+														src={`${API_BASE_URL}${report.photoFront}`}
+														alt={`${report.date} - Фото спереди`}
 														className='w-20 h-20 object-cover rounded-full border'
 														onError={() => handlePhotoError(report.id)}
 													/>
