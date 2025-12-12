@@ -12,6 +12,7 @@ import trainerRoutes from './routes/trainer.routes.js'
 import nutritionRoutes from './routes/nutrition.routes.js'
 import progressRoutes from './routes/progress.routes.js'
 import chatRoutes from './routes/chat.routes.js'
+import notificationRoutes from './routes/notification.routes.js'
 
 // 👇 Экспортируй функцию создания app
 export async function buildApp(): Promise<FastifyInstance> {
