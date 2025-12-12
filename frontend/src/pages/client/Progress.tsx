@@ -32,6 +32,7 @@ import { ProgressChart, ProgressTower3D } from '../../components'
 import { useGetProgressReportsQuery } from '../../store/api/progress.api'
 import type { ProgressReport } from '../../store/api/progress.api'
 import type { Comment } from '../../store/types/progress.types.ts'
+import { API_BASE_URL } from '../../config/api.config.ts'
 
 const { Title, Text } = Typography
 
@@ -199,7 +200,7 @@ export const Progress = () => {
 					<>
 						{/* Переключатель между 2D и 3D */}
 						<Card
-							className='!border !border-gray-200 mb-6'
+							className='border! border-gray-200! mb-6'
 							bodyStyle={{ padding: '16px' }}
 						>
 							<Tabs
@@ -402,11 +403,11 @@ export const Progress = () => {
 										itemLayout='horizontal'
 										dataSource={allComments.slice(0, 5)} // Показываем последние 5 комментариев
 										renderItem={(comment) => (
-											<List.Item className='!border-b !border-gray-100'>
+											<List.Item className='border-b! border-gray-100!'>
 												<List.Item.Meta
 													avatar={
 														<Avatar
-															src={comment.trainer.photo}
+															src={`${API_BASE_URL}${comment.trainer.photo}`}
 															icon={!comment.trainer.photo && <UserOutlined />}
 															size='large'
 														/>
