@@ -1,5 +1,5 @@
 import { message, notification } from 'antd'
-import type { RTKQueryError, NormalizedError, ErrorType } from './types'
+import { type RTKQueryError, type NormalizedError, type ErrorType } from './types'
 import { parseError, getErrorMessage } from './parseError'
 
 /**
@@ -48,7 +48,7 @@ const NOTIFICATION_TYPES: Record<ErrorType, 'error' | 'warning' | 'info'> = {
  * Показывает ошибку пользователю через message или notification
  */
 export function showError(
-	error: RTKQueryError | NormalizedError | string,
+	error: RTKQueryError | NormalizedError | string | undefined,
 	config: ShowErrorConfig = {}
 ): void {
 	const { useNotification = false, title, duration = 4.5, onClose } = config
@@ -56,7 +56,12 @@ export function showError(
 	let normalizedError: NormalizedError
 
 	// Парсим ошибку если это не уже нормализованная ошибка
-	if (typeof error === 'string') {
+	if (!error) {
+		normalizedError = {
+			type: 'unknown',
+			message: 'Произошла неизвестная ошибка',
+		}
+	} else if (typeof error === 'string') {
 		normalizedError = {
 			type: 'unknown',
 			message: error,

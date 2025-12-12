@@ -1,13 +1,13 @@
-import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import type { SerializedError } from '@reduxjs/toolkit'
-import type {
-	RTKQueryError,
-	NormalizedError,
-	ErrorType,
-	ApiErrorResponse,
-	ApiErrorResponseAlt,
+import { type FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import { type SerializedError } from '@reduxjs/toolkit'
+import {
+	type RTKQueryError,
+	type NormalizedError,
+	type ErrorType,
+	type ApiErrorResponse,
+	type ApiErrorResponseAlt,
+	HttpStatusCode,
 } from './types'
-import { HttpStatusCode } from './types'
 
 /**
  * Сообщения по умолчанию для разных типов ошибок

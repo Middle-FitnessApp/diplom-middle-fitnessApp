@@ -6,8 +6,7 @@ import {
 	HomeOutlined,
 	WifiOutlined,
 } from '@ant-design/icons'
-import type { RTKQueryError, ErrorType } from '../../utils/errors'
-import { parseError } from '../../utils/errors'
+import { type RTKQueryError, type ErrorType, parseError } from '../../utils/errors'
 
 interface ApiErrorStateProps {
 	/** Ошибка от RTK Query */

@@ -1,6 +1,6 @@
-import { isRejectedWithValue, Middleware } from '@reduxjs/toolkit'
+import { isRejectedWithValue, type Middleware } from '@reduxjs/toolkit'
 import { message, notification } from 'antd'
-import { parseError, isAuthError } from '../../utils/errors'
+import { parseError, isAuthError, type RTKQueryError } from '../../utils/errors'
 
 /**
  * Список эндпоинтов, для которых НЕ нужно показывать глобальные ошибки
@@ -43,10 +43,10 @@ export const errorMiddleware: Middleware = () => (next) => (action) => {
 		}
 
 		// Парсим ошибку
-		const normalizedError = parseError(payload)
+		const normalizedError = parseError(payload as RTKQueryError)
 
 		// Пропускаем ошибки авторизации - они обрабатываются в baseQuery
-		if (isAuthError(payload)) {
+		if (isAuthError(payload as RTKQueryError)) {
 			return next(action)
 		}
 

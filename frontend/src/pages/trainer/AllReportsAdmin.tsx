@@ -11,7 +11,7 @@ import {
 	computeDiffs,
 	PERIOD_OPTIONS,
 } from '../../utils/progressFunctions.ts'
-import { ApiErrorState } from '../../components/errors'
+import { ApiErrorState } from '../../components/Errors'
 import { LoadingState } from '../../components'
 import { useThemeClasses } from '../../store/hooks.ts'
 import { API_BASE_URL } from '../../config/api.config'

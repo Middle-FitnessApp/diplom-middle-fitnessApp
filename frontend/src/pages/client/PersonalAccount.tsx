@@ -34,7 +34,7 @@ import { useGetProgressChartDataQuery } from '../../store/api/progress.api'
 import { useGetClientNutritionPlanQuery } from '../../store/api/nutrition.api'
 import { performLogout, setUser, updateUser } from '../../store/slices/auth.slice'
 import type { ApiError } from '../../store/types/auth.types'
-import { ApiErrorState } from '../../components/errors'
+import { ApiErrorState } from '../../components/Errors'
 import { API_BASE_URL } from '../../config/api.config'
 
 const { Title, Text } = Typography

@@ -11,7 +11,7 @@ import {
 } from '../../components'
 import { useAuth } from '../../store/hooks'
 import { useGetClientProfileQuery } from '../../store/api/trainer.api'
-import { ApiErrorState } from '../../components/errors'
+import { ApiErrorState } from '../../components/Errors'
 import { useGetProgressAnalyticsQuery } from '../../store/api/progress.api'
 import type { ProgressAnalyticsResponse } from '../../store/types/progress.types'
 import { transformAnalyticsToChartData } from '../../utils/progressChart'

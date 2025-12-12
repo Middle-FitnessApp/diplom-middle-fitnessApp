@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Result, Button, Typography } from 'antd'
 import { ReloadOutlined, HomeOutlined } from '@ant-design/icons'
 

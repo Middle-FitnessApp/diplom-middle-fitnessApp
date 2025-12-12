@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { RTKQueryError, NormalizedError } from './types'
+import { type RTKQueryError, type NormalizedError } from './types'
 import { parseError, getErrorMessage, isAuthError, isNetworkError, isServerError } from './parseError'
 import { showError, handleMutationError } from './showError'
 
