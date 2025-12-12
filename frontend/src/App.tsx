@@ -1,7 +1,7 @@
 import { ConfigProvider, Layout, App as AntApp } from 'antd'
 import { AppRouter } from './router/AppRouter'
 import { Header } from './components/Common/Header'
-import { ErrorBoundary } from './components/Errors'
+import { ErrorBoundary } from './components/errors'
 import { lightTheme, darkTheme } from '../theme-config'
 import { useAppSelector } from './store/hooks'
 

@@ -10,7 +10,7 @@ import {
 	computeDiffs,
 	PERIOD_OPTIONS,
 } from '../../utils/progressFunctions.ts'
-import { ApiErrorState } from '../../components/Errors'
+import { ApiErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'
 import { LoadingOutlined } from '@ant-design/icons'
 import { API_BASE_URL } from '../../config/api.config'

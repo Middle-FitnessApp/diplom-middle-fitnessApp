@@ -9,7 +9,7 @@ import {
 } from '../../store/api/progress.api'
 import { formatDate } from '../../utils/progressFunctions.ts'
 import { AddCommentForm, CommentsList, MeasurementsCard } from '../../components/Admin'
-import { ApiErrorState } from '../../components/Errors'
+import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
 import { API_BASE_URL } from '../../config/api.config'
 import { useThemeClasses } from '../../store/hooks.ts'
