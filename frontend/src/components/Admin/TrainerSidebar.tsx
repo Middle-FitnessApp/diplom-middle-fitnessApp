@@ -2,6 +2,7 @@ import React from 'react'
 import { List, Avatar, Badge, Tooltip, Empty, Typography } from 'antd'
 import { UserOutlined, MessageOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { useThemeClasses } from '../../store/hooks'
 
 const { Text } = Typography
 
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 export const TrainerSidebar: React.FC<SidebarProps> = ({ clients }) => {
 	const navigate = useNavigate()
+	const classes = useThemeClasses()
 
 	const getPhotoUrl = (photo?: string) => {
 		if (!photo) return undefined
@@ -57,11 +59,11 @@ export const TrainerSidebar: React.FC<SidebarProps> = ({ clients }) => {
 				/>
 			) : (
 				<List
-					className='space-y-1'
+					className={`space-y-1`}
 					dataSource={clients}
 					renderItem={(client) => (
 						<List.Item
-							className='group hover:bg-blue-50 rounded-lg cursor-pointer px-3 py-2 transition'
+							className={`group ${classes.hoverBg} rounded-lg cursor-pointer px-3! py-2 transition`}
 							style={{ borderBottom: 'none', marginBottom: 4 }}
 							onClick={() => handleClientClick(client.id)}
 						>

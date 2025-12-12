@@ -6,7 +6,12 @@ import { MessageList } from './MessageList'
 import { InputPanel } from './InputPanel'
 import { ImagePreviewModal } from './ImagePreviewModal'
 import { TypingIndicator } from './TypingIndicator'
-import { useAppDispatch, useAppSelector, selectChatMessages } from '../../store/hooks'
+import {
+	useAppDispatch,
+	useAppSelector,
+	selectChatMessages,
+	useThemeClasses,
+} from '../../store/hooks'
 import {
 	addMessage,
 	receiveMessage,
@@ -44,6 +49,7 @@ export const Chat: React.FC<ChatProps> = ({
 	const dispatch = useAppDispatch()
 	const token = useAppSelector((state) => state.auth.token)
 	const user = useAppSelector((state) => state.auth.user)
+	const classes = useThemeClasses()
 
 	// Загружаем данные пользователя если есть токен, но нет пользователя
 	const { data: meData } = useGetMeQuery(undefined, {
@@ -414,25 +420,29 @@ export const Chat: React.FC<ChatProps> = ({
 	const title = role === 'client' ? 'Чат с тренером' : 'Чат с клиентом'
 
 	return (
-		<div className='w-full max-w-2xl flex flex-col mx-auto justify-between chat-container chat-main-container'>
+		<div
+			className={`w-full max-w-2xl flex flex-col mx-auto justify-between ${classes.cardBg} border-2 ${classes.border} rounded-3xl h-[80vh] max-h-[600px] shadow-xl p-2.5 mt-6 md:h-[90vh] md:mt-2 md:rounded-t-2xl md:rounded-b-none md:p-2`}
+		>
 			{/* Заголовок чата */}
-			<div className='chat-header'>
-				<div className='chat-header-title'>
-					<Text strong className='text-base'>
+			<div
+				className={`p-3 border-b ${classes.border} flex items-center justify-between ${classes.textSecondary}`}
+			>
+				<div className={`flex items-center gap-2`}>
+					<Text strong className={`text-base`}>
 						{title}
 					</Text>
 					{!isOnline && (
-						<Text type='danger' className='chat-offline-indicator'>
+						<Text type='danger' className='text-red-500 text-xs'>
 							(Оффлайн)
 						</Text>
 					)}
 				</div>
-				<div className='chat-header-info'>
+				<div className='flex flex-col items-end gap-0.5'>
 					<Text type='secondary' className='text-sm'>
 						{today}
 					</Text>
 					{role === 'client' && partnerName && (
-						<Text type='secondary' className='text-sm chat-partner-name'>
+						<Text type='secondary' className='text-sm font-medium text-blue-500'>
 							{partnerName}
 						</Text>
 					)}
@@ -461,7 +471,9 @@ export const Chat: React.FC<ChatProps> = ({
 			{/* Сообщения или приветственное сообщение */}
 			{!messagesLoading && !messagesError && (
 				<>
-					<div className='chat-messages-container'>
+					<div
+						className={`chat-messages-container ${classes.bodyBg} border ${classes.border} rounded-lg`}
+					>
 						{messages.length === 0 ? (
 							<div className='chat-empty-state'>
 								<div className='chat-empty-message'>
@@ -488,7 +500,7 @@ export const Chat: React.FC<ChatProps> = ({
 
 					{/* Индикатор печати вне скроллящегося контейнера */}
 					{typing && messages.length > 0 && (
-						<div className='chat-typing-wrapper'>
+						<div className='px-6 py-2'>
 							<TypingIndicator />
 						</div>
 					)}

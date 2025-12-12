@@ -5,6 +5,7 @@ import {
 	ExclamationCircleOutlined,
 } from '@ant-design/icons'
 import type { MessageType } from '../../types'
+import { useThemeClasses } from '../../store/hooks'
 
 type MessageProps = {
 	msg: MessageType
@@ -13,40 +14,20 @@ type MessageProps = {
 }
 
 export const Message: React.FC<MessageProps> = ({ msg, onPreview, currentUserId }) => {
+	const classes = useThemeClasses()
 	const isOwnMessage = msg.sender.id === currentUserId
 
-	// Простые inline стили без CSS классов
-	const baseStyle = {
-		padding: '12px 16px',
-		borderRadius: '15px',
-		maxWidth: '65%',
-		minWidth: '120px',
-		marginBottom: '8px',
-		boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-		display: 'flex',
-		flexDirection: 'column' as const,
-		wordWrap: 'break-word' as const,
-	}
+	// Классы для сообщений
+	const baseClasses =
+		'p-3 rounded-xl max-w-[65%] min-w-[120px] mb-2 shadow-md flex flex-col break-words'
 
-	const ownMessageStyle = {
-		...baseStyle,
-		backgroundColor: '#1890ff',
-		color: 'white',
-		marginLeft: 'auto',
-		marginRight: '0',
-		alignSelf: 'flex-end' as const,
-		border: '1.5px solid #1890ff',
-	}
-
-	const otherMessageStyle = {
-		...baseStyle,
-		backgroundColor: '#ffffff',
-		color: 'black',
-		marginLeft: '0',
-		marginRight: 'auto',
-		alignSelf: 'flex-start' as const,
-		border: '1.5px solid #dbe4ee',
-	}
+	const ownMessageClasses = isOwnMessage
+		? `${baseClasses} bg-blue-500 text-white ml-auto mr-0 self-end border-2 border-blue-500`
+		: `${baseClasses} ${
+				classes.isDark
+					? 'bg-slate-700 text-slate-100 border-slate-600'
+					: 'bg-white text-black border-gray-300'
+		  } ml-0 mr-auto self-start border-2`
 
 	// Форматируем время
 	const formatTime = (dateString: string) => {
@@ -61,37 +42,21 @@ export const Message: React.FC<MessageProps> = ({ msg, onPreview, currentUserId 
 
 		switch (msg.status) {
 			case 'sending':
-				return (
-					<ClockCircleOutlined
-						style={{ color: 'rgba(255,255,255,0.8)', marginLeft: '8px' }}
-					/>
-				)
+				return <ClockCircleOutlined className='text-white/80 ml-2' />
 			case 'sent':
-				return (
-					<CheckCircleOutlined
-						style={{ color: 'rgba(255,255,255,0.8)', marginLeft: '8px' }}
-					/>
-				)
+				return <CheckCircleOutlined className='text-white/80 ml-2' />
 			case 'error':
-				return (
-					<ExclamationCircleOutlined style={{ color: '#ffccc7', marginLeft: '8px' }} />
-				)
+				return <ExclamationCircleOutlined className='text-red-300 ml-2' />
 			default:
 				return null
 		}
 	}
 
 	return (
-		<div style={isOwnMessage ? ownMessageStyle : otherMessageStyle}>
+		<div className={ownMessageClasses}>
 			{msg?.text && (
-				<div
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'space-between',
-					}}
-				>
-					<span style={{ flex: 1 }}>{msg.text}</span>
+				<div className='flex items-center justify-between'>
+					<span className='flex-1'>{msg.text}</span>
 					{renderStatusIcon()}
 				</div>
 			)}
@@ -100,24 +65,15 @@ export const Message: React.FC<MessageProps> = ({ msg, onPreview, currentUserId 
 					<img
 						src={msg.imageUrl}
 						alt='attachment'
-						style={{
-							maxWidth: '200px',
-							maxHeight: '200px',
-							borderRadius: '8px',
-							marginTop: '8px',
-							cursor: 'pointer',
-						}}
+						className='max-w-48 max-h-48 rounded-lg mt-2 cursor-pointer'
 						onClick={() => onPreview(msg.imageUrl!)}
 					/>
 				</div>
 			)}
 			<div
-				style={{
-					fontSize: '11px',
-					marginTop: '4px',
-					textAlign: 'right',
-					color: isOwnMessage ? 'rgba(255,255,255,0.8)' : '#8c8c8c',
-				}}
+				className={`text-xs mt-1 text-right ${
+					isOwnMessage ? 'text-white/80' : classes.textSecondary
+				}`}
 			>
 				{formatTime(msg.createdAt)}
 			</div>

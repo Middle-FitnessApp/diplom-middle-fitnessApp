@@ -75,7 +75,7 @@ export const PersonalAccount = () => {
 
 	// Получаем план питания клиента (только если есть тренер)
 	const { data: nutritionPlanData } = useGetClientNutritionPlanQuery(
-		{ clientId: user?.id || '', period: 'day' },
+		{ period: 'day' },
 		{
 			skip: !isAuthenticated || user?.role !== 'CLIENT' || !user?.trainer,
 		},
