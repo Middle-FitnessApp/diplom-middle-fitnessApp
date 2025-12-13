@@ -16,9 +16,7 @@ import notificationRoutes from './routes/notification.routes.js'
 
 // 👇 Экспортируй функцию создания app
 export async function buildApp(): Promise<FastifyInstance> {
-	const app = Fastify({
-		logger: process.env.NODE_ENV !== 'test', // 👈 Отключаем логи в тестах
-	})
+	const app = Fastify()
 
 	errorHandler(app)
 
@@ -50,11 +48,6 @@ export async function buildApp(): Promise<FastifyInstance> {
 			httpOnly: true,
 			sameSite: 'lax',
 		},
-	})
-
-	// Health check endpoint
-	app.get('/health', async (request, reply) => {
-		return reply.send({ status: 'ok', timestamp: new Date().toISOString() })
 	})
 
 	app.register(

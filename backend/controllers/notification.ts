@@ -10,7 +10,6 @@ import { ApiError } from '../utils/ApiError.js'
  * @returns Уведомления с метаданными пагинации и счетчиком непрочитанных
  */
 export async function getNotifications(userId: string, query: GetNotificationsQueryDTO) {
-	console.log('getNotifications called for userId:', userId, 'query:', query)
 	const { page, limit, isRead } = query
 
 	// Вычисляем offset для пагинации
@@ -30,7 +29,6 @@ export async function getNotifications(userId: string, query: GetNotificationsQu
 		skip,
 		take,
 	})
-	console.log('Found notifications:', notifications.length, 'total:', notifications)
 
 	// Получаем общее количество уведомлений
 	const total = await prisma.notification.count({

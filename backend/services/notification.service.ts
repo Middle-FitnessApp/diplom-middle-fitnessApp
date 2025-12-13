@@ -8,7 +8,6 @@ export async function createNotification(
 	message: string,
 	io: SocketIOServer, // Socket.IO server instance
 ) {
-	console.log('Creating notification:', { userId, type, message })
 	// Создаём уведомление в базе данных
 	const notification = await prisma.notification.create({
 		data: {

@@ -12,6 +12,8 @@ import { GetAnalyticsQuerySchema } from '../validation/zod/progress/analytics.dt
 import { GetComparisonQuerySchema } from '../validation/zod/progress/compare.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
+import { getTrainerForClient } from '../controllers/trainer.js'
+import { createNotification } from '../services/notification.service.js'
 
 export default async function progressRoutes(app: FastifyInstance) {
 	// Регистрируем multipart, но он будет работать только для multipart/form-data
@@ -92,7 +94,6 @@ export default async function progressRoutes(app: FastifyInstance) {
 
 			const trainerId = await getTrainerForClient(req.user.id)
 			if (trainerId && app.io) {
-				console.log('Creating notification for trainerId:', trainerId)
 				await createNotification(
 					trainerId,
 					'REPORT',
@@ -320,7 +321,6 @@ export default async function progressRoutes(app: FastifyInstance) {
 			const comment = await addComment(id, req.user.id, validation.data)
 
 			// Отправляем уведомление клиенту о новом комментарии
-			const { createNotification } = await import('../services/notification.service.js')
 			const { prisma } = await import('../prisma.js')
 
 			// Получаем ID клиента из отчета о прогрессе

@@ -146,7 +146,7 @@ export function Notifications() {
 						dataSource={data.notifications}
 						renderItem={(notification: Notification) => (
 							<List.Item
-								className={`p-4! rounded-lg border mb-2 transition-colors ${
+								className={`p-4! rounded-lg border mb-2 transition-colors shadow-xl ${
 									!notification.isRead
 										? `${themeClasses.notificationUnreadBg} ${themeClasses.notificationUnreadBorder}`
 										: `${themeClasses.notificationReadBg} ${themeClasses.notificationReadBorder}`

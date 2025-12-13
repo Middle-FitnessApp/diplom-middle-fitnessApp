@@ -38,7 +38,7 @@ const start = async () => {
 
 			// Индикатор печати
 			authSocket.on('typing_start', (chatId: string) => {
-				console.log(`User ${authSocket.user.id} started typing in chat ${chatId}`)
+				console.log(`Пользователь ${authSocket.user.id} печатает в чате ${chatId}`)
 				authSocket.to(`chat_${chatId}`).emit('user_typing', {
 					userId: authSocket.user.id,
 					chatId,
@@ -46,7 +46,7 @@ const start = async () => {
 			})
 
 			authSocket.on('typing_stop', (chatId: string) => {
-				console.log(`User ${authSocket.user.id} stopped typing in chat ${chatId}`)
+				console.log(`Пользователь ${authSocket.user.id} перестал печатать в чате ${chatId}`)
 				authSocket.to(`chat_${chatId}`).emit('user_stopped_typing', {
 					userId: authSocket.user.id,
 					chatId,

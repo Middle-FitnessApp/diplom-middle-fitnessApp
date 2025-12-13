@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { Notification } from '../../types/notifications'
 
-interface NotificationsState {
+export interface NotificationsState {
 	notifications: Notification[]
 	unreadCount: number
 	isConnected: boolean

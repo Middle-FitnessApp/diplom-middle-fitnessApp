@@ -67,8 +67,6 @@ export default async function notificationRoutes(app: FastifyInstance) {
 				},
 			})
 
-			console.log('unread-count for userId:', req.user.id, 'unreadCount:', unreadCount)
-
 			return reply.status(200).send({ unreadCount })
 		},
 	)
