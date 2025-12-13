@@ -65,6 +65,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 			instance.register(nutritionRoutes, { prefix: '/nutrition' })
 			instance.register(progressRoutes, { prefix: '/progress' })
 			instance.register(chatRoutes, { prefix: '/chat' })
+			instance.register(notificationRoutes, { prefix: '/notification' })
 		},
 		{ prefix: '/api' },
 	)
