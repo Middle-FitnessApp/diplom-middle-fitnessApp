@@ -13,7 +13,7 @@ import {
 } from '../../utils/progressFunctions.ts'
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
-import { useThemeClasses } from '../../store/hooks.ts'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 import { API_BASE_URL } from '../../config/api.config'
 
 const { Title, Text } = Typography

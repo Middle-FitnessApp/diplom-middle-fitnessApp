@@ -1,6 +1,6 @@
 import { Typography } from 'antd'
 import type { ProgressReport } from '../../store/api/progress.api'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
 
@@ -9,7 +9,6 @@ interface MeasurementsCardProps {
 }
 
 export const MeasurementsCard = ({ report }: MeasurementsCardProps) => {
-
 	const classes = useThemeClasses()
 
 	return (

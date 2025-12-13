@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @layer utilities {
 	/* Пользовательские утилиты можно добавить здесь, если необходимо */
+	.no-hover:hover {
+		background-color: transparent !important;
+	}
 }
 
 /* ===========================
@@ -541,4 +544,32 @@ a:hover {
 	top: -490px;
 	left: 80px;
 	z-index: 1000;
+}
+
+/* Стили для ссылок в Header */
+.link-primary {
+	color: var(--text);
+	transition: color 0.2s ease;
+}
+
+.link-primary:hover {
+	color: var(--primary);
+}
+
+.link-active {
+	color: var(--primary);
+	transition: color 0.2s ease;
+}
+
+.link-active:hover {
+	color: var(--primary-hover);
+}
+
+.link-inactive {
+	color: var(--text-muted);
+	transition: color 0.2s ease;
+}
+
+.link-inactive:hover {
+	color: var(--primary);
 }

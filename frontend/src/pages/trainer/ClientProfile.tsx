@@ -102,7 +102,7 @@ export const ClientProfile = () => {
 											<Button
 												type='primary'
 												onClick={() => navigate(`/admin/progress/${clientId}/reports`)}
-												className='!rounded-lg'
+												className='rounded-lg!'
 											>
 												Все отчеты
 											</Button>
@@ -116,7 +116,7 @@ export const ClientProfile = () => {
 					</Col>
 				</Row>
 
-				<Card className='hover:shadow-lg transition-all duration-300 hover:-translate-y-1 !mb-8'>
+				<Card className='hover:shadow-lg transition-all duration-300 hover:-translate-y-1 mb-8!'>
 					<Title level={4} className='text-gray-800 font-semibold text-lg mb-6 pb-3 border-b-3 border-primary inline-block'>
 						График прогресса
 					</Title>

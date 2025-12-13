@@ -12,7 +12,7 @@ import { AddCommentForm, CommentsList, MeasurementsCard } from '../../components
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
 import { API_BASE_URL } from '../../config/api.config'
-import { useThemeClasses } from '../../store/hooks.ts'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
 
@@ -155,7 +155,9 @@ export const Report: FC = () => {
 								{showFront && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Спереди</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Спереди
+											</div>
 											<Image
 												src={`${API_BASE_URL}${report.photoFront}`}
 												alt='Фото спереди'
@@ -173,7 +175,9 @@ export const Report: FC = () => {
 								{showSide && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сбоку</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Сбоку
+											</div>
 											<Image
 												src={`${API_BASE_URL}${report.photoSide}`}
 												alt='Фото сбоку'
@@ -191,7 +195,9 @@ export const Report: FC = () => {
 								{showBack && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сзади</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Сзади
+											</div>
 											<Image
 												src={`${API_BASE_URL}${report.photoBack}`}
 												alt='Фото сзади'

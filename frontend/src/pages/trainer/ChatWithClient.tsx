@@ -3,7 +3,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Chat } from '../../components/Chat'
 import { useGetClientsQuery } from '../../store/api/trainer.api'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
 

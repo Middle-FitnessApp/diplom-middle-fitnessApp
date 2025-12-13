@@ -92,6 +92,24 @@ export default async function chatRoutes(app: FastifyInstance) {
 				if (chat) {
 					io.to(`user_${chat.trainerId}`).emit('chat_updated')
 					io.to(`user_${chat.clientId}`).emit('chat_updated')
+
+					// Создаем уведомление о новом сообщении
+					try {
+						const { createNotification } = await import(
+							'../services/notification.service.js'
+						)
+						const senderName = message.sender.name
+
+						// Определяем получателя и отправляем уведомление
+						const receiverId =
+							chat.trainerId === req.user.id ? chat.clientId : chat.trainerId
+						const notificationMessage = `Новое сообщение от ${senderName}`
+
+						await createNotification(receiverId, 'MESSAGE', notificationMessage, io)
+					} catch (error) {
+						console.error('Error creating notification:', error)
+						// Не прерываем отправку сообщения из-за ошибки уведомления
+					}
 				}
 			}
 

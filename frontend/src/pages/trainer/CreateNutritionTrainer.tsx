@@ -8,6 +8,7 @@ import {
 	useCreateSubcategoryWithDaysMutation,
 	useGetCategoriesQuery,
 } from '../../store/api/nutrition.api'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -39,6 +40,9 @@ export const CreateNutritionTrainer = () => {
 	const [isDayFormVisible, setIsDayFormVisible] = useState(false)
 	const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
 	const [days, setDays] = useState<LocalDay[]>([])
+
+	const themeState = useAppSelector((state) => state.ui.theme)
+	const headerBgClass = themeState === 'dark' ? 'bg-dark' : 'bg-light'
 
 	// API
 	const [createSubcategoryWithDays, { isLoading: isCreating }] =
@@ -205,7 +209,9 @@ export const CreateNutritionTrainer = () => {
 	}
 
 	return (
-		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+		<div
+			className={`${headerBgClass} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
+		>
 			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-4xl'>
 				{/* Header */}
 				<div className='flex items-center gap-4 mb-6'>
@@ -229,7 +235,7 @@ export const CreateNutritionTrainer = () => {
 
 				<Form form={form} layout='vertical' onFinish={handleSubmit}>
 					{/* Основная информация */}
-					<Card className='mb-6' title='Основная информация'>
+					<Card className='mb-6!' title='Основная информация'>
 						<Form.Item
 							name='name'
 							label='Название плана'
@@ -339,7 +345,7 @@ export const CreateNutritionTrainer = () => {
 					</Card>
 
 					{/* Кнопки действий */}
-					<div className='flex justify-end gap-3'>
+					<div className='flex justify-end gap-3 mt-4'>
 						<Button size='large' onClick={handleCancel}>
 							Отмена
 						</Button>
@@ -349,6 +355,9 @@ export const CreateNutritionTrainer = () => {
 							size='large'
 							loading={isCreating}
 							disabled={days.length === 0}
+							style={{
+								color: days.length === 0 && themeState === 'dark' ? '#999' : undefined,
+							}}
 						>
 							{isCreating ? 'Создание...' : `Создать план (${days.length} дней)`}
 						</Button>
@@ -364,7 +373,7 @@ export const CreateNutritionTrainer = () => {
 					onCancel={handleDayFormCancel}
 					footer={null}
 					width={800}
-					destroyOnClose
+					destroyOnHidden={true}
 				>
 					<CreateDayForm
 						day={getEditingDay()}

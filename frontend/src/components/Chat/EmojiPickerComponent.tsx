@@ -1,6 +1,6 @@
 import React from 'react'
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 type EmojiPickerProps = {
 	onSelect: (emoji: string) => void

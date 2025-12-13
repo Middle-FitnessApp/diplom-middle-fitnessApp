@@ -12,6 +12,7 @@ import {
 	Report,
 	Trainer,
 } from '../pages/client'
+import { Notifications } from '../components/Common'
 import {
 	AddNutritionTrainer,
 	Admin,
@@ -111,6 +112,14 @@ export const AppRouter = () => {
 					</ProtectedRoute>
 				}
 			/>
+			<Route
+				path='/me/notifications'
+				element={
+					<ProtectedRoute requiredRole={['CLIENT', 'TRAINER']}>
+						<Notifications />
+					</ProtectedRoute>
+				}
+			/>
 			{/* Trainer routes - защищённые, требуют роль TRAINER */}
 			<Route
 				path='/admin'
@@ -181,6 +190,14 @@ export const AppRouter = () => {
 				element={
 					<ProtectedRoute requiredRole='TRAINER'>
 						<Report />
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path='/admin/notifications'
+				element={
+					<ProtectedRoute requiredRole='TRAINER'>
+						<Notifications />
 					</ProtectedRoute>
 				}
 			/>

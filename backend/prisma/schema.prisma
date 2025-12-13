@@ -21,6 +21,13 @@ enum MealType {
   DINNER
 }
 
+enum NotificationType {
+  REPORT
+  COMMENT
+  PLAN
+  MESSAGE
+}
+
 model User {
   // общие поля
   id        String   @id @default(cuid())
@@ -49,6 +56,7 @@ model User {
   refreshTokens   RefreshToken[]
   progressReports Progress[]
   comments        Comment[]
+  notifications   Notification[]
 
   // связи тренер–клиент
   trainerClients TrainerClient[] @relation("TrainerClientsAsTrainer")
@@ -271,4 +279,17 @@ model Message {
 
   @@index([chatId])
   @@index([senderId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
 }

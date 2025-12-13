@@ -1,8 +1,9 @@
 import React from 'react'
-import { List, Avatar, Badge, Tooltip, Empty, Typography } from 'antd'
-import { UserOutlined, MessageOutlined } from '@ant-design/icons'
+import { List, Avatar, Badge, Empty, Typography } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
+import type { Chat } from '../../store/api/chat.api'
 
 const { Text } = Typography
 
@@ -17,9 +18,10 @@ interface SidebarClient {
 
 interface SidebarProps {
 	clients: SidebarClient[]
+	chats?: { chats: Chat[] }
 }
 
-export const TrainerSidebar: React.FC<SidebarProps> = ({ clients }) => {
+export const TrainerSidebar: React.FC<SidebarProps> = ({ clients, chats }) => {
 	const navigate = useNavigate()
 	const classes = useThemeClasses()
 
@@ -61,51 +63,41 @@ export const TrainerSidebar: React.FC<SidebarProps> = ({ clients }) => {
 				<List
 					className={`space-y-1`}
 					dataSource={clients}
-					renderItem={(client) => (
-						<List.Item
-							className={`group ${classes.hoverBg} rounded-lg cursor-pointer px-3! py-2 transition`}
-							style={{ borderBottom: 'none', marginBottom: 4 }}
-							onClick={() => handleClientClick(client.id)}
-						>
-							<div className='flex items-center gap-3 w-full'>
-								{/* Аватар */}
-								<Avatar
-									src={getPhotoUrl(client.avatarUrl)}
-									icon={<UserOutlined />}
-									size={40}
-								/>
+					renderItem={(client) => {
+						const unreadCount =
+							chats?.chats?.find((c) => c.clientId === client.id)?.unreadCount || 0
 
-								{/* Имя */}
-								<div className='flex-1 min-w-0'>
-									<span className='text-base font-medium block truncate'>
-										{client.name}
-									</span>
-									{client.hasNewReport && (
-										<Text type='success' className='text-xs'>
-											📊 Новый отчёт
-										</Text>
-									)}
-								</div>
-
-								{/* Непрочитанные сообщения */}
-								<div className='flex items-center gap-2'>
-									{client.unreadMessages > 0 ? (
-										<Badge
-											count={client.unreadMessages}
-											style={{ backgroundColor: 'var(--primary)' }}
+						return (
+							<List.Item
+								className={`group ${classes.hoverBg} rounded-lg cursor-pointer px-3! py-2 transition`}
+								style={{ borderBottom: 'none', marginBottom: 4 }}
+								onClick={() => handleClientClick(client.id)}
+							>
+								<div className='flex items-center gap-3 w-full'>
+									{/* Аватар */}
+									<Badge dot={unreadCount > 0}>
+										<Avatar
+											src={getPhotoUrl(client.avatarUrl)}
+											icon={<UserOutlined />}
+											size={40}
 										/>
-									) : (
-										<Tooltip title='Открыть чат'>
-											<MessageOutlined
-												className='text-gray-400 group-hover:text-blue-500 transition'
-												style={{ fontSize: 16 }}
-											/>
-										</Tooltip>
-									)}
+									</Badge>
+
+									{/* Имя */}
+									<div className='flex-1 min-w-0'>
+										<span className='text-base font-medium block truncate'>
+											{client.name}
+										</span>
+										{client.hasNewReport && (
+											<Text type='success' className='text-xs'>
+												📊 Новый отчёт
+											</Text>
+										)}
+									</div>
 								</div>
-							</div>
-						</List.Item>
-					)}
+							</List.Item>
+						)
+					}}
 				/>
 			)}
 		</>
