@@ -1,3 +1,4 @@
+import { MAX_NUTRITION_DAYS } from 'consts/nutrition.js'
 import { z } from 'zod'
 
 export const CreateNutritionDaySchema = z.object({
@@ -5,7 +6,11 @@ export const CreateNutritionDaySchema = z.object({
 		.string()
 		.min(1, 'Название дня обязательно')
 		.max(100, 'Название дня слишком длинное'),
-	dayOrder: z.number().int().min(1, 'Порядок дня должен быть положительным'),
+	dayOrder: z
+		.number()
+		.int()
+		.min(1, 'Порядок дня должен быть положительным')
+		.max(MAX_NUTRITION_DAYS, `Порядок дня не может превышать ${MAX_NUTRITION_DAYS}`),
 	meals: z
 		.array(
 			z.object({
