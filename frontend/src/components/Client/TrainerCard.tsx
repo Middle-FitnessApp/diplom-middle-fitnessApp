@@ -287,7 +287,7 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 			</div>
 
 			{/* Контент */}
-			<div style={{ padding: '20px', marginTop: -20 }}>
+			<div className='p-5 -mt-5 pb-0 pr-0 pl-0'>
 				<div style={contentBlockStyle}>
 					<Text strong style={nameStyle}>
 						{trainer.name}

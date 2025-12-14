@@ -1022,3 +1022,25 @@ export async function updateNutritionPlan(
 		updatedAt: updatedPlan.updatedAt,
 	}
 }
+
+/**
+ * Получает тренера для клиента
+ * @param clientId - ID клиента
+ * @returns ID тренера или null, если тренер не найден
+ */
+export async function getTrainerForClient(clientId: string): Promise<string | null> {
+	const relationship = await prisma.trainerClient.findFirst({
+		where: {
+			clientId,
+			status: 'ACCEPTED',
+		},
+		select: {
+			trainerId: true,
+		},
+		orderBy: {
+			createdAt: 'desc', // Берем самую свежую связь
+		},
+	})
+
+	return relationship?.trainerId || null
+}

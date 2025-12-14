@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { NutritionMeal, NutritionDay, MealType } from '../../types/nutritions'
 import { mealTypes } from '../../constants/mealTypes'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 interface CreateDayFormProps {
 	day?: NutritionDay | null
@@ -23,6 +24,7 @@ export const CreateDayForm = ({
 }: CreateDayFormProps) => {
 	const [form] = Form.useForm()
 	const [meals, setMeals] = useState<NutritionMeal[]>([])
+	const classes = useThemeClasses()
 
 	// Инициализация meals при монтировании или изменении day
 	useEffect(() => {
@@ -38,10 +40,10 @@ export const CreateDayForm = ({
 				name: 'Завтрак',
 				mealOrder: 1,
 				items: [''],
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-		}
-		setMeals([defaultMeal])
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			}
+			setMeals([defaultMeal])
 		}
 	}, [day])
 
@@ -176,13 +178,13 @@ export const CreateDayForm = ({
 				<Input placeholder='Например: День 1, Понедельник...' />
 			</Form.Item>
 
-			<div className='space-y-4'>
+			<div className='space-y-4!'>
 				{meals.map((meal) => (
 					<Card
 						key={meal.id}
 						size='small'
 						title={
-							<div className='flex items-center gap-2'>
+							<div className='flex items-center gap-2 mt-3 mb-3'>
 								<Select
 									value={meal.type}
 									onChange={(value) => handleMealTypeChange(meal.id, value as MealType)}
@@ -242,7 +244,7 @@ export const CreateDayForm = ({
 				Добавить прием пищи
 			</Button>
 
-			<Form.Item className='mt-8 mb-4 pt-6 pb-2 border-t border-gray-200'>
+			<Form.Item className={`mt-4! mb-0! pt-4! border-t ${classes.border}`}>
 				<div className='flex justify-end gap-3'>
 					<Button onClick={onCancel} size='large'>
 						Отмена

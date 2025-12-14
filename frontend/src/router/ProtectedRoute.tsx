@@ -7,7 +7,7 @@ import { setUser } from '../store/slices/auth.slice'
 
 interface ProtectedRouteProps {
 	children: React.ReactNode
-	requiredRole?: 'CLIENT' | 'TRAINER'
+	requiredRole?: 'CLIENT' | 'TRAINER' | ('CLIENT' | 'TRAINER')[]
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -43,9 +43,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	// Загрузка данных пользователя
 	if (isLoading) {
 		return (
-			<div className="gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start">
-				<div className="flex justify-center items-center py-20">
-					<Spin size="large" />
+			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+				<div className='flex justify-center items-center py-20'>
+					<Spin size='large' />
 				</div>
 			</div>
 		)
@@ -59,14 +59,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	const currentUser = meData.user
 
 	// Проверка роли если требуется
-	if (requiredRole && currentUser.role !== requiredRole) {
-		// Клиент пытается попасть на страницы тренера
-		if (requiredRole === 'TRAINER' && currentUser.role === 'CLIENT') {
-			return <Navigate to='/me' replace />
-		}
-		// Тренер пытается попасть на страницы клиента
-		if (requiredRole === 'CLIENT' && currentUser.role === 'TRAINER') {
-			return <Navigate to='/admin' replace />
+	if (requiredRole) {
+		const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole]
+		if (!allowedRoles.includes(currentUser.role)) {
+			// Клиент пытается попасть на страницы тренера
+			if (
+				allowedRoles.includes('TRAINER') &&
+				!allowedRoles.includes('CLIENT') &&
+				currentUser.role === 'CLIENT'
+			) {
+				return <Navigate to='/me' replace />
+			}
+			// Тренер пытается попасть на страницы клиента
+			if (
+				allowedRoles.includes('CLIENT') &&
+				!allowedRoles.includes('TRAINER') &&
+				currentUser.role === 'TRAINER'
+			) {
+				return <Navigate to='/admin' replace />
+			}
 		}
 	}
 

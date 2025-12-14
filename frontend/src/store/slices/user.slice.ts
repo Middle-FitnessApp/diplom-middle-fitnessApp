@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { UserProfile, BodyMeasurement } from '../types/user.types'
 
-interface UserState {
+export interface UserState {
 	profile: UserProfile | null
 	bodyMeasurements: BodyMeasurement[]
 	selectedMetric: keyof BodyMeasurement

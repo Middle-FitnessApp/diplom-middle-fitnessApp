@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Form, Typography, Spin, Alert, message } from 'antd'
 import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import type { MessageType, ChatUploadFile } from '../../types'
@@ -6,12 +6,8 @@ import { MessageList } from './MessageList'
 import { InputPanel } from './InputPanel'
 import { ImagePreviewModal } from './ImagePreviewModal'
 import { TypingIndicator } from './TypingIndicator'
-import {
-	useAppDispatch,
-	useAppSelector,
-	selectChatMessages,
-	useThemeClasses,
-} from '../../store/hooks'
+import { useAppDispatch, useAppSelector, selectChatMessages } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 import {
 	addMessage,
 	receiveMessage,
@@ -93,6 +89,14 @@ export const Chat: React.FC<ChatProps> = ({
 		return id
 	}, [propChatId, chatsData, partnerId, role])
 
+	// Ref для хранения актуального chatId в обработчиках событий
+	const chatIdRef = useRef<string | undefined>(chatId)
+
+	// Обновляем ref при изменении chatId
+	useEffect(() => {
+		chatIdRef.current = chatId
+	}, [chatId])
+
 	// Подключение к Socket.IO и подписка на события
 	useEffect(() => {
 		if (!currentUser) return
@@ -119,22 +123,54 @@ export const Chat: React.FC<ChatProps> = ({
 					// Отмечаем как прочитанное только если это активный чат
 					if (message.chatId === chatId) {
 						dispatch(markAsRead(message.chatId))
+
+						// Скрыть индикатор печати при получении сообщения от собеседника
+						if (message.senderId !== currentUser.id) {
+							dispatch(updateTyping({ chatId: message.chatId, isTyping: false }))
+
+							// Очистить таймер автоматического скрытия
+							if (typingIndicatorTimeoutRef.current) {
+								clearTimeout(typingIndicatorTimeoutRef.current)
+								typingIndicatorTimeoutRef.current = null
+							}
+						}
 					}
 				}
 
 				// Обработчик начала печати
 				const handleUserTyping = (data: { chatId: string; userId: string }) => {
-					// Проверяем только что это не наше сообщение
-					if (data.userId !== currentUser.id) {
+					// Используем актуальный chatId из ref
+					const currentChatId = chatIdRef.current
+					// Проверяем только что это не наше сообщение и что это наш чат
+					if (data.userId !== currentUser.id && data.chatId === currentChatId) {
 						dispatch(updateTyping({ chatId: data.chatId, isTyping: true }))
+
+						// Очистить предыдущий таймер автоматического скрытия
+						if (typingIndicatorTimeoutRef.current) {
+							clearTimeout(typingIndicatorTimeoutRef.current)
+						}
+
+						// Установить таймер для автоматического скрытия индикатора через 3 секунды
+						typingIndicatorTimeoutRef.current = setTimeout(() => {
+							dispatch(updateTyping({ chatId: data.chatId, isTyping: false }))
+							typingIndicatorTimeoutRef.current = null
+						}, 3000)
 					}
 				}
 
 				// Обработчик остановки печати
 				const handleUserStoppedTyping = (data: { chatId: string; userId: string }) => {
-					// Проверяем только что это не наше сообщение
-					if (data.userId !== currentUser.id) {
+					// Используем актуальный chatId из ref
+					const currentChatId = chatIdRef.current
+					// Проверяем только что это не наше сообщение и что это наш чат
+					if (data.userId !== currentUser.id && data.chatId === currentChatId) {
 						dispatch(updateTyping({ chatId: data.chatId, isTyping: false }))
+
+						// Очистить таймер автоматического скрытия
+						if (typingIndicatorTimeoutRef.current) {
+							clearTimeout(typingIndicatorTimeoutRef.current)
+							typingIndicatorTimeoutRef.current = null
+						}
 					}
 				}
 
@@ -156,8 +192,15 @@ export const Chat: React.FC<ChatProps> = ({
 					socket.off('user_typing', handleUserTyping)
 					socket.off('user_stopped_typing', handleUserStoppedTyping)
 
-					if (chatId) {
-						socket.emit('leave_chat', chatId)
+					const currentChatId = chatIdRef.current
+					if (currentChatId) {
+						socket.emit('leave_chat', currentChatId)
+					}
+
+					// Очистить таймеры
+					if (typingIndicatorTimeoutRef.current) {
+						clearTimeout(typingIndicatorTimeoutRef.current)
+						typingIndicatorTimeoutRef.current = null
 					}
 				}
 			} catch (error) {
@@ -172,6 +215,14 @@ export const Chat: React.FC<ChatProps> = ({
 		isLoading: messagesLoading,
 		error: messagesError,
 	} = useGetMessagesQuery({ chatId: chatId!, page: 1, limit: 50 }, { skip: !chatId })
+
+	// Обновляем список чатов после загрузки сообщений (они автоматически отмечаются как прочитанные на сервере)
+	useEffect(() => {
+		if (messagesData && chatId) {
+			// Инвалидируем теги чатов, чтобы обновить unreadCount в списке чатов
+			dispatch(chatApi.util.invalidateTags(['Chats']))
+		}
+	}, [messagesData, chatId, dispatch])
 	const [sendMessage, { isLoading: sendLoading }] = useSendMessageMutation()
 
 	const [form] = Form.useForm()
@@ -181,6 +232,7 @@ export const Chat: React.FC<ChatProps> = ({
 	const [inputValue, setInputValue] = useState('')
 	const [isOnline, setIsOnline] = useState(navigator.onLine)
 	const [typingTimeout, setTypingTimeout] = useState<number | null>(null)
+	const typingIndicatorTimeoutRef = useRef<number | null>(null)
 
 	// Получить состояние чата из Redux
 	const typing = useAppSelector((state) => (chatId ? state.chat.typing[chatId] : false))
@@ -221,6 +273,8 @@ export const Chat: React.FC<ChatProps> = ({
 		if (chatId) {
 			dispatch(setActiveChat(chatId))
 			dispatch(markAsRead(chatId))
+			// Инвалидируем теги чатов, чтобы обновить unreadCount в списке чатов
+			dispatch(chatApi.util.invalidateTags(['Chats']))
 		}
 	}, [chatId, dispatch])
 
@@ -499,7 +553,7 @@ export const Chat: React.FC<ChatProps> = ({
 					</div>
 
 					{/* Индикатор печати вне скроллящегося контейнера */}
-					{typing && messages.length > 0 && (
+					{typing && (
 						<div className='px-6 py-2'>
 							<TypingIndicator />
 						</div>

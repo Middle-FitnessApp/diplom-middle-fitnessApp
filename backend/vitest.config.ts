@@ -4,9 +4,9 @@ import { existsSync } from 'fs'
 
 if (existsSync('.env.test')) {
 	dotenv.config({ path: '.env.test' })
-	console.log('✅ Loaded .env.test for integration tests')
+	console.log('✅ Загружен .env.test для интеграционных тестов.')
 } else {
-	console.log('⚠️  .env.test not found, using system env (unit tests only)')
+	console.log('⚠️  .env.test не найден, используется системная среда (только модульные тесты)')
 }
 
 export default defineConfig({

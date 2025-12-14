@@ -12,12 +12,11 @@ import trainerRoutes from './routes/trainer.routes.js'
 import nutritionRoutes from './routes/nutrition.routes.js'
 import progressRoutes from './routes/progress.routes.js'
 import chatRoutes from './routes/chat.routes.js'
+import notificationRoutes from './routes/notification.routes.js'
 
 // 👇 Экспортируй функцию создания app
 export async function buildApp(): Promise<FastifyInstance> {
-	const app = Fastify({
-		logger: process.env.NODE_ENV !== 'test', // 👈 Отключаем логи в тестах
-	})
+	const app = Fastify()
 
 	errorHandler(app)
 
@@ -51,11 +50,6 @@ export async function buildApp(): Promise<FastifyInstance> {
 		},
 	})
 
-	// Health check endpoint
-	app.get('/health', async (request, reply) => {
-		return reply.send({ status: 'ok', timestamp: new Date().toISOString() })
-	})
-
 	app.register(
 		async (instance) => {
 			instance.register(authRoutes, { prefix: '/auth' })
@@ -64,6 +58,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 			instance.register(nutritionRoutes, { prefix: '/nutrition' })
 			instance.register(progressRoutes, { prefix: '/progress' })
 			instance.register(chatRoutes, { prefix: '/chat' })
+			instance.register(notificationRoutes, { prefix: '/notification' })
 		},
 		{ prefix: '/api' },
 	)

@@ -70,6 +70,7 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 				<Empty
 					image={Empty.PRESENTED_IMAGE_SIMPLE}
 					description={<Text type='secondary'>Нет новых заявок от клиентов</Text>}
+					style={{ padding: '40px 0' }}
 				/>
 			) : (
 				<List

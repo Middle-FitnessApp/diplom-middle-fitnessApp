@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../../store'
-import { Layout, Button, Typography, Spin, message, Tabs, Row, Col } from 'antd'
+import { Layout, Button, Typography, Spin, message, Tabs, Row, Col, Badge } from 'antd'
 import { MenuOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
 	ClientsGrid,
@@ -23,7 +23,9 @@ import {
 import { useGetMeQuery } from '../../store/api/user.api'
 import { userApi } from '../../store/api/user.api'
 import { toggleSidebar } from '../../store/slices/ui.slice'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
+import { useGetChatsQuery } from '../../store/api/chat.api'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text } = Typography
 const { Content, Sider } = Layout
@@ -34,10 +36,16 @@ export const Admin: React.FC = () => {
 	const [rejectingId, setRejectingId] = useState<string | null>(null)
 	const [activeTab, setActiveTab] = useState('overview')
 	const classes = useThemeClasses()
+	const themeState = useAppSelector((state) => state.ui.theme)
+
+	const headerBgClass = themeState === 'dark' ? 'bg-dark' : 'bg-light'
 
 	// текущий пользователь (для проверки загрузки)
 	const { data: meData, isLoading: isLoadingMe } = useGetMeQuery()
 	const trainerId = meData?.user.id
+
+	// чаты для обновления unreadCount
+	const { data: chatsData, refetch: refetchChats } = useGetChatsQuery()
 
 	// клиенты тренера с сервера (только ACCEPTED)
 	const {
@@ -67,6 +75,26 @@ export const Admin: React.FC = () => {
 	const sidebarCollapsed = useSelector(
 		(state: RootState) => state.ui.isSidebarOpen === false,
 	)
+
+	const unreadNotificationsCount = useSelector(
+		(state: RootState) => state.notifications.unreadCount,
+	)
+
+	// Автоматическое обновление данных при новом уведомлении
+	useEffect(() => {
+		if (unreadNotificationsCount > 0) {
+			refetchClients()
+			refetchInvites()
+			refetchStats()
+			refetchChats()
+		}
+	}, [
+		unreadNotificationsCount,
+		refetchClients,
+		refetchInvites,
+		refetchStats,
+		refetchChats,
+	])
 
 	const handleToggleSidebar = () => dispatch(toggleSidebar())
 
@@ -300,13 +328,18 @@ export const Admin: React.FC = () => {
 	]
 
 	return (
-			<Layout className={`min-h-screen overflow-hidden bg-transparent`}>
-				<Sider
-					width={sidebarCollapsed ? 80 : 300}
-					collapsed={sidebarCollapsed}
-					className={`${classes.border} border-r  shadow-md h-screen overflow-y-auto`}
-				>
-					<div className={`p-4 border-b ${classes.border}`}>
+		<Layout className={`min-h-screen overflow-hidden ${headerBgClass}`}>
+			<Sider
+				width={sidebarCollapsed ? 80 : 300}
+				collapsed={sidebarCollapsed}
+				className={`${classes.border} border-r  shadow-md h-screen overflow-y-auto`}
+			>
+				<div className={`p-4 border-b ${classes.border} flex justify-center`}>
+					<Badge
+						dot={
+							chatsData?.chats?.some((chat) => chat.unreadCount > 0) && sidebarCollapsed
+						}
+					>
 						<Button
 							type='text'
 							icon={<MenuOutlined style={{ fontSize: 18 }} />}
@@ -315,46 +348,50 @@ export const Admin: React.FC = () => {
 						>
 							{!sidebarCollapsed && <span className='ml-2'>Свернуть</span>}
 						</Button>
+					</Badge>
+				</div>
+
+				{!sidebarCollapsed && (
+					<div className={`p-4`}>
+						<TrainerSidebar clients={sidebarClients} chats={chatsData} />
 					</div>
+				)}
+			</Sider>
 
-					{!sidebarCollapsed && (
-						<div className={`p-4`}>
-							<TrainerSidebar clients={sidebarClients} />
-						</div>
-					)}
-				</Sider>
-
-				<Content className='h-screen overflow-y-auto bg-transparent! p-0!'>
-					<div className='bg-light p-10 shadow-xl w-full min-h-full'>
-						{/* Header */}
-						<div className='flex items-center justify-between mb-6'>
-							<div className='text-left'>
-								<Title level={2} className={`${classes.title} font-semibold mb-0 pb-3 border-b-3 border-primary inline-block`}>
-									🏢 Панель тренера
-								</Title>
-								<Text type='secondary' className='block mt-1'>
-									Управляйте клиентами и планами питания
-								</Text>
-							</div>
-							<Button
-								icon={<ReloadOutlined />}
-								onClick={handleRefresh}
-								style={{ borderRadius: '8px' }}
+			<Content className='h-screen overflow-y-auto bg-transparent! p-0!'>
+				<div className='bg-light p-10 shadow-xl w-full min-h-full'>
+					{/* Header */}
+					<div className='flex items-center justify-between mb-6'>
+						<div className='text-left'>
+							<Title
+								level={2}
+								className={`${classes.title} font-semibold mb-0 pb-3 border-b-3 border-primary inline-block`}
 							>
-								Обновить
-							</Button>
+								🏢 Панель тренера
+							</Title>
+							<Text type='secondary' className='block mt-1'>
+								Управляйте клиентами и планами питания
+							</Text>
 						</div>
-
-						{/* Tabs */}
-						<Tabs
-							activeKey={activeTab}
-							onChange={setActiveTab}
-							items={tabItems}
-							size='large'
-							style={{ marginTop: '16px' }}
-						/>
+						<Button
+							icon={<ReloadOutlined />}
+							onClick={handleRefresh}
+							style={{ borderRadius: '8px' }}
+						>
+							Обновить
+						</Button>
 					</div>
-				</Content>
-			</Layout>
+
+					{/* Tabs */}
+					<Tabs
+						activeKey={activeTab}
+						onChange={setActiveTab}
+						items={tabItems}
+						size='large'
+						style={{ marginTop: '16px' }}
+					/>
+				</div>
+			</Content>
+		</Layout>
 	)
 }

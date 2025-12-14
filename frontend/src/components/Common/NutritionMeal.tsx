@@ -1,6 +1,7 @@
 import React from 'react'
 import { Typography, Tag } from 'antd'
 import { CoffeeOutlined, AppleOutlined } from '@ant-design/icons'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 import type { NutritionMeal } from '../../types/nutritions'
 
 const { Text } = Typography
@@ -33,6 +34,7 @@ interface MealCardProps {
 }
 
 export const MealCard: React.FC<MealCardProps> = ({ meal, variant = 'client' }) => {
+	const classes = useThemeClasses()
 	if (variant === 'trainer') {
 		// Стиль для тренера - с цветами и градиентами
 		return (
@@ -59,7 +61,7 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, variant = 'client' }) 
 				{meal.items && meal.items.length > 0 ? (
 					<ul className='list-disc ml-6 mt-2 space-y-1'>
 						{meal.items.map((item: string, index: number) => (
-							<li key={index} className='text-gray-600'>
+							<li key={index} className={classes.textSecondary}>
 								{item}
 							</li>
 						))}

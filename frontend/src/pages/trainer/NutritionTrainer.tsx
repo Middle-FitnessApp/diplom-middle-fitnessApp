@@ -28,6 +28,7 @@ import {
 import { ModalForCreateCategory } from '../../components/Admin/ModalForCreateCategory'
 import type { NutritionCategory, NutritionSubcategory } from '../../types/nutritions'
 import type { ApiError } from '../../store/types/auth.types'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text, Paragraph } = Typography
 const { Search } = Input
@@ -38,6 +39,9 @@ export const NutritionTrainer = () => {
 	const [newCategoryName, setNewCategoryName] = useState('')
 	const [newCategoryDescription, setNewCategoryDescription] = useState('')
 	const [searchQuery, setSearchQuery] = useState('')
+
+	const themeState = useAppSelector((state) => state.ui.theme)
+	const headerBgClass = themeState === 'dark' ? 'bg-dark' : 'bg-light'
 
 	const {
 		data: categories = [],
@@ -156,12 +160,17 @@ export const NutritionTrainer = () => {
 	}
 
 	return (
-		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
+		<div
+			className={`${headerBgClass} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
+		>
 			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-6xl'>
 				{/* Header */}
 				<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8'>
 					<div>
-						<Title level={2} className='text-gray-800 font-semibold m-0 pb-3 border-b-3 border-primary inline-block'>
+						<Title
+							level={2}
+							className='text-gray-800 font-semibold m-0 pb-3 border-b-3 border-primary inline-block'
+						>
 							📚 Библиотека планов питания
 						</Title>
 						<Text type='secondary' className='text-sm mt-1 block'>
@@ -207,7 +216,7 @@ export const NutritionTrainer = () => {
 
 				{/* Categories */}
 				{filteredCategories.length > 0 ? (
-					<div className='space-y-6'>
+					<div className='space-y-6!'>
 						{filteredCategories.map((category: NutritionCategory) => (
 							<Card
 								key={category.id}

@@ -5,7 +5,7 @@ import {
 	ExclamationCircleOutlined,
 } from '@ant-design/icons'
 import type { MessageType } from '../../types'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 type MessageProps = {
 	msg: MessageType

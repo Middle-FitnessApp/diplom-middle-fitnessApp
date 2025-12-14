@@ -241,7 +241,7 @@ export const AllReports: FC = () => {
 
 											{shouldShowPhoto && (
 												<div
-													className='flex-shrink-0 md:ml-4'
+													className='shrink-0 md:ml-4'
 													onClick={(e) => e.stopPropagation()}
 												>
 													<img
