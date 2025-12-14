@@ -23,6 +23,7 @@ import {
 	useDeleteDayMutation,
 	useGetCategoriesQuery,
 } from '../../store/api/nutrition.api'
+import { MAX_DAYS } from '../../constants/nutritionTrainer'
 
 const { Title, Text } = Typography
 
@@ -227,14 +228,16 @@ export const NutritionPlanTrainer = () => {
 							)}
 						</div>
 					</div>
-					<Button
-						type='primary'
-						icon={<PlusOutlined />}
-						onClick={handleAddDay}
-						loading={isCreating}
-					>
-						Добавить день
-					</Button>
+					{(daysResponse?.pagination?.total || 0) < MAX_DAYS && (
+						<Button
+							type='primary'
+							icon={<PlusOutlined />}
+							onClick={handleAddDay}
+							loading={isCreating}
+						>
+							Добавить день
+						</Button>
+					)}
 				</div>
 
 				{/* Stats */}

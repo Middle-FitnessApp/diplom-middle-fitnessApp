@@ -9,6 +9,7 @@ import {
 	useGetCategoriesQuery,
 } from '../../store/api/nutrition.api'
 import { useAppSelector } from '../../store/hooks'
+import { MAX_DAYS } from '../../constants/nutritionTrainer'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -264,14 +265,16 @@ export const CreateNutritionTrainer = () => {
 						title={
 							<div className='flex justify-between items-center'>
 								<span>Дни плана ({days.length})</span>
-								<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
-									Добавить день
-								</Button>
+								{days.length < MAX_DAYS && (
+									<Button type='primary' icon={<PlusOutlined />} onClick={handleAddDay}>
+										Добавить день
+									</Button>
+								)}
 							</div>
 						}
 					>
 						{days.length > 0 ? (
-							<div className='space-y-4'>
+							<div className='space-y-4!'>
 								{days.map((day, index) => (
 									<Card
 										key={day.id}
