@@ -9,6 +9,7 @@ const mockPrisma = {
 		create: vi.fn(),
 		update: vi.fn(),
 		delete: vi.fn(),
+		count: vi.fn(),
 	},
 	nutritionSubcategory: {
 		findUnique: vi.fn(),
@@ -43,6 +44,9 @@ describe('Дни плана питания', () => {
 			id: subcategoryId,
 			category: { trainerId },
 		})
+
+		mockPrisma.nutritionDay.count.mockResolvedValue(0)
+
 		mockPrisma.nutritionDay.create.mockResolvedValue({
 			id: dayId,
 			subcatId: subcategoryId,
@@ -69,6 +73,10 @@ describe('Дни плана питания', () => {
 			where: { id: subcategoryId },
 			include: { category: true },
 		})
+
+		expect(mockPrisma.nutritionDay.count).toHaveBeenCalledWith({
+			where: { subcatId: subcategoryId },
+		})
 		expect(mockPrisma.nutritionDay.create).toHaveBeenCalledWith(
 			expect.objectContaining({
 				data: expect.objectContaining({
@@ -82,6 +90,45 @@ describe('Дни плана питания', () => {
 			}),
 		)
 		expect(reply.status).toHaveBeenCalledWith(201)
+	})
+
+	// 🔥 ИСПРАВЛЕННЫЙ ТЕСТ: проверка лимита 31 день
+	it('нельзя создать больше 31 дня в подкатегории', async () => {
+		mockPrisma.nutritionSubcategory.findUnique.mockResolvedValue({
+			id: subcategoryId,
+			category: { trainerId },
+		})
+		// Мокаем, что уже существует 31 день
+		mockPrisma.nutritionDay.count.mockResolvedValue(31)
+
+		const { createNutritionDay } = await import('../../controllers/nutrition.js')
+		const req = {
+			user: { id: trainerId },
+			params: { id: subcategoryId },
+			body: {
+				dayTitle: '32-й день',
+				dayOrder: 32,
+				meals: validMeals,
+			},
+		}
+		const reply = { status: vi.fn(), send: vi.fn() }
+
+		// Проверяем, что выбрасывается ApiError
+		await expect(createNutritionDay(req as any, reply as any)).rejects.toThrow(ApiError)
+
+		// Альтернатива: проверяем конкретное сообщение
+		try {
+			await createNutritionDay(req as any, reply as any)
+			// Если не выбросилась ошибка - тест должен упасть
+			expect.fail('Ожидалась ошибка, но её не было')
+		} catch (error) {
+			expect(error).toBeInstanceOf(ApiError)
+			expect((error as ApiError).message).toContain('31')
+			expect((error as ApiError).statusCode).toBe(400)
+		}
+
+		// Проверяем, что create НЕ вызывался
+		expect(mockPrisma.nutritionDay.create).not.toHaveBeenCalled()
 	})
 
 	it('нельзя создать день в чужой подкатегории', async () => {
@@ -112,6 +159,8 @@ describe('Дни плана питания', () => {
 			id: subcategoryId,
 			category: { trainerId },
 		})
+
+		mockPrisma.nutritionDay.count.mockResolvedValue(0)
 
 		const { createNutritionDay } = await import('../../controllers/nutrition.js')
 		const req = {

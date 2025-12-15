@@ -8,7 +8,7 @@ import {
 	type CreateNutritionDayDto,
 } from '../validation/zod/nutrition/create-day.dto.js'
 import type { CreateSubcategoryWithDaysInput } from '../types/nutrition.js'
-import { MAX_NUTRITION_DAYS } from 'consts/nutrition.js'
+import { MAX_NUTRITION_DAYS } from '../consts/nutrition.js'
 
 // =============================================
 //  Личный назначенный план питания клиента

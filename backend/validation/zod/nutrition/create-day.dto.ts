@@ -1,4 +1,4 @@
-import { MAX_NUTRITION_DAYS } from 'consts/nutrition.js'
+import { MAX_NUTRITION_DAYS } from '../../../consts/nutrition.js'
 import { z } from 'zod'
 
 export const CreateNutritionDaySchema = z.object({
