@@ -4,7 +4,8 @@ import type { RootState, AppDispatch } from './index'
 import { createSelector } from '@reduxjs/toolkit'
 import { performCancelTrainer } from './slices/auth.slice'
 import type { ApiError } from './types/auth.types'
-import { Modal } from 'antd'
+import { Modal, message } from 'antd'
+import { useCancelTrainerMutation, useInviteTrainerMutation } from './api/user.api'
 
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
@@ -80,4 +81,58 @@ export const useCancelTrainerModal = () => {
 	}
 
 	return { showCancelTrainerModal }
+}
+
+interface SwitchTrainerModalOptions {
+	newTrainerId: string
+	newTrainerName: string
+	onSuccess?: () => void
+	onError?: (error: unknown) => void
+}
+
+export interface ApiErrorData {
+	message?: string
+	error?: {
+		message?: string
+	}
+}
+
+export const useSwitchTrainerModal = () => {
+	const [cancelTrainer] = useCancelTrainerMutation()
+	const [inviteTrainer] = useInviteTrainerMutation()
+
+	const showSwitchTrainerModal = ({
+		newTrainerId,
+		newTrainerName,
+		onSuccess,
+		onError,
+	}: SwitchTrainerModalOptions) => {
+		Modal.confirm({
+			title: 'Заменить тренера?',
+			content: `У вас уже есть активный тренер.
+			Вы действительно хотите отвязаться от него и отправить приглашение ${newTrainerName}?`,
+			okText: 'Да, заменить',
+			okType: 'primary',
+			cancelText: 'Отмена',
+			async onOk() {
+				try {
+					await cancelTrainer().unwrap()
+					await inviteTrainer({ trainerId: newTrainerId }).unwrap()
+
+					message.success(`Приглашение отправлено тренеру ${newTrainerName}!`)
+					onSuccess?.()
+				} catch (err) {
+					let errorMessage = 'Не удалось заменить тренера'
+					if (typeof err === 'object' && err !== null && 'data' in err) {
+						const errorData = err.data as ApiErrorData | undefined
+						errorMessage = errorData?.message || errorData?.error?.message || errorMessage
+					}
+					message.error(errorMessage)
+					onError?.(err)
+				}
+			},
+		})
+	}
+
+	return { showSwitchTrainerModal }
 }

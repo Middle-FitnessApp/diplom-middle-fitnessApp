@@ -1,9 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Button, Typography, message, Spin, Pagination, Divider } from 'antd'
+import { Button, Typography, message, Spin, Pagination, Divider, Modal } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { TeamOutlined } from '@ant-design/icons'
 import { TrainerCard, TrainersList } from '../../components/Client'
-import { useAppSelector, useAppDispatch, useCancelTrainerModal } from '../../store/hooks'
+import {
+	useAppSelector,
+	useAppDispatch,
+	useCancelTrainerModal,
+	useSwitchTrainerModal,
+} from '../../store/hooks'
 import {
 	useGetMeQuery,
 	useGetAllTrainersQuery,
@@ -65,6 +70,7 @@ export const Main: React.FC = () => {
 	const isClient = user?.role === 'CLIENT'
 	const hasTrainer = isClient && !!user?.trainer
 	const trainers = useMemo(() => trainersData?.trainers || [], [trainersData?.trainers])
+	const { showSwitchTrainerModal } = useSwitchTrainerModal()
 
 	// Собираем статусы приглашений из данных тренеров (приходят с бэкенда)
 	const inviteStatuses = useMemo(() => {
@@ -103,6 +109,45 @@ export const Main: React.FC = () => {
 			navigate('/login')
 			return
 		}
+		// Проверяем: есть ли у клиента другие принятые приглашения
+		const hasOtherAcceptedInvite = trainers.some(
+			(t) => t.id !== user?.trainer?.id && t.inviteStatus === 'ACCEPTED',
+		)
+
+		if (hasTrainer && user?.trainer) {
+			const trainer = trainers.find((t) => t.id === trainerId)
+			if (trainer) {
+				if (hasOtherAcceptedInvite) {
+					Modal.warning({
+						title: 'Вы уже в работе с тренером',
+						content: (
+							<>
+								Вы привязаны к <b>{user.trainer.name}</b>.<br />
+								У вас также есть принятое приглашение от другого тренера, и при отвязке вы
+								автоматически перейдёте к нему.
+								<br />
+								<br />
+								Чтобы выбрать <b>{trainer.name}</b>, сначала отвяжитесь от текущего.
+							</>
+						),
+						okText: 'Отвязать текущего тренера',
+						onOk() {
+							handleUnlinkTrainer()
+						},
+					})
+				} else {
+					// Если у клиента уже есть текущий тренер и нет приглашений от других тренеров
+					showSwitchTrainerModal({
+						newTrainerId: trainerId,
+						newTrainerName: trainer.name,
+						onSuccess: () => {
+							refetchMe()
+						},
+					})
+				}
+				return
+			}
+		}
 
 		setSelectingTrainerId(trainerId)
 		try {
@@ -124,12 +169,6 @@ export const Main: React.FC = () => {
 				message.warning(
 					'Этот тренер ранее отклонил вашу заявку. Попробуйте выбрать другого тренера.',
 				)
-			} else if (
-				errorMessage.includes('уже есть') ||
-				errorMessage.includes('активный тренер')
-			) {
-				message.info('У вас уже есть тренер. Страница будет обновлена.')
-				window.location.reload()
 			} else if (errorMessage.includes('уже отправлено')) {
 				message.info('Заявка этому тренеру уже отправлена и ожидает ответа.')
 			} else {
