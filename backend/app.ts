@@ -35,8 +35,17 @@ export async function buildApp(): Promise<FastifyInstance> {
 		},
 	)
 
+	// Настройка CORS
 	app.register(fastifyCors, {
-		origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+		origin: (origin, cb) => {
+			const allowed = ['http://localhost:5173', 'https://fitnessapp-result-university.ru']
+
+			if (!origin || allowed.includes(origin)) {
+				cb(null, true)
+			} else {
+				cb(new Error('Не разрешено CORS'), false)
+			}
+		},
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization'],
@@ -48,6 +57,22 @@ export async function buildApp(): Promise<FastifyInstance> {
 			httpOnly: true,
 			sameSite: 'lax',
 		},
+	})
+
+	// Маршрут для проверки состояния сервера (для деплоя, не удалять)
+	app.get('/health', async () => {
+		try {
+			await app.prisma.$queryRaw`SELECT 1`
+
+			return {
+				status: 'ok',
+				db: 'ok',
+				uptime: process.uptime(),
+				timestamp: Date.now(),
+			}
+		} catch {
+			return app.httpErrors.serviceUnavailable('DB not ready')
+		}
 	})
 
 	app.register(
