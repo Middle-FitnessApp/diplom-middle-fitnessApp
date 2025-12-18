@@ -3,6 +3,8 @@ import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import path from 'path'
+import sensible from '@fastify/sensible'
+import { prisma } from './prisma.js'
 
 import { errorHandler } from './middleware/globalErrorHandler.js'
 
@@ -19,6 +21,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 	const app = Fastify()
 
 	errorHandler(app)
+
+	app.decorate('prisma', prisma)
+
+	await app.register(sensible)
 
 	// Разрешаем пустое тело для application/json
 	app.addContentTypeParser(
@@ -37,15 +43,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
 	// Настройка CORS
 	app.register(fastifyCors, {
-		origin: (origin, cb) => {
-			const allowed = ['http://localhost:5173', 'https://fitnessapp-result-university.ru']
-
-			if (!origin || allowed.includes(origin)) {
-				cb(null, true)
-			} else {
-				cb(new Error('Не разрешено CORS'), false)
-			}
-		},
+		origin: [
+			'http://fitnessapp-result-university.ru',
+			'https://fitnessapp-result-university.ru',
+		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization'],

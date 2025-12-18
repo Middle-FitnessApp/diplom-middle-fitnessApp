@@ -8,12 +8,11 @@ version: '3.8'
 services:
   postgres-test:
     image: postgres:17
-    environment:
-      POSTGRES_DB: fitnessApp_test
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    ports:
-      - '5433:5432' # TODO: Другой порт, чтобы не конфликтовать с dev
+    # Переменные окружения берём из .env.test
+    env_file: .env.test
+    # Для локальной разработки (если нужно, раскомментируйте пример ниже):
+    # ports:
+    #   - '5433:5432' # Проброс порта хоста -> контейнер (удобно локально, не используйте в CI)
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
     healthcheck:

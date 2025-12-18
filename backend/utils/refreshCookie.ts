@@ -6,7 +6,7 @@ export function setRefreshCookie(reply: FastifyReply, token: string, maxAge: num
 		sameSite: 'lax',
 		path: '/',
 		maxAge,
-		// secure: process.env.NODE_ENV === 'production',
+		secure: process.env.NODE_ENV === 'production',
 	})
 }
 
@@ -14,7 +14,7 @@ export function removeRefreshCookie(reply: FastifyReply) {
 	reply.clearCookie('refreshToken', {
 		path: '/',
 		httpOnly: true,
-		// secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
+		secure: process.env.NODE_ENV === 'production',
 	})
 }
