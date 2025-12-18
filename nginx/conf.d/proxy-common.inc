@@ -14,36 +14,30 @@ location /api/ {
     proxy_http_version 1.1;
     
     # Передаём заголовки
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    include /etc/nginx/conf.d/proxy-headers.conf;
     
     # Таймауты
-    proxy_connect_timeout 60s;
-    proxy_send_timeout 60s;
-    proxy_read_timeout 60s;
+    # proxy_connect_timeout 60s;
+    # proxy_send_timeout 60s;
+    # proxy_read_timeout 60s;
     
     # Буферизация
-    proxy_buffering on;
-    proxy_buffer_size 4k;
-    proxy_buffers 8 4k;
+    # proxy_buffering on;
+    # proxy_buffer_size 4k;
+    # proxy_buffers 8 4k;
 }
 
 # ═══════════════════════════════════════════
 # Авторизация (с усиленным rate limiting)
 # ═══════════════════════════════════════════
-location /api/auth/ {
+location ^~ /api/auth/ {
     # Строгий rate limiting для защиты от брутфорса
     limit_req zone=auth burst=10 nodelay;
     
     proxy_pass http://backend;
     proxy_http_version 1.1;
     
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    include /etc/nginx/conf.d/proxy-headers.conf;
 }
 
 # ═══════════════════════════════════════════
@@ -55,38 +49,20 @@ location /socket.io/ {
     
     # Важно для WebSocket
     proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+    proxy_set_header Connection $connection_upgrade;
     
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    include /etc/nginx/conf.d/proxy-headers.conf;
     
     # Увеличенные таймауты для WebSocket
-    proxy_connect_timeout 7d;
-    proxy_send_timeout 7d;
-    proxy_read_timeout 7d;
-}
-
-# ═══════════════════════════════════════════
-# Статические файлы (uploads)
-# ═══════════════════════════════════════════
-location /uploads/ {
-    proxy_pass http://backend;
-    proxy_http_version 1.1;
-    
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    
-    # Кеширование статики
-    proxy_cache_valid 200 1d;
-    add_header Cache-Control "public, max-age=86400";
+    proxy_connect_timeout 60s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
 }
 
 # ═══════════════════════════════════════════
 # Health Check для Backend
 # ═══════════════════════════════════════════
-location /health {
+location /api/health {
     access_log off;
     proxy_pass http://backend/health;
     proxy_http_version 1.1;
@@ -99,26 +75,21 @@ location / {
     # Rate limiting для статики
     limit_req zone=general burst=20 nodelay;
     
-    proxy_pass http://frontend;
+    proxy_pass http://frontend/;
     proxy_http_version 1.1;
     
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    include /etc/nginx/conf.d/proxy-headers.conf;
 }
 
 # ═══════════════════════════════════════════
 # Кеширование статических ресурсов Frontend
 # ═══════════════════════════════════════════
-location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-    proxy_pass http://frontend;
-    proxy_http_version 1.1;
+# location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+#     proxy_pass http://frontend/;
+#     proxy_http_version 1.1;
     
-    # Долгосрочное кеширование (Vite добавляет хеши к файлам)
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-    access_log off;
-}
-
-
+#     # Долгосрочное кеширование (Vite добавляет хеши к файлам)
+#     expires 1y;
+#     add_header Cache-Control "public, immutable";
+#     access_log off;
+# }
