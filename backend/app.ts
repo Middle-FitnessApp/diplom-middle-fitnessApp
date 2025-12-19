@@ -43,10 +43,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
 	// Настройка CORS
 	app.register(fastifyCors, {
-		origin: [
-			'http://fitnessapp-result-university.ru',
-			'https://fitnessapp-result-university.ru',
-		],
+		origin: ['http://localhost:5173', 'https://fitnessapp-result-university.ru'],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization'],

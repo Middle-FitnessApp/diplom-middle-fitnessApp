@@ -389,6 +389,134 @@ export const Progress = () => {
 								</Space>
 							)}
 						</Modal>
+						{/* Горизонтальный скролл карточек отчётов - показываем только в 2D режиме */}
+						{chartData.length > 0 && activeTab === '2d' && (
+							<Card
+								className='border! border-gray-200! mb-6 mt-2!'
+								bodyStyle={{ padding: '16px' }}
+							>
+								<Title level={4} className='mb-4'>
+									🗂️ Все отчёты
+								</Title>
+								<div className='flex overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
+									{reports?.map((report, index) => (
+										<div
+											key={report.id}
+											onClick={() =>
+												handleBlockClick(
+													{
+														date: report.date.split('T')[0],
+														weight: report.weight,
+														waist: report.waist,
+														hips: report.hips,
+														chest: report.chest,
+														arm: report.arm,
+														leg: report.leg,
+													},
+													index,
+												)
+											}
+											className='min-w-[280px] max-w-[280px] flex-shrink-0 cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
+										>
+											{/* Заголовок */}
+											<div className='flex items-center gap-2 mb-3 pb-3 border-b border-gray-100'>
+												<span className='text-lg'>📊</span>
+												<span className='text-xs text-gray-400 bg-blue-50 px-2 py-1 rounded'>
+													{new Date(report.date)
+														.toLocaleDateString('ru-RU', {
+															day: 'numeric',
+															month: 'short',
+															year: 'numeric',
+														})
+														.replace(' г.', '')}
+												</span>
+											</div>
+
+											{/* Метрики в 2 колонки */}
+											<div className='grid grid-cols-2 gap-2'>
+												{/* Вес */}
+												{report.weight && (
+													<div className='bg-red-50 rounded-lg px-3 py-2.5 border border-red-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>⚖️</span>
+															<span className='text-xs text-gray-500'>Вес</span>
+														</div>
+														<div className='text-red-500! text-base! font-bold!'>
+															{report.weight} кг
+														</div>
+													</div>
+												)}
+
+												{/* Талия */}
+												{report.waist && (
+													<div className='bg-blue-50 rounded-lg px-3 py-2.5 border border-blue-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>📏</span>
+															<span className='text-xs text-gray-500'>Талия</span>
+														</div>
+														<div className='text-blue-500! text-base! font-bold!'>
+															{report.waist} см
+														</div>
+													</div>
+												)}
+
+												{/* Бедра */}
+												{report.hips && (
+													<div className='bg-purple-50 rounded-lg px-3 py-2.5 border border-purple-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>📐</span>
+															<span className='text-xs text-gray-500'>Бедра</span>
+														</div>
+														<div className='text-purple-500! text-base! font-bold!'>
+															{report.hips} см
+														</div>
+													</div>
+												)}
+
+												{/* Грудь */}
+												{report.chest && report.chest > 0 && (
+													<div className='bg-yellow-50 rounded-lg px-3 py-2.5 border border-yellow-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>💪</span>
+															<span className='text-xs text-gray-500'>Грудь</span>
+														</div>
+														<div className='text-yellow-600! text-base! font-bold!'>
+															{report.chest} см
+														</div>
+													</div>
+												)}
+
+												{/* Рука */}
+												{report.arm && report.arm > 0 && (
+													<div className='bg-green-50 rounded-lg px-3 py-2.5 border border-green-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>💪</span>
+															<span className='text-xs text-gray-500'>Рука</span>
+														</div>
+														<div className='text-green-500! text-base! font-bold!'>
+															{report.arm} см
+														</div>
+													</div>
+												)}
+
+												{/* Нога */}
+												{report.leg && report.leg > 0 && (
+													<div className='bg-cyan-50 rounded-lg px-3 py-2.5 border border-cyan-100'>
+														<div className='flex items-center gap-1.5 mb-1'>
+															<span className='text-sm'>🦵</span>
+															<span className='text-xs text-gray-500'>Нога</span>
+														</div>
+														<div className='text-cyan-500! text-base! font-bold!'>
+															{report.leg} см
+														</div>
+													</div>
+												)}
+											</div>
+										</div>
+									))}
+								</div>
+							</Card>
+						)}
 
 						{/* Комментарии тренера */}
 						{allComments.length > 0 && (
