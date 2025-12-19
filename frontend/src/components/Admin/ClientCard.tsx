@@ -12,6 +12,7 @@ import {
 	AppleOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 const { Text } = Typography
 
@@ -30,8 +31,6 @@ interface ClientCardProps {
 	compact?: boolean
 }
 
-const API_URL = 'http://localhost:3000'
-
 export const ClientCard: React.FC<ClientCardProps> = ({
 	client,
 	onToggleStar,
@@ -39,10 +38,8 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 }) => {
 	const navigate = useNavigate()
 
-	const getPhotoUrl = (photo?: string) => {
-		if (!photo) return `${API_URL}/uploads/default/user.png`
-		return photo.startsWith('http') ? photo : `${API_URL}${photo}`
-	}
+	const getPhoto = (photo?: string) =>
+		getPhotoUrl(photo) || `${getPhotoUrl('/uploads/default/user.png')}`
 
 	const handleViewProfile = () => {
 		navigate(`/admin/client/${client.id}`)

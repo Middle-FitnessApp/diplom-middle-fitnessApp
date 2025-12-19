@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+	createAndTrackObjectUrl,
+	revokeTrackedRefIfMatches,
+	revokeTrackedRef,
+} from '../../utils/avatarUtils'
 import { Form, Input, Button, Card, Typography, Row, Col, Statistic } from 'antd'
 import {
 	EditOutlined,
@@ -123,6 +128,12 @@ export const PersonalAccount = () => {
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
+	const objectUrlRef = useRef<string | null>(null)
+
+	useEffect(() => {
+		return () => revokeTrackedRef(objectUrlRef)
+	}, [])
+
 	const [updateClientProfile, { isLoading: isUpdatingClient }] =
 		useUpdateClientProfileMutation()
 	const [updateTrainerProfile, { isLoading: isUpdatingTrainer }] =
@@ -220,7 +231,11 @@ export const PersonalAccount = () => {
 		}
 	}
 
-	const uploadAvatarImmediately = async (file: File | null) => {
+	const uploadAvatarImmediately = async (
+		file: File | null,
+		prevPhoto?: string | null,
+		localUrl?: string | null,
+	) => {
 		if (!file || !user) return
 
 		setFormError(null)
@@ -247,10 +262,15 @@ export const PersonalAccount = () => {
 
 			setAvatarUrl(safePhotoUrl)
 			setAvatarPreview(null)
+			if (localUrl) revokeTrackedRefIfMatches(objectUrlRef, localUrl)
 		} catch (err) {
 			const apiError = err as ApiError
 			setFormError(apiError?.data?.message || 'Ошибка при загрузке фото')
 			setAvatarPreview(null)
+			if (prevPhoto !== undefined) {
+				dispatch(updateUser({ ...user, photo: prevPhoto }))
+			}
+			if (localUrl) revokeTrackedRefIfMatches(objectUrlRef, localUrl)
 		}
 	}
 
@@ -284,7 +304,12 @@ export const PersonalAccount = () => {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10'>
 				<ApiErrorState
-					error={{ status: 401, data: { error: { message: 'Пожалуйста, войдите в аккаунт', statusCode: 401 } } }}
+					error={{
+						status: 401,
+						data: {
+							error: { message: 'Пожалуйста, войдите в аккаунт', statusCode: 401 },
+						},
+					}}
 					title='Требуется авторизация'
 				/>
 			</div>
@@ -341,9 +366,11 @@ export const PersonalAccount = () => {
 									initialUrl={avatarPreview ?? avatarUrl}
 									onChange={(file) => {
 										if (file) {
-											const localUrl = URL.createObjectURL(file)
+											const localUrl = createAndTrackObjectUrl(file, objectUrlRef)
 											setAvatarPreview(localUrl)
-											uploadAvatarImmediately(file)
+											const prevPhoto = user.photo ?? null
+											dispatch(updateUser({ ...user, photo: localUrl }))
+											uploadAvatarImmediately(file, prevPhoto, localUrl)
 										}
 									}}
 								/>

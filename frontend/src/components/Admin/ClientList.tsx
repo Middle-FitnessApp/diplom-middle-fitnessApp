@@ -1,9 +1,16 @@
 import React from 'react'
 import { Card, Avatar, List, Tooltip, Button, Empty, Typography } from 'antd'
-import { StarFilled, StarOutlined, UserOutlined, MessageOutlined, EyeOutlined } from '@ant-design/icons'
+import {
+	StarFilled,
+	StarOutlined,
+	UserOutlined,
+	MessageOutlined,
+	EyeOutlined,
+} from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ClientInTrainerProfile } from '../../types'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 const { Text } = Typography
 
@@ -25,14 +32,7 @@ export const ClientList: React.FC<ClientListProps> = ({
 	const isDark = theme === 'dark'
 
 	// Hover класс в зависимости от темы
-	const hoverClass = isDark
-		? 'hover:bg-slate-700/50'
-		: 'hover:bg-slate-100'
-
-	const getPhotoUrl = (photo?: string) => {
-		if (!photo) return undefined
-		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
-	}
+	const hoverClass = isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-100'
 
 	// Переход в профиль клиента
 	const handleViewProfile = (clientId: string) => {
@@ -114,9 +114,7 @@ export const ClientList: React.FC<ClientListProps> = ({
 									{/* Звёздочка */}
 									<Tooltip
 										title={
-											client.isFavorite
-												? 'Убрать из избранных'
-												: 'Добавить в избранное'
+											client.isFavorite ? 'Убрать из избранных' : 'Добавить в избранное'
 										}
 									>
 										<Button

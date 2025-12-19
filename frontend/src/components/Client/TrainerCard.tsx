@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons'
 import type { TrainerInfo } from '../../store/types/auth.types'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import type { TrainerListItem } from '../../store/types/user.types'
 
 const { Text, Paragraph } = Typography
@@ -54,11 +55,7 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 	const theme = useAppSelector((state) => state.ui.theme)
 	const isDark = theme === 'dark'
 
-	const photoUrl = trainer.photo
-		? trainer.photo.startsWith('http')
-			? trainer.photo
-			: `http://localhost:3000${trainer.photo}`
-		: undefined
+	const photoUrl = getPhotoUrl(trainer.photo)
 
 	// Социальные ссылки
 	const socialLinks = []

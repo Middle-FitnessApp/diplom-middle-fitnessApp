@@ -35,11 +35,10 @@ import {
 	useToggleClientStarMutation,
 } from '../../store/api/trainer.api'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import type { AllSystemClient } from '../../store/types/trainer.types'
 
 const { Text, Title } = Typography
-
-const API_URL = 'http://localhost:3000'
 
 interface AllClientsGridProps {
 	isSidebarCollapsed?: boolean
@@ -65,10 +64,8 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 	const theme = useAppSelector((state) => state.ui.theme)
 	const isDark = theme === 'dark'
 
-	const getPhotoUrl = (photo?: string | null) => {
-		if (!photo) return `${API_URL}/uploads/default/user.png`
-		return photo.startsWith('http') ? photo : `${API_URL}${photo}`
-	}
+	const getPhoto = (photo?: string | null) =>
+		getPhotoUrl(photo) || getPhotoUrl('/uploads/default/user.png')
 
 	const handleViewProfile = (clientId: string) => {
 		navigate(`/admin/client/${clientId}`)

@@ -3,6 +3,7 @@ import { List, Avatar, Badge, Empty, Typography } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useThemeClasses } from '../../hooks/useThemeClasses'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import type { Chat } from '../../store/api/chat.api'
 
 const { Text } = Typography
@@ -24,11 +25,6 @@ interface SidebarProps {
 export const TrainerSidebar: React.FC<SidebarProps> = ({ clients, chats }) => {
 	const navigate = useNavigate()
 	const classes = useThemeClasses()
-
-	const getPhotoUrl = (photo?: string) => {
-		if (!photo) return undefined
-		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
-	}
 
 	// Переход в чат с клиентом
 	const handleClientClick = (clientId: string) => {

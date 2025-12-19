@@ -20,6 +20,7 @@ import {
 } from '../../store/api/user.api'
 import { useAppDispatch } from '../../store/hooks'
 import { updateUser } from '../../store/slices/auth.slice'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 const { Title } = Typography
 interface TrainerFormValues {
@@ -42,8 +43,6 @@ const schema = z.object({
 })
 
 const rule = createSchemaFieldRule(schema)
-
-const API_URL = 'http://localhost:3000'
 
 export const TrainerInfo: React.FC = () => {
 	const [form] = Form.useForm()
@@ -73,18 +72,8 @@ export const TrainerInfo: React.FC = () => {
 
 	const resolveAvatarSrc = () => {
 		if (avatarPreview) return avatarPreview
-
 		const photo = trainer?.photo
-
-		if (!photo) {
-			return `${API_URL}/uploads/default/user.png`
-		}
-
-		if (photo.startsWith('http://') || photo.startsWith('https://')) {
-			return photo
-		}
-
-		return `${API_URL}${photo}`
+		return getPhotoUrl(photo) || getPhotoUrl('/uploads/default/user.png')
 	}
 
 	const currentAvatar = resolveAvatarSrc()

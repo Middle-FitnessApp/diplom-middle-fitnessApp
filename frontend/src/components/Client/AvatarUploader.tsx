@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Avatar, Upload, message } from 'antd'
 import { UploadOutlined, UserOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 interface AvatarUploaderProps {
 	size?: number
@@ -68,7 +69,7 @@ export const AvatarUploader = ({
 			<div className='cursor-pointer relative group mb-6'>
 				<Avatar
 					size={size}
-					src={avatarUrl ? `http://localhost:3000${avatarUrl}` : '/default-avatar.png'}
+					src={avatarUrl ? getPhotoUrl(avatarUrl) : '/default-avatar.png'}
 					icon={<UserOutlined />}
 					className='bg-blue-500'
 				/>

@@ -15,6 +15,7 @@ import { setUnreadCount } from '../../store/slices/notifications.slice'
 import { useGetMeQuery } from '../../store/api/user.api'
 import { useGetUnreadCountQuery } from '../../store/api/notifications.api'
 import { ThemeToggle } from './ThemeToggle'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import { NotificationDropdown } from './NotificationDropdown'
 
 export function Header() {
@@ -43,7 +44,8 @@ export function Header() {
 		}
 	}, [unreadData?.unreadCount, dispatch])
 
-	const user = meData?.user
+	const storedUser = useAppSelector((state) => state.auth.user)
+	const user = storedUser ?? meData?.user
 	const isAuthenticated = !!token && !!user
 
 	// Получаем количество непрочитанных сообщений из Redux
@@ -78,11 +80,6 @@ export function Header() {
 	const handleLogout = async () => {
 		await dispatch(performLogout())
 		navigate('/login')
-	}
-
-	const getPhotoUrl = (photo?: string | null) => {
-		if (!photo) return undefined
-		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
 	}
 
 	// Меню профиля
