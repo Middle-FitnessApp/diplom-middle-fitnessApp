@@ -1,12 +1,18 @@
 # ============================================
-# Deploy - Автоматический деплой на сервер
+# Развёртывание — автоматический деплой на сервер
 # ============================================
-# Запускается ПОСЛЕ мержа PR в development
-# Собирает и деплоит Backend + Frontend
+# Запускается при мерже PR в ветку `development` и при пуше в релизные ветки
+# Собирает и разворачивает Backend и Frontend
 
-name: 🚀 Deploy to Server
+name: 🚀 Развертывание на сервере
 
 on:
+  push:
+    branches:
+      - master
+      - 'release/**'
+      - 'release-*'
+      - development
   pull_request:
     types: [closed]
     branches:
@@ -14,22 +20,20 @@ on:
 
 jobs:
   deploy:
-    name: 🚀 Build & Deploy
-    # Запускаем ТОЛЬКО если PR был смержен (не просто закрыт)
-    if: github.event.pull_request.merged == true
+    name: 🚀 Сборка и деплой
     runs-on: ubuntu-latest
 
     steps:
       # ─────────────────────────────────────────
       # Подготовка
       # ─────────────────────────────────────────
-      - name: 📥 Checkout code
+      - name: 📥 Клонировать репозиторий
         uses: actions/checkout@v4
 
-      - name: 🔧 Set up Docker Buildx
+      - name: 🔧 Настроить Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔐 Login to Docker Hub
+      - name: 🔐 Вход в Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -38,33 +42,31 @@ jobs:
       # ─────────────────────────────────────────
       # Сборка Backend
       # ─────────────────────────────────────────
-      - name: 🖥️ Build and push Backend
+      - name: 🖥️ Собрать и отправить Backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
+            ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.sha }}
 
       # ─────────────────────────────────────────
       # Сборка Frontend
       # ─────────────────────────────────────────
-      - name: 🎨 Build and push Frontend
+      - name: 🎨 Собрать и отправить Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:${{ github.run_number }}
+            ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:${{ github.sha }}
           build-args: |
             VITE_API_URL=${{ secrets.API_URL }}
 
       # ─────────────────────────────────────────
       # Деплой на сервер
       # ─────────────────────────────────────────
-      - name: 🚀 Deploy to Timeweb VPS
+      - name: 🚀 Деплой на Timeweb VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.TIMEWEB_HOST }}
@@ -72,40 +74,27 @@ jobs:
           key: ${{ secrets.TIMEWEB_SSH_KEY }}
           script: |
             echo "════════════════════════════════════════════"
-            echo "🚀 ДЕПЛОЙ v${{ github.run_number }}"
+            echo "🚀 ДЕПЛОЙ ${{ github.sha }}"
             echo "════════════════════════════════════════════"
 
-            # --- Backend ---
+            # --- Подготовить docker-compose env и поднять сервисы через docker compose ---
             echo ""
-            echo "🖥️ Backend..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
-            docker stop fitness-backend || true
-            docker rm fitness-backend || true
-            docker run -d \
-              --name fitness-backend \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              --env-file /root/fitness-backend.env \
-              ${{ secrets.DOCKER_USERNAME }}/fitness-backend:${{ github.run_number }}
+            echo "🎯 Перезаписываем /root/fitness-compose.env и запускаем docker compose"
+            cat > /root/fitness-compose.env <<EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            IMAGE_TAG=${{ github.sha }}
+            EOF
 
-            # --- Frontend ---
-            echo ""
-            echo "🎨 Frontend..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:${{ github.run_number }}
-            docker stop fitness-frontend || true
-            docker rm fitness-frontend || true
-            docker run -d \
-              --name fitness-frontend \
-              --restart unless-stopped \
-              -p 80:80 \
-              ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:${{ github.run_number }}
+            docker compose --env-file /root/fitness-compose.env -f /root/docker-compose.prod.yml pull backend frontend
+            docker compose --env-file /root/fitness-compose.env -f /root/docker-compose.prod.yml up -d
 
             # --- Очистка ---
             echo ""
             echo "🧹 Очистка старых образов..."
-            docker system prune -f
-            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-backend --format "{{.Tag}}" | grep -E '^[0-9]+$' | sort -rn | tail -n +4 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-backend:{} || true
-            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-frontend --format "{{.Tag}}" | grep -E '^[0-9]+$' | sort -rn | tail -n +4 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:{} || true
+            # Не выполняем общую очистку system prune — это может затронуть другие ресурсы.
+            # Удаляем старые SHA-теги (hex). Оставляем 2 последних.
+            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-backend --format "{{.Tag}}" | grep -E '^[0-9a-f]+' | sort -r | tail -n +3 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-backend:{} || true
+            docker images ${{ secrets.DOCKER_USERNAME }}/fitness-frontend --format "{{.Tag}}" | grep -E '^[0-9a-f]+' | sort -r | tail -n +3 | xargs -r -I {} docker rmi ${{ secrets.DOCKER_USERNAME }}/fitness-frontend:{} || true
 
             # --- Результат ---
             echo ""
@@ -114,4 +103,3 @@ jobs:
             echo "════════════════════════════════════════════"
             echo ""
             docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-

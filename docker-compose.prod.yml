@@ -6,6 +6,14 @@
 # - Backend (Fastify API)
 # - Frontend (React + Nginx)
 
+# IMPORTANT:
+# Для запуска через `docker compose` создайте/измените файл `fitness-compose.env`
+# рядом с этим файлом и положите туда значения переменных:
+# DOCKER_USERNAME=<dockerhub-username>
+# IMAGE_TAG=<sha-или-другой-тег>
+# Пример запуска:
+# docker compose --env-file fitness-compose.env -f docker-compose.prod.yml up -d
+
 version: '3.8'
 
 services:
@@ -32,7 +40,7 @@ services:
   # Backend API (Fastify + Prisma)
   # ═══════════════════════════════════════════
   backend:
-    image: suvstreet/fitness-backend:latest
+    image: ${DOCKER_USERNAME}/fitness-backend:${IMAGE_TAG}
     container_name: fitness-backend
     restart: unless-stopped
     networks:
@@ -51,7 +59,7 @@ services:
   # Frontend (React SPA через Nginx)
   # ═══════════════════════════════════════════
   frontend:
-    image: suvstreet/fitness-frontend:latest
+    image: ${DOCKER_USERNAME}/fitness-frontend:${IMAGE_TAG}
     container_name: fitness-frontend
     restart: unless-stopped
     networks:
