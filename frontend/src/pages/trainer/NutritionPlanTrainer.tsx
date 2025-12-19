@@ -8,7 +8,6 @@ import {
 	Spin,
 	message,
 	Breadcrumb,
-	Tag,
 	Pagination,
 } from 'antd'
 import { PlusOutlined, ArrowLeftOutlined, HomeOutlined } from '@ant-design/icons'
@@ -24,6 +23,8 @@ import {
 	useGetCategoriesQuery,
 } from '../../store/api/nutrition.api'
 import { MAX_DAYS } from '../../constants/nutritionTrainer'
+import { useAppSelector } from '../../store/hooks'
+import { ThemedTag } from '../../components'
 
 const { Title, Text } = Typography
 
@@ -41,6 +42,9 @@ export const NutritionPlanTrainer = () => {
 	const currentPage = parseInt(searchParams.get('page') || '1', 10)
 
 	const prevSubcategoryIdRef = useRef<string | undefined>()
+
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
 
 	useEffect(() => {
 		if (prevSubcategoryIdRef.current && prevSubcategoryIdRef.current !== subcategoryId) {
@@ -218,11 +222,11 @@ export const NutritionPlanTrainer = () => {
 							className='text-gray-500 hover:text-gray-700'
 						/>
 						<div>
-							<Title level={2} className='m-0'>
+							<Title level={2} className={isDark ? 'text-white' : 'text-gray-800'}>
 								{String(currentSubcategory?.name || 'План питания')}
 							</Title>
 							{currentSubcategory?.description && (
-								<Text type='secondary' className='text-sm mt-1 block'>
+								<Text className={isDark ? 'text-slate-300' : 'text-sm mt-1 block'}>
 									{String(currentSubcategory.description)}
 								</Text>
 							)}
@@ -242,13 +246,12 @@ export const NutritionPlanTrainer = () => {
 
 				{/* Stats */}
 				<div className='mb-6 flex items-center gap-4'>
-					<Tag color='blue' className='text-sm px-3 py-1'>
+					<ThemedTag baseColor='#1890ff' isDark={isDark} className='text-sm px-3 py-1'>
 						{String(daysResponse?.pagination?.total || 0)} дней
-					</Tag>
-					<Tag color='green' className='text-sm px-3 py-1'>
-						{String(days.reduce((acc: number, day) => acc + day.meals.length, 0))} приёмов
-						пищи
-					</Tag>
+					</ThemedTag>
+					<ThemedTag baseColor='#52c41a' isDark={isDark} className='text-sm px-3 py-1'>
+						{String(days.reduce((acc, day) => acc + day.meals.length, 0))} приёмов пищи
+					</ThemedTag>
 				</div>
 
 				{/* Days list */}
@@ -262,6 +265,7 @@ export const NutritionPlanTrainer = () => {
 									variant='trainer'
 									onEdit={handleEditDay}
 									onDelete={handleDeleteDay}
+									isDark={isDark}
 								/>
 							))}
 						</div>
