@@ -22,9 +22,7 @@ import authReducer from './slices/auth.slice'
 import uiReducer from './slices/ui.slice'
 import userReducer from './slices/user.slice'
 import chatReducer from './slices/chat.slice'
-import notificationsReducer, {
-	type NotificationsState,
-} from './slices/notifications.slice'
+import notificationsReducer from './slices/notifications.slice'
 import { authApi } from './api/auth.api'
 import { userApi } from './api/user.api'
 import { nutritionApi } from './api/nutrition.api'
@@ -32,11 +30,12 @@ import { progressApi } from './api/progress.api'
 import { trainerApi } from './api/trainer.api'
 import { chatApi } from './api/chat.api'
 import { notificationsApi } from './api/notifications.api'
+import type { NotificationsState } from '../types/notifications'
 import { errorMiddleware } from './middleware/errorMiddleware'
 import type { AuthState } from './types/auth.types'
 import type { UIState } from './slices/ui.slice'
-import type { UserState } from './slices/user.slice'
 import type { ChatState } from './slices/chat.slice'
+import type { UserState } from './types/user.types'
 
 export type RootState = {
 	auth: AuthState

@@ -1,6 +1,6 @@
 import { Typography } from 'antd'
-import type { ProgressReport } from '../../store/api/progress.api'
 import { useThemeClasses } from '../../hooks/useThemeClasses'
+import type { ProgressReport } from '../../store/types/progress.types'
 
 const { Title } = Typography
 

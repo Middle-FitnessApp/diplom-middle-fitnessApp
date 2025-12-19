@@ -19,3 +19,9 @@ export interface NotificationsResponse {
 		totalPages: number
 	}
 }
+
+export interface NotificationsState {
+	notifications: Notification[]
+	unreadCount: number
+	isConnected: boolean
+}

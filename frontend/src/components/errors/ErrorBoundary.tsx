@@ -20,7 +20,7 @@ interface State {
 
 /**
  * Error Boundary для перехвата ошибок рендеринга React компонентов
- * 
+ *
  * Использование:
  * ```tsx
  * <ErrorBoundary>
@@ -46,7 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
 		this.setState({ errorInfo })
 
 		// Логируем ошибку
-		console.error('ErrorBoundary caught an error:', error, errorInfo)
+		if (import.meta.env.DEV) {
+			console.error('ErrorBoundary caught an error:', error, errorInfo)
+		}
 
 		// Вызываем callback если передан
 		this.props.onError?.(error, errorInfo)
@@ -95,11 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
 							>
 								Обновить страницу
 							</Button>,
-							<Button
-								key='home'
-								icon={<HomeOutlined />}
-								onClick={this.handleGoHome}
-							>
+							<Button key='home' icon={<HomeOutlined />} onClick={this.handleGoHome}>
 								На главную
 							</Button>,
 						]}
@@ -133,4 +131,3 @@ export class ErrorBoundary extends Component<Props, State> {
 		return this.props.children
 	}
 }
-

@@ -87,7 +87,9 @@ export const CreateNutritionTrainer = () => {
 			message.success('План питания успешно создан!')
 			navigate('/admin/nutrition')
 		} catch (err) {
-			console.error('Ошибка при создании плана:', err)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка при создании плана:', err)
+			}
 			const error = err as { data?: { message?: string } }
 			message.error(error?.data?.message || 'Ошибка при создании плана питания')
 		}

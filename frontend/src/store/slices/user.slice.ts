@@ -1,13 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { UserProfile, BodyMeasurement } from '../types/user.types'
-
-export interface UserState {
-	profile: UserProfile | null
-	bodyMeasurements: BodyMeasurement[]
-	selectedMetric: keyof BodyMeasurement
-	selectedPeriod: 'week' | 'month' | '3months' | 'year'
-}
+import type { UserProfile, BodyMeasurement, UserState } from '../types/user.types'
 
 const initialState: UserState = {
 	profile: null,

@@ -30,7 +30,7 @@ import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { ProgressChart, ProgressTower3D } from '../../components'
 import { useGetProgressReportsQuery } from '../../store/api/progress.api'
-import type { ProgressReport } from '../../store/api/progress.api'
+import type { ProgressReport } from '../../store/types/progress.types'
 import type { Comment } from '../../store/types/progress.types.ts'
 import { API_BASE_URL } from '../../config/api.config.ts'
 

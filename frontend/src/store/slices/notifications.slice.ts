@@ -1,12 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { Notification } from '../../types/notifications'
-
-export interface NotificationsState {
-	notifications: Notification[]
-	unreadCount: number
-	isConnected: boolean
-}
+import type { Notification, NotificationsState } from '../../types/notifications'
 
 const initialState: NotificationsState = {
 	notifications: [],

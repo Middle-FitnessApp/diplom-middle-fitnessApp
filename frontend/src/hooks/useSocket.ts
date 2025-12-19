@@ -37,17 +37,23 @@ export const useSocket = () => {
 
 		// Обработчики событий
 		socket.on('connect', () => {
-			console.log('Connected to server')
+			if (import.meta.env.DEV) {
+				console.log('Connected to server')
+			}
 			dispatch(setConnected(true))
 		})
 
 		socket.on('disconnect', () => {
-			console.log('Disconnected from server')
+			if (import.meta.env.DEV) {
+				console.log('Disconnected from server')
+			}
 			dispatch(setConnected(false))
 		})
 
 		socket.on('notification', (notification: Notification) => {
-			console.log('Received notification:', notification)
+			if (import.meta.env.DEV) {
+				console.log('Received notification:', notification)
+			}
 			dispatch(addNotification(notification))
 
 			// Показываем toast уведомление
@@ -58,7 +64,9 @@ export const useSocket = () => {
 		})
 
 		socket.on('connect_error', (error) => {
-			console.error('Connection error:', error)
+			if (import.meta.env.DEV) {
+				console.error('Connection error:', error)
+			}
 			dispatch(setConnected(false))
 		})
 

@@ -112,7 +112,9 @@ export const AddProgress = () => {
 			message.success('Отчёт о прогрессе успешно добавлен!')
 			navigate('/me/progress')
 		} catch (err) {
-			console.error('Не удалось добавить прогресс:', err)
+			if (import.meta.env.DEV) {
+				console.error('Не удалось добавить прогресс:', err)
+			}
 
 			const error = err as { data?: { message?: string }; status?: number }
 
@@ -143,7 +145,10 @@ export const AddProgress = () => {
 			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[700px]'>
 				<Card className='border-gray-200!'>
 					<div className='text-center mb-6'>
-						<Title level={2} className='text-gray-800 font-semibold mb-1 pb-3 border-b-3 border-primary inline-block'>
+						<Title
+							level={2}
+							className='text-gray-800 font-semibold mb-1 pb-3 border-b-3 border-primary inline-block'
+						>
 							📊 Добавить прогресс
 						</Title>
 						<Text type='secondary'>Заполните данные о ваших измерениях</Text>
@@ -266,7 +271,10 @@ export const AddProgress = () => {
 						{/* Фото - опциональные */}
 						<div className='grid grid-cols-3 gap-4 mb-6'>
 							{photoFields.map((photoType, index) => (
-								<div key={photoType} className='border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer transition-all hover:border-primary hover:bg-gray-50'>
+								<div
+									key={photoType}
+									className='border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer transition-all hover:border-primary hover:bg-gray-50'
+								>
 									{photoPreviews[photoType] ? (
 										<div className='photo-preview-container'>
 											<img

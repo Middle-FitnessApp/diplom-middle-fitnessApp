@@ -1,7 +1,7 @@
 import React from 'react'
 import { Row, Col, Empty, Spin, Typography } from 'antd'
 import { TrainerCard } from './TrainerCard'
-import type { TrainerListItem } from '../../store/api/user.api'
+import type { TrainerListItem } from '../../store/types/user.types'
 
 const { Text } = Typography
 
@@ -27,8 +27,8 @@ export const TrainersList: React.FC<TrainersListProps> = ({
 }) => {
 	if (loading) {
 		return (
-			<div className="flex justify-center items-center py-20">
-				<Spin size="large" />
+			<div className='flex justify-center items-center py-20'>
+				<Spin size='large' />
 			</div>
 		)
 	}
@@ -37,7 +37,7 @@ export const TrainersList: React.FC<TrainersListProps> = ({
 		return (
 			<Empty
 				description={
-					<Text type="secondary" style={{ fontSize: 16 }}>
+					<Text type='secondary' style={{ fontSize: 16 }}>
 						Пока нет доступных тренеров
 					</Text>
 				}

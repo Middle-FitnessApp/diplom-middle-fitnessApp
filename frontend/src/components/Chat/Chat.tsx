@@ -107,7 +107,10 @@ export const Chat: React.FC<ChatProps> = ({
 				const socket = socketService.getSocket()
 
 				if (!socket) {
-					console.error('Socket not available after connect')
+					if (import.meta.env.DEV) {
+						console.error('Socket not available after connect')
+					}
+					message.error('Не удалось подключиться к чату. Попробуйте позже.')
 					return
 				}
 
@@ -204,7 +207,10 @@ export const Chat: React.FC<ChatProps> = ({
 					}
 				}
 			} catch (error) {
-				console.error('Failed to connect socket:', error)
+				message.error('Не удалось подключиться к чату. Попробуйте позже.')
+				if (import.meta.env.DEV) {
+					console.error('Failed to connect socket:', error)
+				}
 			}
 		}
 
@@ -319,13 +325,20 @@ export const Chat: React.FC<ChatProps> = ({
 		const file = info.file.originFileObj ?? info.file
 
 		if (!(file instanceof Blob)) {
-			console.error('Выбранный файл не является Blob/File:', file)
+			message.error(
+				'Разрешены только изображения. Выберите файл с расширением .jpg, .png, .gif и т.д.',
+			)
+			if (import.meta.env.DEV) {
+				console.error('Выбранный файл не является изображением:', file)
+			}
 			return
 		}
 
 		// Валидация типа файла
 		if (!file.type.startsWith('image/')) {
-			console.error('Разрешены только файлы изображений')
+			if (import.meta.env.DEV) {
+				console.error('Разрешены только файлы изображений')
+			}
 			message.error(
 				'Разрешены только изображения. Выберите файл с расширением .jpg, .png, .gif и т.д.',
 			)
@@ -335,8 +348,10 @@ export const Chat: React.FC<ChatProps> = ({
 		// Валидация размера файла (500KB = 500 * 1024 байт)
 		const maxSize = 500 * 1024
 		if (file.size > maxSize) {
-			console.error('Размер файла превышает лимит 500KB')
 			message.error('Размер файла превышает 500KB. Выберите файл меньшего размера.')
+			if (import.meta.env.DEV) {
+				console.error('Размер файла превышает лимит 500KB:', file?.size)
+			}
 			return
 		}
 
@@ -354,8 +369,10 @@ export const Chat: React.FC<ChatProps> = ({
 			}
 		}
 		reader.onerror = () => {
-			console.error('Не удалось прочитать файл')
 			message.error('Не удалось прочитать файл. Попробуйте выбрать другое изображение.')
+			if (import.meta.env.DEV) {
+				console.error('Не удалось прочитать файл:', file)
+			}
 			setFileList([]) // Очищаем список файлов при ошибке
 		}
 		reader.readAsDataURL(file)
@@ -451,7 +468,10 @@ export const Chat: React.FC<ChatProps> = ({
 			// Заменить временное сообщение на реальное (если нужно)
 			// В идеале сервер должен вернуть то же сообщение, но с правильным ID
 		} catch (error) {
-			console.error('Не удалось отправить сообщение:', error)
+			message.error('Не удалось отправить сообщение. Попробуйте еще раз.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка отправки сообщения:', error)
+			}
 			// Обновить статус на 'error'
 			dispatch(
 				updateMessageStatus({

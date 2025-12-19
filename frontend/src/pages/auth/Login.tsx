@@ -19,7 +19,8 @@ export const Login = () => {
 	const cardBgClass = theme === 'dark' ? 'bg-slate-800' : 'bg-light'
 	const borderClass = theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
 	const titleClass = theme === 'dark' ? '!text-slate-100' : '!text-gray-800'
-	const demoBgClass = theme === 'dark' ? 'bg-teal-900/30 border-teal-700' : 'bg-teal-50 border-teal-200'
+	const demoBgClass =
+		theme === 'dark' ? 'bg-teal-900/30 border-teal-700' : 'bg-teal-50 border-teal-200'
 	const demoTitleClass = theme === 'dark' ? '!text-teal-300' : '!text-teal-800'
 	const demoTextClass = theme === 'dark' ? 'text-teal-200' : 'text-teal-700'
 
@@ -52,35 +53,43 @@ export const Login = () => {
 				navigate('/me')
 			}
 		} catch (err) {
-			console.error('Login error:', err)
-			
-		const error = err as {
-			status?: number
-			data?: { 
-				message?: string
-				error?: { message?: string; statusCode?: number } | string 
+			if (import.meta.env.DEV) {
+				console.error('Login error:', err)
 			}
-			error?: { message?: string }
-			message?: string
-			name?: string
-		}
-		
-		// Определяем статус ошибки
-		const status = error?.status
-		
-		// Получаем сообщение об ошибке из разных возможных мест
-		// Бэкенд возвращает: { error: { message: "...", statusCode: ... } }
-		const errorMessage =
-			(typeof error?.data?.error === 'object' ? error?.data?.error?.message : error?.data?.error) ||
-			error?.data?.message || 
-			error?.error?.message ||
-			error?.message ||
-			'Ошибка входа'
+
+			const error = err as {
+				status?: number
+				data?: {
+					message?: string
+					error?: { message?: string; statusCode?: number } | string
+				}
+				error?: { message?: string }
+				message?: string
+				name?: string
+			}
+
+			// Определяем статус ошибки
+			const status = error?.status
+
+			// Получаем сообщение об ошибке из разных возможных мест
+			// Бэкенд возвращает: { error: { message: "...", statusCode: ... } }
+			const errorMessage =
+				(typeof error?.data?.error === 'object'
+					? error?.data?.error?.message
+					: error?.data?.error) ||
+				error?.data?.message ||
+				error?.error?.message ||
+				error?.message ||
+				'Ошибка входа'
 
 			// Обрабатываем разные типы ошибок
 			if (status === 400) {
 				// Показываем конкретную ошибку валидации от бэкенда
-				setFormError(typeof errorMessage === 'string' ? errorMessage : 'Неверный формат данных. Проверьте введённые данные.')
+				setFormError(
+					typeof errorMessage === 'string'
+						? errorMessage
+						: 'Неверный формат данных. Проверьте введённые данные.',
+				)
 			} else if (status === 401 || status === 404) {
 				// Неверные учетные данные или пользователь не найден
 				setFormError('Неверный email/телефон или пароль. Проверьте введённые данные.')
@@ -99,7 +108,9 @@ export const Login = () => {
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] flex items-center justify-center p-5'>
-			<div className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} max-w-[480px] w-full animate-fade-in`}>
+			<div
+				className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} max-w-[480px] w-full animate-fade-in`}
+			>
 				<div className='text-center mb-8'>
 					<Title level={2} className={`mb-2! ${titleClass}`}>
 						Добро пожаловать

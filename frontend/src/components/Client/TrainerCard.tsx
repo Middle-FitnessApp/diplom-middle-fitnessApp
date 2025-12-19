@@ -8,9 +8,9 @@ import {
 	ClockCircleOutlined,
 	InstagramOutlined,
 } from '@ant-design/icons'
-import type { TrainerListItem } from '../../store/api/user.api'
 import type { TrainerInfo } from '../../store/types/auth.types'
 import { useAppSelector } from '../../store/hooks'
+import type { TrainerListItem } from '../../store/types/user.types'
 
 const { Text, Paragraph } = Typography
 

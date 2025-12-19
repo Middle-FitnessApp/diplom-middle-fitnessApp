@@ -1,4 +1,4 @@
-import { Form, Input, Button, Typography } from 'antd'
+import { Form, Input, Button, Typography, message } from 'antd'
 import { useState } from 'react'
 
 const { Text } = Typography
@@ -23,7 +23,10 @@ export const AddCommentForm = ({
 			await onSubmit(text)
 			setText('')
 		} catch (error) {
-			console.error('Error:', error)
+			const errorMsg =
+				error instanceof Error ? error.message : 'Произошла неизвестная ошибка'
+
+			message.error(`Не удалось добавить комментарий: ${errorMsg}`)
 		}
 	}
 

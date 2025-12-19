@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, Tag, Space, Typography } from 'antd'
 import { computeDiffs, formatDate } from '../../utils/progressFunctions.ts'
 import { API_BASE_URL } from '../../config/api.config'
-import type { ProgressReport } from '../../store/api/progress.api.ts'
+import type { ProgressReport } from '../../store/types/progress.types'
 
 const { Text } = Typography
 

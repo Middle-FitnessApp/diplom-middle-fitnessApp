@@ -102,7 +102,9 @@ export const Admin: React.FC = () => {
 		try {
 			await toggleStarMutation({ clientId }).unwrap()
 		} catch (error) {
-			console.error('Ошибка переключения isFavorite:', error)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка переключения isFavorite:', error)
+			}
 			message.error('Не удалось изменить статус избранного')
 		}
 	}

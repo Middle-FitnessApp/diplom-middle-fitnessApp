@@ -1,4 +1,4 @@
-import type { ProgressReport } from '../store/api/progress.api'
+import type { ProgressReport } from '../store/types/progress.types'
 
 /**
  * Форматирует ISO-дату как DD.MM.YYYY

@@ -13,6 +13,7 @@ import {
 	Row,
 	Col,
 	Spin,
+	message,
 } from 'antd'
 import {
 	UserOutlined,
@@ -33,8 +34,8 @@ import {
 	useGetAllClientsQuery,
 	useToggleClientStarMutation,
 } from '../../store/api/trainer.api'
-import type { AllSystemClient } from '../../store/api/trainer.api'
 import { useAppSelector } from '../../store/hooks'
+import type { AllSystemClient } from '../../store/types/trainer.types'
 
 const { Text, Title } = Typography
 
@@ -81,7 +82,10 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		try {
 			await toggleStarMutation({ clientId }).unwrap()
 		} catch (error) {
-			console.error('Ошибка переключения избранного:', error)
+			message.error('Не удалось обновить избранное. Попробуйте позже.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка переключения избранного:', error)
+			}
 		}
 	}
 

@@ -144,7 +144,9 @@ export const AddNutritionTrainer = () => {
 			navigate(`/admin/client/${clientId}`)
 		} catch (error) {
 			const apiError = error as { data?: { message?: string } }
-			console.error('Ошибка при назначении плана:', error)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка при назначении плана:', error)
+			}
 			message.error(apiError?.data?.message || 'Ошибка при назначении плана питания')
 		}
 	}

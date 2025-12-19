@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { Card, Typography, Button, Row, Col, Image } from 'antd'
+import { Card, Typography, Button, Row, Col, Image, message } from 'antd'
 import { ArrowLeftOutlined, CommentOutlined } from '@ant-design/icons'
 import {
 	useAddProgressCommentMutation,
@@ -68,7 +68,10 @@ export const Report: FC = () => {
 		try {
 			await addComment({ progressId: reportIdToUse!, text }).unwrap()
 		} catch (err) {
-			console.error('Ошибка добавления комментария:', err)
+			message.error('Не удалось добавить комментарий. Попробуйте позже.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка добавления комментария:', err)
+			}
 		}
 	}
 
@@ -95,7 +98,15 @@ export const Report: FC = () => {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10'>
 				<ApiErrorState
-					error={{ status: 400, data: { error: { message: 'ID отчета не указан или указан неверно', statusCode: 400 } } }}
+					error={{
+						status: 400,
+						data: {
+							error: {
+								message: 'ID отчета не указан или указан неверно',
+								statusCode: 400,
+							},
+						},
+					}}
 					title='Ошибка загрузки'
 				/>
 			</div>

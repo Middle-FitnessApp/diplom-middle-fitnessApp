@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card, List, Typography, Avatar, Empty } from 'antd'
 import { UserAddOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import type { TrainerInvite } from '../../store/api/trainer.api'
+import type { TrainerInvite } from '../../store/types/trainer.types'
 
 const { Text } = Typography
 

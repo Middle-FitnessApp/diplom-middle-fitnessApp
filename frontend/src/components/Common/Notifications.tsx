@@ -42,10 +42,7 @@ export function Notifications() {
 	const limit = NOTIFICATIONS_LIMIT
 
 	const { data, isLoading, error, refetch } = useGetNotificationsQuery({ page, limit })
-	console.log('Notifications data:', data, 'isLoading:', isLoading, 'error:', error)
 
-	const user = useAppSelector((state) => state.auth.user)
-	console.log('Current user in Notifications:', user)
 	const theme = useAppSelector((state) => state.ui.theme)
 	const [markAsReadMutation] = useMarkAsReadMutation()
 	const [markAllAsReadMutation] = useMarkAllAsReadMutation()

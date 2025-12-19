@@ -2,10 +2,8 @@ import { useState, useMemo, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pagination, Select, Typography, Empty, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
-import {
-	useGetProgressReportsQuery,
-	type ProgressReport,
-} from '../../store/api/progress.api'
+import { useGetProgressReportsQuery } from '../../store/api/progress.api'
+import type { ProgressReport } from '../../store/types/progress.types'
 import { PERIOD_OPTIONS } from '../../utils/progressFunctions.ts'
 import { ApiErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'

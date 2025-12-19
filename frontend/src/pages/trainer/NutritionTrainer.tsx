@@ -81,7 +81,9 @@ export const NutritionTrainer = () => {
 			refetchCategories()
 		} catch (error: unknown) {
 			const apiError = error as ApiError
-			console.error('Ошибка при создании категории:', error)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка при создании категории:', error)
+			}
 			message.error(apiError?.data?.message || 'Ошибка при создании категории')
 		}
 	}

@@ -1,7 +1,7 @@
 import { Row, Col, Image } from 'antd'
 import { Typography } from 'antd'
-import type { ProgressReport } from '../../store/api/progress.api'
 import { buildPhotoUrl } from '../../utils/buildPhotoUrl'
+import type { ProgressReport } from '../../store/types/progress.types'
 
 const { Text, Title } = Typography
 

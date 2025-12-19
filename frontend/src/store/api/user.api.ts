@@ -1,53 +1,17 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { createBaseQueryWithReauth } from './baseQuery'
 import type {
+	CancelInviteResponse,
+	CancelTrainerResponse,
+	InviteTrainerResponse,
+	TrainerListItem,
+	TrainerWithStatus,
 	UpdateClientProfileRequest,
 	UpdateProfileResponse,
 	UpdateTrainerProfileRequest,
 } from '../types/user.types'
 import type { AuthUser } from '../types/auth.types'
 import { API_ENDPOINTS } from '../../config/api.config'
-
-// Тип для тренера в списке (с опциональным статусом приглашения)
-export interface TrainerListItem {
-	id: string
-	name: string
-	photo: string | null
-	bio: string | null
-	telegram: string | null
-	whatsapp: string | null
-	instagram: string | null
-	// Статус приглашения (только для авторизованного клиента)
-	inviteStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | null
-}
-
-// Тренер с информацией о статусе приглашения (для авторизованного клиента)
-export interface TrainerWithStatus extends TrainerListItem {
-	inviteStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED' | null
-	isMyTrainer: boolean
-}
-
-// Ответ на приглашение тренера
-export interface InviteTrainerResponse {
-	message: string
-	invite: {
-		id: string
-		trainerId: string
-		status: string
-		createdAt: string
-	}
-}
-
-// Ответ на отмену сотрудничества
-export interface CancelTrainerResponse {
-	message: string
-	deactivatedNutritionPlans: number
-}
-
-// Ответ на отмену приглашения
-export interface CancelInviteResponse {
-	message: string
-}
 
 export const userApi = createApi({
 	reducerPath: 'userApi',

@@ -1,10 +1,8 @@
 import { useState, type FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Card, Pagination, Select, Typography, Empty, Tag, Space } from 'antd'
-import {
-	useGetTrainerClientReportsQuery,
-	type ProgressReport,
-} from '../../store/api/progress.api.ts'
+import { useGetTrainerClientReportsQuery } from '../../store/api/progress.api.ts'
+import type { ProgressReport } from '../../store/types/progress.types'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
 	formatDate,
@@ -75,7 +73,15 @@ export const AllReportsAdmin: FC = () => {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10'>
 				<ApiErrorState
-					error={{ status: 400, data: { error: { message: 'ID клиента не указан или указан неверно', statusCode: 400 } } }}
+					error={{
+						status: 400,
+						data: {
+							error: {
+								message: 'ID клиента не указан или указан неверно',
+								statusCode: 400,
+							},
+						},
+					}}
 					title='Ошибка загрузки'
 				/>
 			</div>
