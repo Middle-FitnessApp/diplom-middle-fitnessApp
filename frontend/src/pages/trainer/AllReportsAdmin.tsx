@@ -13,7 +13,7 @@ import {
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
 import { useThemeClasses } from '../../hooks/useThemeClasses'
-import { API_BASE_URL } from '../../config/api.config'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import { useAppSelector } from '../../store/hooks.ts'
 
 const { Title, Text } = Typography
@@ -170,7 +170,8 @@ export const AllReportsAdmin: FC = () => {
 								const globalIdx = (page - 1) * pageSize + idx
 								const prev = globalIdx > 0 ? filteredReports[globalIdx - 1] : undefined
 								const diffs = computeDiffs(report, prev)
-								const showPhoto = !!report.photoFront && !failedPhotoIds.has(report.id)
+								const imageSrc = getPhotoUrl(report.photoFront)
+								const showPhoto = !!imageSrc && !failedPhotoIds.has(report.id)
 
 								return (
 									<Card
@@ -233,7 +234,7 @@ export const AllReportsAdmin: FC = () => {
 											{showPhoto && (
 												<div className={`md:ml-4`} onClick={(e) => e.stopPropagation()}>
 													<img
-														src={`${API_BASE_URL}${report.photoFront}`}
+														src={imageSrc}
 														alt={`${report.date} - Фото спереди`}
 														className='w-20 h-20 object-cover rounded-full border'
 														onError={() => handlePhotoError(report.id)}

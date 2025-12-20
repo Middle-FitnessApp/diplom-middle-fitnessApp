@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card, Tag, Space, Typography } from 'antd'
 import { computeDiffs, formatDate } from '../../utils/progressFunctions.ts'
-import { API_BASE_URL } from '../../config/api.config'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import type { ProgressReport } from '../../store/types/progress.types'
 
 const { Text } = Typography
@@ -24,11 +24,14 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 	isDark,
 }) => {
 	const diffs = computeDiffs(report, prevReport)
-	const shouldShowPhoto = !!report.photoFront && !failedPhotoIds.has(report.id)
+	const imageSrc = getPhotoUrl(report.photoFront)
+	const shouldShowPhoto = !!imageSrc && !failedPhotoIds.has(report.id)
 
 	const titleClass = isDark ? 'text-slate-100' : 'text-gray-800'
 	const textClass = isDark ? 'text-slate-300' : 'text-gray-700'
 	const textMutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
+
+	console.log('Image src for report', report.id, ':', imageSrc)
 
 	return (
 		<Card
@@ -88,18 +91,20 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 					</Space>
 				</div>
 
-				{shouldShowPhoto && (
-					<div className='shrink-0 md:ml-4' onClick={(e) => e.stopPropagation()}>
-						<img
-							src={`${API_BASE_URL}${report.photoFront}`}
-							alt='Фото отчета'
-							className={`w-20 h-20 object-cover rounded-full border-2 ${
-								isDark ? 'border-slate-600' : 'border-gray-200'
-							}`}
-							onError={() => onPhotoError(report.id)}
-						/>
-					</div>
-				)}
+							{shouldShowPhoto && (
+								<div className='shrink-0 md:ml-4' onClick={(e) => e.stopPropagation()}>
+									{/* Build image src safely: if photoFront already contains an absolute URL, use it as-is */}
+									
+									<img
+										src={imageSrc}
+										alt='Фото отчета'
+										className={`w-20 h-20 object-cover rounded-full border-2 ${
+											isDark ? 'border-slate-600' : 'border-gray-200'
+										}`}
+										onError={() => onPhotoError(report.id)}
+									/>
+								</div>
+							)}
 			</div>
 		</Card>
 	)

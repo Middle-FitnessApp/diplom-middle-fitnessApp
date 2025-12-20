@@ -11,7 +11,7 @@ import { formatDate } from '../../utils/progressFunctions.ts'
 import { AddCommentForm, CommentsList, MeasurementsCard } from '../../components/Admin'
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
-import { API_BASE_URL } from '../../config/api.config'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
@@ -129,9 +129,13 @@ export const Report: FC = () => {
 		)
 	}
 
-	const showFront = !!report.photoFront && !failedPhotos.front
-	const showSide = !!report.photoSide && !failedPhotos.side
-	const showBack = !!report.photoBack && !failedPhotos.back
+	const frontSrc = getPhotoUrl(report.photoFront)
+	const sideSrc = getPhotoUrl(report.photoSide)
+	const backSrc = getPhotoUrl(report.photoBack)
+
+	const showFront = !!frontSrc && !failedPhotos.front
+	const showSide = !!sideSrc && !failedPhotos.side
+	const showBack = !!backSrc && !failedPhotos.back
 	const hasAnyPhoto = showFront || showSide || showBack
 
 	return (
@@ -170,7 +174,7 @@ export const Report: FC = () => {
 												Спереди
 											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoFront}`}
+												src={frontSrc}
 												alt='Фото спереди'
 												className='rounded-lg'
 												style={{
@@ -190,7 +194,7 @@ export const Report: FC = () => {
 												Сбоку
 											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoSide}`}
+												src={sideSrc}
 												alt='Фото сбоку'
 												className='rounded-lg'
 												style={{
@@ -210,7 +214,7 @@ export const Report: FC = () => {
 												Сзади
 											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoBack}`}
+												src={backSrc}
 												alt='Фото сзади'
 												className='rounded-lg'
 												style={{
