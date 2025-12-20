@@ -41,3 +41,4 @@ coverage
 uploads/photos
 media/
 seed-production.ts
+seed-progress-only.ts
