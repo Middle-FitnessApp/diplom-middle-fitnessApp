@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Card, Pagination, Select, Typography, Empty, Tag, Space } from 'antd'
+import { Card, Pagination, Typography, Empty, Tag, Space, Segmented } from 'antd'
 import { useGetTrainerClientReportsQuery } from '../../store/api/progress.api.ts'
 import type { ProgressReport } from '../../store/types/progress.types'
 import { skipToken } from '@reduxjs/toolkit/query'
@@ -8,11 +8,13 @@ import {
 	formatDate,
 	computeDiffs,
 	PERIOD_OPTIONS,
+	type PeriodValue,
 } from '../../utils/progressFunctions.ts'
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
 import { useThemeClasses } from '../../hooks/useThemeClasses'
 import { API_BASE_URL } from '../../config/api.config'
+import { useAppSelector } from '../../store/hooks.ts'
 
 const { Title, Text } = Typography
 
@@ -20,10 +22,15 @@ export const AllReportsAdmin: FC = () => {
 	const navigate = useNavigate()
 	const { clientId } = useParams<{ clientId: string }>()
 	const [page, setPage] = useState(1)
-	const [period, setPeriod] = useState('all')
+	const [period, setPeriod] = useState<PeriodValue>('all')
 	const pageSize = 5
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
 	const classes = useThemeClasses()
+
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+	const cardBgClass = isDark ? 'bg-slate-800' : 'bg-light'
+	const borderClass = isDark ? 'border-slate-700' : 'border-gray-200'
 
 	const { data, isLoading, isError, error } = useGetTrainerClientReportsQuery(
 		clientId ? { clientId, page, limit: pageSize } : skipToken,
@@ -121,34 +128,32 @@ export const AllReportsAdmin: FC = () => {
 	}
 
 	return (
-		<div
-			className={` ${classes.cardBg} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
-		>
+		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
 			<div
-				className={`rounded-2xl p-10 shadow-xl ${classes.border} w-full max-w-[1200px]`}
+				className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}
 			>
-				<div className='section-header'>
-					<Title
-						level={2}
-						className={`section-title border-b-3 border-primary inline-block pb-3 mb-8 ${classes.title}`}
-					>
-						📋 Отчёты клиента
-					</Title>
-				</div>
-
-				<div className={`flex items-center justify-between mb-8 ${classes.textLight}`}>
-					<div>
-						<span className={`text-lg font-semibold ${classes.textLight}`}>Период:</span>
-						<p className='mt-2 md:hidden'>
-							(на мобильных устройствах фильтрация по периоду недоступна)
-						</p>
+				<div className='flex items-center justify-between gap-4 flex-wrap mb-8'>
+					<div className='flex flex-col'>
+						<Title
+							level={2}
+							className={`section-title border-b-3 border-primary inline-block pb-3 mb-8 ${classes.title}`}
+						>
+							📋 Отчёты клиента
+						</Title>
 					</div>
-					<Select
-						options={periodOptions}
+
+					<Segmented<PeriodValue>
+						options={PERIOD_OPTIONS.map((opt) => ({
+							label: opt.label,
+							value: opt.value,
+						}))}
 						value={period}
 						onChange={handlePeriodChange}
-						className='w-48'
-						size='large'
+						className={
+							isDark
+								? '[&_.ant-segmented-item-selected]:bg-primary [&_.ant-segmented-item-selected]:text-white'
+								: ''
+						}
 					/>
 				</div>
 

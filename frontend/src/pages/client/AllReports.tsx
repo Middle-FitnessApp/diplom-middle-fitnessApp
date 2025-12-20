@@ -1,10 +1,10 @@
 import { useState, useMemo, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pagination, Select, Typography, Empty, Spin } from 'antd'
+import { Pagination, Typography, Empty, Spin, Segmented } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useGetProgressReportsQuery } from '../../store/api/progress.api'
 import type { ProgressReport } from '../../store/types/progress.types'
-import { PERIOD_OPTIONS } from '../../utils/progressFunctions.ts'
+import { PERIOD_OPTIONS, type PeriodValue } from '../../utils/progressFunctions.ts'
 import { ApiErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'
 import { ReportCard } from '../../components'
@@ -14,7 +14,7 @@ const { Title } = Typography
 export const AllReports: FC = () => {
 	const navigate = useNavigate()
 	const [page, setPage] = useState(1)
-	const [period, setPeriod] = useState('all')
+	const [period, setPeriod] = useState<PeriodValue>('all')
 	const pageSize = 5
 	const theme = useAppSelector((state) => state.ui.theme)
 	const isDark = theme === 'dark'
@@ -23,7 +23,6 @@ export const AllReports: FC = () => {
 	const cardBgClass = isDark ? 'bg-slate-800' : 'bg-light'
 	const borderClass = isDark ? 'border-slate-700' : 'border-gray-200'
 	const titleClass = isDark ? 'text-slate-100' : 'text-gray-800'
-	const textClass = isDark ? 'text-slate-300' : 'text-gray-700'
 	const periodOptions = PERIOD_OPTIONS
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
 
@@ -133,24 +132,29 @@ export const AllReports: FC = () => {
 			<div
 				className={`${cardBgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-[1200px]`}
 			>
-				<div className='text-center mb-8'>
-					<Title
-						level={2}
-						className={`${titleClass} font-semibold mb-4 pb-3 border-b-3 inline-block`}
-						style={{ borderColor: 'var(--primary)' }}
-					>
-						📋 Ваши отчеты
-					</Title>
-				</div>
+				<div className='flex items-center justify-between gap-4 flex-wrap mb-8'>
+					<div className='flex flex-col'>
+						<Title
+							level={2}
+							className={`${titleClass} font-semibold m-0 text-left pb-3 border-b-3 inline-block`}
+							style={{ borderColor: 'var(--primary)' }}
+						>
+							📋 Ваши отчеты
+						</Title>
+					</div>
 
-				<div className='flex items-center justify-between mb-8'>
-					<span className={`text-lg font-semibold ${textClass}`}>Период:</span>
-					<Select
-						options={periodOptions}
+					<Segmented<PeriodValue>
+						options={PERIOD_OPTIONS.map((opt) => ({
+							label: opt.label,
+							value: opt.value,
+						}))}
 						value={period}
 						onChange={handlePeriodChange}
-						className='w-48'
-						size='large'
+						className={
+							isDark
+								? '[&_.ant-segmented-item-selected]:bg-primary [&_.ant-segmented-item-selected]:text-white'
+								: ''
+						}
 					/>
 				</div>
 
