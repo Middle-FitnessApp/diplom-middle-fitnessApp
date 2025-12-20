@@ -70,7 +70,10 @@ export const Progress = () => {
 	const [isModalVisible, setIsModalVisible] = useState(false)
 
 	// effectiveReports — prefer full reports endpoint, otherwise paged client data
-	const effectiveReports = reports ?? clientPageData?.data ?? []
+	const effectiveReports = useMemo(
+		() => reports ?? clientPageData?.data ?? [],
+		[reports, clientPageData?.data],
+	)
 
 	// Последние 20 отчетов для блока "Все отчёты"
 	const recentReports = useMemo(() => {

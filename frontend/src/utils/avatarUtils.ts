@@ -7,7 +7,7 @@ export function createAndTrackObjectUrl(
 	if (ref.current && ref.current.startsWith('blob:')) {
 		try {
 			URL.revokeObjectURL(ref.current)
-		} catch (e) {
+		} catch {
 			// ignore
 		}
 	}
@@ -20,7 +20,7 @@ export function revokeObjectUrl(url?: string | null) {
 	if (!url) return
 	try {
 		if (url.startsWith('blob:')) URL.revokeObjectURL(url)
-	} catch (e) {
+	} catch {
 		// ignore
 	}
 }
