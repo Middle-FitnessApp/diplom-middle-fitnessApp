@@ -35,8 +35,10 @@ coverage
 .env.production.local
 .env.production
 .env
+.env.test
 
 # файлы мультимедиа
 uploads/photos
 media/
 seed-production.ts
+seed-progress-only.ts

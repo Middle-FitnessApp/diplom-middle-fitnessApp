@@ -1,11 +1,11 @@
 import { Radio, Space, type RadioChangeEvent } from 'antd'
 
-interface Props {
+interface SelectPeriodProps {
 	period: 'month' | 'year' | 'all'
 	handlePeriodChange: (e: RadioChangeEvent) => void
 }
 
-export const SelectPeriod = ({ period, handlePeriodChange }: Props) => {
+export const SelectPeriod = ({ period, handlePeriodChange }: SelectPeriodProps) => {
 	return (
 		<Radio.Group value={period} onChange={handlePeriodChange}>
 			<Space direction='horizontal'>

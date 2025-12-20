@@ -8,6 +8,7 @@ import {
 	type CreateNutritionDayDto,
 } from '../validation/zod/nutrition/create-day.dto.js'
 import type { CreateSubcategoryWithDaysInput } from '../types/nutrition.js'
+import { MAX_NUTRITION_DAYS } from '../consts/nutrition.js'
 
 // =============================================
 //  Личный назначенный план питания клиента
@@ -494,6 +495,17 @@ export async function createNutritionDay(req: FastifyRequest, reply: FastifyRepl
 		throw ApiError.notFound('Подкатегория не найдена или нет прав доступа')
 	}
 
+	// 🔥 НОВАЯ ПРОВЕРКА: Проверяем количество существующих дней
+	const existingDaysCount = await prisma.nutritionDay.count({
+		where: { subcatId },
+	})
+
+	if (existingDaysCount >= MAX_NUTRITION_DAYS) {
+		throw ApiError.badRequest(
+			`Достигнут максимум: ${MAX_NUTRITION_DAYS} дней в программе питания`,
+		)
+	}
+
 	// Создаем день с приемами пищи
 	const day = await prisma.nutritionDay.create({
 		data: {
@@ -629,6 +641,13 @@ export async function createSubcategoryWithDays(
 ) {
 	const { id: categoryId } = req.params as { id: string }
 	const { name, description, days } = req.body as CreateSubcategoryWithDaysInput
+
+	// 🔥 НОВАЯ ПРОВЕРКА: Валидация количества дней
+	if (days.length > MAX_NUTRITION_DAYS) {
+		throw ApiError.badRequest(
+			`Нельзя создать больше ${MAX_NUTRITION_DAYS} дней. Получено: ${days.length}`,
+		)
+	}
 
 	// Проверяем, что категория существует и принадлежит тренеру
 	const category = await prisma.nutritionCategory.findFirst({

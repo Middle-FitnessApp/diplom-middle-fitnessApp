@@ -5,8 +5,9 @@ import type { ProgressAnalyticsResponse } from '../store/types/progress.types'
  * в массив данных для графика (LineChart)
  */
 
-type ChartDataPoint = {
+export type ChartDataPoint = {
 	date: string
+	_interpolated?: boolean
 	[key: string]: string | number | boolean | undefined
 }
 

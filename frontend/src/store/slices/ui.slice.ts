@@ -10,7 +10,7 @@ interface Notification {
 	read: boolean
 }
 
-interface UIState {
+export interface UIState {
 	isSidebarOpen: boolean
 	currentPage: string
 	notifications: Notification[]
@@ -20,24 +20,24 @@ interface UIState {
 // Получаем сохранённую тему из localStorage или определяем по системным настройкам
 const getInitialTheme = (): Theme => {
 	if (typeof window === 'undefined') return 'light'
-	
+
 	const savedTheme = localStorage.getItem('theme') as Theme | null
 	if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
 		return savedTheme
 	}
-	
+
 	// Проверяем системные настройки
 	if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
 		return 'dark'
 	}
-	
+
 	return 'light'
 }
 
 // Применяем тему к документу
 const applyTheme = (theme: Theme) => {
 	if (typeof document === 'undefined') return
-	
+
 	const root = document.documentElement
 	if (theme === 'dark') {
 		root.classList.add('dark')
@@ -67,7 +67,10 @@ const uiSlice = createSlice({
 		setCurrentPage: (state, action: PayloadAction<string>) => {
 			state.currentPage = action.payload
 		},
-		addNotification: (state, action: PayloadAction<Omit<Notification, 'id' | 'read'>>) => {
+		addNotification: (
+			state,
+			action: PayloadAction<Omit<Notification, 'id' | 'read'>>,
+		) => {
 			state.notifications.push({
 				...action.payload,
 				id: Date.now().toString(),

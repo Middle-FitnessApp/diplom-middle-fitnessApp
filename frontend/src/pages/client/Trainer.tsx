@@ -1,6 +1,6 @@
 import { Typography } from 'antd'
 import { Chat } from '../../components/Chat'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
 

@@ -3,6 +3,7 @@ import { Card, Typography, Collapse, Empty, Tag, Button, Tooltip, Popconfirm } f
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { MealCard } from './NutritionMeal'
 import type { NutritionDay } from '../../types/nutritions'
+import { ThemedTag } from './ThemedTag'
 
 const { Title, Text } = Typography
 
@@ -14,6 +15,7 @@ interface NutritionDayCardProps {
 	showMealsByDefault?: boolean
 	onEdit?: (day: NutritionDay, e: React.MouseEvent) => void
 	onDelete?: (day: NutritionDay, e: React.MouseEvent) => void
+	isDark?: boolean
 }
 
 export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
@@ -24,6 +26,7 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 	showMealsByDefault = false,
 	onEdit,
 	onDelete,
+	isDark = false,
 }) => {
 	const formatDate = (dateStr: string) => {
 		const date = new Date(dateStr)
@@ -66,6 +69,9 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 
 	const uniqueTypes = [...new Set(day.meals.map((meal) => meal.type))]
 
+	const titleClass = isDark ? 'text-white' : 'text-gray-800'
+	const textSecondaryClass = isDark ? 'text-slate-300' : 'text-gray-500'
+
 	if (variant === 'trainer') {
 		// Стиль для тренера - с выбором и интерактивностью
 		return (
@@ -81,24 +87,22 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 							{day.dayOrder}
 						</div>
 						<div>
-							<Title level={5} className='mb-0!'>
+							<Title level={5} className={`mb-1! ${titleClass}`}>
 								{day.dayTitle}
 							</Title>
 							<div className='flex items-center gap-2 mt-1'>
-								<Text type='secondary'>{day.meals?.length || 0} приёмов пищи</Text>
+								<Text className={`text-sm ${textSecondaryClass}`}>
+									{day.meals?.length || 0} приёмов пищи
+								</Text>
 								<div className='flex flex-wrap gap-1'>
 									{uniqueTypes.map((type) => (
-										<Tag
+										<ThemedTag
 											key={type}
-											className='text-xs'
-											style={{
-												backgroundColor: `${getMealTypeColor(type)}20`,
-												borderColor: getMealTypeColor(type),
-												color: getMealTypeColor(type),
-											}}
+											baseColor={getMealTypeColor(type)}
+											isDark={isDark}
 										>
 											{getMealTypeLabel(type)}
-										</Tag>
+										</ThemedTag>
 									))}
 								</div>
 							</div>
@@ -145,7 +149,7 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 						{
 							key: '1',
 							label: (
-								<Text type='secondary' className='text-sm'>
+								<Text className={`text-sm ${textSecondaryClass}`}>
 									Показать детали приёмов пищи
 								</Text>
 							),
@@ -185,37 +189,44 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 						{day.dayOrder}
 					</div>
 					<div>
-						<Title level={4} className='mb-1! text-gray-800!'>
+						<Title level={4} className={`mb-1! ${titleClass}`}>
 							{day.dayTitle}
 						</Title>
 						<div className='flex items-center gap-3'>
-							<Text type='secondary' className='text-sm'>
+							<Text className={`text-sm ${textSecondaryClass}`}>
 								{day.meals?.length || 0} приёмов пищи
 							</Text>
 							<div className='flex flex-wrap gap-1'>
 								{uniqueTypes.map((type) => (
-									<Tag
+									<ThemedTag
 										key={type}
-										className='text-xs'
-										style={{
-											backgroundColor: `${getMealTypeColor(type)}20`,
-											borderColor: getMealTypeColor(type),
-											color: getMealTypeColor(type),
-										}}
+										baseColor={getMealTypeColor(type)}
+										isDark={isDark}
 									>
 										{getMealTypeLabel(type)}
-									</Tag>
+									</ThemedTag>
 								))}
 							</div>
 							{date && (
 								<>
 									<span className='text-gray-300'>•</span>
-									<Text type='secondary' className='text-sm'>
+									<Text className={`text-sm ${textSecondaryClass}`}>
 										{formatDate(date)}
 									</Text>
 								</>
 							)}
-							{isToday && <Tag color='green'>Сегодня</Tag>}
+							{isToday && (
+								<Tag
+									style={{
+										backgroundColor: isDark ? '#52c41a' : '#f6ffed',
+										borderColor: isDark ? '#52c41a' : '#b7eb8f',
+										color: isDark ? '#ffffff' : '#52c41a',
+										borderRadius: '4px',
+									}}
+								>
+									Сегодня
+								</Tag>
+							)}
 						</div>
 					</div>
 				</div>
@@ -227,7 +238,7 @@ export const NutritionDayCard: React.FC<NutritionDayCardProps> = ({
 					{
 						key: '1',
 						label: (
-							<Text type='secondary' className='text-sm'>
+							<Text className={`text-sm ${textSecondaryClass}`}>
 								Показать детали приёмов пищи
 							</Text>
 						),

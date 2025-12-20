@@ -5,7 +5,7 @@ import type { UploadChangeParam, UploadFile } from 'antd/es/upload'
 import type { InputRef } from 'antd'
 import { EmojiPickerComponent } from './EmojiPickerComponent'
 import type { ChatUploadFile } from '../../types'
-import { useThemeClasses } from '../../store/hooks'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 type InputPanelProps = {
 	form: ReturnType<typeof Form.useForm>[0]

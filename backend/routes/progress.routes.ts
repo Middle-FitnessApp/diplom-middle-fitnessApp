@@ -12,6 +12,8 @@ import { GetAnalyticsQuerySchema } from '../validation/zod/progress/analytics.dt
 import { GetComparisonQuerySchema } from '../validation/zod/progress/compare.dto.js'
 import { MAX_PHOTO_SIZE } from '../consts/file.js'
 import { cleanupFilesOnError, attachFilesToRequest } from '../utils/uploadPhotos.js'
+import { getTrainerForClient } from '../controllers/trainer.js'
+import { createNotification } from '../services/notification.service.js'
 
 export default async function progressRoutes(app: FastifyInstance) {
 	// Регистрируем multipart, но он будет работать только для multipart/form-data
@@ -89,6 +91,16 @@ export default async function progressRoutes(app: FastifyInstance) {
 
 			// Создаём новый отчёт о прогрессе (фото опциональны)
 			const progress = await createProgress(req.user.id, validatedData, filesMap)
+
+			const trainerId = await getTrainerForClient(req.user.id)
+			if (trainerId && app.io) {
+				await createNotification(
+					trainerId,
+					'REPORT',
+					`Ваш клиент отправил новый отчет о прогрессе`,
+					app.io,
+				)
+			}
 
 			return reply.status(201).send({
 				message: 'Отчет о прогрессе успешно создан',
@@ -307,6 +319,24 @@ export default async function progressRoutes(app: FastifyInstance) {
 
 			// Создание комментария
 			const comment = await addComment(id, req.user.id, validation.data)
+
+			// Отправляем уведомление клиенту о новом комментарии
+			const { prisma } = await import('../prisma.js')
+
+			// Получаем ID клиента из отчета о прогрессе
+			const progress = await prisma.progress.findUnique({
+				where: { id },
+				select: { userId: true },
+			})
+
+			if (progress && app.io) {
+				await createNotification(
+					progress.userId,
+					'COMMENT',
+					`Тренер добавил комментарий к вашему отчету о прогрессе`,
+					app.io,
+				)
+			}
 
 			return reply.status(201).send({
 				message: 'Комментарий успешно добавлен',

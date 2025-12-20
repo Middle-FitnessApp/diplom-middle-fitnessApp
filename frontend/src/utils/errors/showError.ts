@@ -49,7 +49,7 @@ const NOTIFICATION_TYPES: Record<ErrorType, 'error' | 'warning' | 'info'> = {
  */
 export function showError(
 	error: RTKQueryError | NormalizedError | string | undefined,
-	config: ShowErrorConfig = {}
+	config: ShowErrorConfig = {},
 ): void {
 	const { useNotification = false, title, duration = 4.5, onClose } = config
 
@@ -106,7 +106,7 @@ export function showApiError(error: RTKQueryError, config?: ShowErrorConfig): vo
 export function showErrorWithFallback(
 	error: RTKQueryError,
 	customMessage?: string,
-	config?: ShowErrorConfig
+	config?: ShowErrorConfig,
 ): void {
 	if (customMessage) {
 		showError(customMessage, config)
@@ -126,7 +126,9 @@ export function showErrorWithFallback(
  */
 export function handleError(error: unknown, config?: ShowErrorConfig): void {
 	// Логируем в консоль для отладки
-	console.error('Error:', error)
+	if (import.meta.env.DEV) {
+		console.error('Error:', error)
+	}
 
 	showError(error as RTKQueryError, config)
 }
@@ -135,7 +137,7 @@ export function handleError(error: unknown, config?: ShowErrorConfig): void {
  * Создаёт типизированный обработчик ошибок для RTK Query mutations
  * @example
  * const [createItem] = useCreateItemMutation()
- * 
+ *
  * const handleSubmit = async () => {
  *   try {
  *     await createItem(data).unwrap()
@@ -148,15 +150,16 @@ export function handleError(error: unknown, config?: ShowErrorConfig): void {
 export function handleMutationError(
 	error: unknown,
 	fallbackMessage?: string,
-	config?: ShowErrorConfig
+	config?: ShowErrorConfig,
 ): void {
 	const parsed = parseError(error as RTKQueryError)
-	
+
 	// Если есть сообщение от сервера - используем его
 	// Иначе используем fallback или дефолтное сообщение
-	const finalMessage = parsed.message !== 'Произошла неизвестная ошибка' 
-		? parsed.message 
-		: (fallbackMessage || parsed.message)
+	const finalMessage =
+		parsed.message !== 'Произошла неизвестная ошибка'
+			? parsed.message
+			: fallbackMessage || parsed.message
 
 	showError({ ...parsed, message: finalMessage }, config)
 }
@@ -165,4 +168,3 @@ export function handleMutationError(
  * Хелпер для получения сообщения об ошибке (реэкспорт)
  */
 export { getErrorMessage }
-

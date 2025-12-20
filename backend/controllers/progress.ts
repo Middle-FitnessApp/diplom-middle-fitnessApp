@@ -176,6 +176,8 @@ export async function getAllProgress(userId: string, params: GetAllProgressQuery
 	// Получаем общее количество записей
 	const total = await prisma.progress.count({ where })
 
+	console.log('Total progress reports:', total)
+
 	// Вычисляем пагинацию
 	const skip = (page - 1) * limit
 	const totalPages = Math.ceil(total / limit)

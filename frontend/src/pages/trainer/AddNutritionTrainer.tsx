@@ -29,12 +29,20 @@ import type {
 	NutritionSubcategory,
 	NutritionDay,
 } from '../../types/nutritions'
+import { useAppSelector } from '../../store/hooks'
 
 const { Title, Text, Paragraph } = Typography
 
 export const AddNutritionTrainer = () => {
 	const { id: clientId } = useParams<{ id: string }>()
 	const navigate = useNavigate()
+
+	const themeState = useAppSelector((state) => state.ui.theme)
+	const isDark = themeState === 'dark'
+	const headerBgClass = 'gradient-bg'
+	const bgClass = themeState === 'dark' ? 'bg-dark' : 'bg-light'
+	const textPrimaryClass = themeState === 'dark' ? 'text-white' : 'text-gray-800'
+	const borderClass = themeState === 'dark' ? 'border-gray-600' : 'border-gray-200'
 
 	// Состояния для выбора
 	const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -137,7 +145,9 @@ export const AddNutritionTrainer = () => {
 			navigate(`/admin/client/${clientId}`)
 		} catch (error) {
 			const apiError = error as { data?: { message?: string } }
-			console.error('Ошибка при назначении плана:', error)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка при назначении плана:', error)
+			}
 			message.error(apiError?.data?.message || 'Ошибка при назначении плана питания')
 		}
 	}
@@ -154,13 +164,19 @@ export const AddNutritionTrainer = () => {
 			<Card
 				key={day.id}
 				className={`transition-all duration-300 cursor-pointer ${
-					isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
+					isSelected
+						? isDark
+							? 'ring-2 ring-sky-400 shadow-lg'
+							: 'ring-2 ring-blue-500 shadow-lg'
+						: 'hover:shadow-md'
 				}`}
 				onClick={() => !selectAllDays && handleDayToggle(day.id)}
 				style={{
-					borderColor: isSelected ? '#1890ff' : undefined,
+					borderColor: isSelected ? (isDark ? '#60a5fa' : '#1890ff') : undefined,
 					background: isSelected
-						? 'linear-gradient(135deg, #e6f7ff, #f0f5ff)'
+						? isDark
+							? 'linear-gradient(135deg, #1f2937, #111827)'
+							: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)'
 						: undefined,
 				}}
 			>
@@ -235,8 +251,12 @@ export const AddNutritionTrainer = () => {
 
 	if (isErrorCategories) {
 		return (
-			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-				<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-4xl'>
+			<div
+				className={`${headerBgClass} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
+			>
+				<div
+					className={`${bgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-4xl`}
+				>
 					<Empty
 						description='Ошибка при загрузке категорий питания'
 						image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -254,8 +274,12 @@ export const AddNutritionTrainer = () => {
 	const daysCount = selectAllDays ? days.length : selectedDayIds.length
 
 	return (
-		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
-			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-5xl'>
+		<div
+			className={`${headerBgClass} min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start`}
+		>
+			<div
+				className={`${bgClass} rounded-2xl p-10 shadow-xl border ${borderClass} w-full max-w-5xl`}
+			>
 				{/* Заголовок */}
 				<div className='text-center mb-8 relative'>
 					<Button
@@ -266,7 +290,10 @@ export const AddNutritionTrainer = () => {
 					>
 						Назад
 					</Button>
-					<Title level={2} className='text-gray-800 font-semibold mb-4 pb-3 border-b-3 border-primary inline-block'>
+					<Title
+						level={2}
+						className={`${textPrimaryClass} font-semibold mb-4 pb-3 border-b-3 border-primary inline-block`}
+					>
 						🍽️ Назначение плана питания
 					</Title>
 					<Paragraph type='secondary' className='max-w-xl mx-auto'>
@@ -275,11 +302,13 @@ export const AddNutritionTrainer = () => {
 				</div>
 
 				{/* Селекторы */}
-				<Card className='mb-6 hover:shadow-lg transition-all duration-300'>
+				<Card
+					className={`mb-6! hover:shadow-lg transition-all duration-300 ${bgClass} border ${borderClass}`}
+				>
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 						{/* Категория */}
 						<div>
-							<label className='block text-sm font-semibold mb-2 text-gray-700'>
+							<label className={`block text-sm font-semibold mb-2 ${textPrimaryClass}`}>
 								📁 Категория
 							</label>
 							<Select
@@ -312,7 +341,7 @@ export const AddNutritionTrainer = () => {
 
 						{/* Программа (подкатегория) */}
 						<div>
-							<label className='block text-sm font-semibold mb-2 text-gray-700'>
+							<label className={`block text-sm font-semibold mb-2 ${textPrimaryClass}`}>
 								📋 Программа питания
 							</label>
 							<Select
@@ -343,15 +372,21 @@ export const AddNutritionTrainer = () => {
 
 					{/* Информация о выбранной программе */}
 					{selectedSubcategoryInfo && (
-						<div className='mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100'>
+						<div
+							className={`mt-4 p-4 rounded-lg border ${borderClass} ${
+								isDark ? 'bg-gray-800 text-white' : 'bg-blue-50 text-blue-700'
+							}`}
+						>
 							<div className='flex items-center gap-2 mb-2'>
-								<CalendarOutlined className='text-blue-500' />
-								<Text strong className='text-blue-700'>
+								<CalendarOutlined className={isDark ? 'text-sky-300' : 'text-blue-500'} />
+								<Text strong className={isDark ? 'text-white' : 'text-blue-700'}>
 									{selectedSubcategoryInfo.name}
 								</Text>
 							</div>
 							{selectedSubcategoryInfo.description && (
-								<Text type='secondary'>{selectedSubcategoryInfo.description}</Text>
+								<Text type='secondary' className={isDark ? 'text-slate-300' : ''}>
+									{selectedSubcategoryInfo.description}
+								</Text>
 							)}
 						</div>
 					)}
@@ -359,7 +394,7 @@ export const AddNutritionTrainer = () => {
 
 				{/* Выбор дней */}
 				{selectedSubcategory && (
-					<Card className='mb-6'>
+					<Card className={`mb-6 ${bgClass} border ${borderClass}`}>
 						<div className='flex items-center justify-between mb-4'>
 							<div>
 								<Title level={4} className='mb-1!'>
@@ -381,17 +416,23 @@ export const AddNutritionTrainer = () => {
 							</div>
 						</div>
 
-						<Divider className='my-4!' />
+						<Divider className='my-6!' />
 
 						{isLoadingDays || isFetchingDays ? (
 							<div className='flex justify-center py-8'>
 								<Spin size='large' />
 							</div>
 						) : days.length > 0 ? (
-							<div className='space-y-6'>
+							<div className='space-y-6!'>
 								{!selectAllDays && (
-									<div className='p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-4'>
-										<Text type='warning'>
+									<div
+										className={`p-3 rounded-lg border mb-4 ${
+											isDark
+												? 'bg-gray-800 border-gray-700'
+												: 'bg-yellow-50 border-yellow-200'
+										}`}
+									>
+										<Text type='warning' className={isDark ? 'text-slate-200' : ''}>
 											💡 Нажмите на день, чтобы выбрать или отменить выбор
 										</Text>
 									</div>
@@ -411,7 +452,7 @@ export const AddNutritionTrainer = () => {
 				)}
 
 				{/* Итоговая информация и кнопки */}
-				<Card className='sticky bottom-4'>
+				<Card className={`sticky bottom-4 ${bgClass} border ${borderClass}`}>
 					<div className='flex items-center justify-between'>
 						<div>
 							{canAssign && (

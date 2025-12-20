@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { MessageType, ChatType } from '../../types'
 
-interface ChatState {
+export interface ChatState {
 	// Список чатов пользователя
 	chats: ChatType[]
 	// Сообщения по chatId

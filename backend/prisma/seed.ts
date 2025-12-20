@@ -1043,6 +1043,31 @@ async function main() {
 		})
 	}
 
+	// Создаём уведомления для тренеров
+	console.log('\n🔔 Создаём уведомления...')
+	for (const trainer of trainers) {
+		// Находим клиентов с ACCEPTED статусом у этого тренера
+		const acceptedRelations = await prisma.trainerClient.findMany({
+			where: {
+				trainerId: trainer.id,
+				status: 'ACCEPTED',
+			},
+			select: { clientId: true },
+		})
+
+		if (acceptedRelations.length > 0) {
+			// Создаём уведомление о новом отчете для тренера
+			await prisma.notification.create({
+				data: {
+					userId: trainer.id,
+					type: 'REPORT',
+					message: `Ваш клиент отправил новый отчет о прогрессе`,
+					isRead: false,
+				},
+			})
+		}
+	}
+
 	// Подсчёт фото
 	const trainerPhotos = fs.readdirSync(trainersDir).length
 	const clientPhotos = fs.readdirSync(clientsDir).length

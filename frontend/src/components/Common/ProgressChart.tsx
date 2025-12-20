@@ -12,14 +12,9 @@ import {
 	ResponsiveContainer,
 } from 'recharts'
 import type { ProgressMetric } from '../../constants/progressMetrics'
+import type { ChartDataPoint } from '../../utils/progressChart'
 
 const { Text } = Typography
-
-type ChartDataPoint = {
-	date: string
-	_interpolated?: boolean
-	[key: string]: string | number | boolean | undefined
-}
 
 interface DotProps {
 	cx?: number

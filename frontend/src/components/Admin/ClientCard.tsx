@@ -12,6 +12,9 @@ import {
 	AppleOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
+import { formatTelHref, formatPhoneDisplay } from '../../utils/phone'
 
 const { Text } = Typography
 
@@ -30,8 +33,6 @@ interface ClientCardProps {
 	compact?: boolean
 }
 
-const API_URL = 'http://localhost:3000'
-
 export const ClientCard: React.FC<ClientCardProps> = ({
 	client,
 	onToggleStar,
@@ -39,10 +40,8 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 }) => {
 	const navigate = useNavigate()
 
-	const getPhotoUrl = (photo?: string) => {
-		if (!photo) return `${API_URL}/uploads/default/user.png`
-		return photo.startsWith('http') ? photo : `${API_URL}${photo}`
-	}
+	// theme
+	const isDark = useAppSelector((s) => s.ui.theme) === 'dark'
 
 	const handleViewProfile = () => {
 		navigate(`/admin/client/${client.id}`)
@@ -55,6 +54,8 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 	const handleAddNutrition = () => {
 		navigate(`/admin/client/${client.id}/add-nutrition`)
 	}
+
+	const telHref = formatTelHref(client.phone)
 
 	if (compact) {
 		return (
@@ -179,15 +180,35 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 					{client.email && (
 						<div className='flex items-center gap-2 text-sm'>
 							<MailOutlined style={{ color: 'var(--primary)' }} />
-							<Text type='secondary' className='truncate'>
+							<a
+								href={`mailto:${client.email}`}
+								onClick={(e) => e.stopPropagation()}
+								className={
+									isDark
+										? 'text-xs text-slate-300 hover:text-white'
+										: 'text-xs text-blue-600 hover:text-blue-800 truncate'
+								}
+								style={{ textDecoration: 'underline', cursor: 'pointer' }}
+							>
 								{client.email}
-							</Text>
+							</a>
 						</div>
 					)}
 					{client.phone && (
 						<div className='flex items-center gap-2 text-sm'>
 							<PhoneOutlined style={{ color: 'var(--success)' }} />
-							<Text type='secondary'>{client.phone}</Text>
+							<a
+								href={telHref}
+								onClick={(e) => e.stopPropagation()}
+								className={
+									isDark
+										? 'text-xs text-slate-300 hover:text-white'
+										: 'text-xs text-green-600 hover:text-green-800'
+								}
+								style={{ textDecoration: 'underline', cursor: 'pointer' }}
+							>
+								{formatPhoneDisplay(client.phone) || client.phone}
+							</a>
 						</div>
 					)}
 				</div>
@@ -195,19 +216,20 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 
 			{/* Действия */}
 			<div className='p-4'>
-				<div className='action-buttons'>
+				{/* Responsive buttons: allow wrapping when space is limited */}
+				<div className='flex flex-wrap gap-3'>
 					<Button
 						type='primary'
 						icon={<EyeOutlined />}
 						onClick={handleViewProfile}
-						style={{ borderRadius: '8px' }}
+						className='rounded-md flex-1 basis-[220px] min-w-0'
 					>
 						Профиль
 					</Button>
 					<Button
 						icon={<MessageOutlined />}
 						onClick={handleOpenChat}
-						style={{ borderRadius: '8px' }}
+						className='rounded-md flex-1 basis-[220px] min-w-0'
 					>
 						Чат
 					</Button>
@@ -215,7 +237,8 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 						<Button
 							icon={<AppleOutlined />}
 							onClick={handleAddNutrition}
-							style={{ borderRadius: '8px', color: 'var(--success)' }}
+							className='rounded-md flex-1 basis-[220px] min-w-0'
+							style={{ color: 'var(--success)' }}
 						>
 							Питание
 						</Button>

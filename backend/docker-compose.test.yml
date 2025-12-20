@@ -1,0 +1,25 @@
+# Docker Compose для тестов с PostgreSQL
+# TODO: Настроить запуск перед тестами
+# - Использовать образ postgres:17 из Docker Hub
+# - Переменные из .env.test
+
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:17
+    # Переменные окружения берём из .env.test
+    env_file: .env.test
+    # Для локальной разработки (если нужно, раскомментируйте пример ниже):
+    # ports:
+    #   - '5433:5432' # Проброс порта хоста -> контейнер (удобно локально, не используйте в CI)
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_test_data:

@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { Card, Typography, Button, Row, Col, Image } from 'antd'
+import { Card, Typography, Button, Row, Col, Image, message } from 'antd'
 import { ArrowLeftOutlined, CommentOutlined } from '@ant-design/icons'
 import {
 	useAddProgressCommentMutation,
@@ -11,8 +11,8 @@ import { formatDate } from '../../utils/progressFunctions.ts'
 import { AddCommentForm, CommentsList, MeasurementsCard } from '../../components/Admin'
 import { ApiErrorState } from '../../components/errors'
 import { LoadingState } from '../../components'
-import { API_BASE_URL } from '../../config/api.config'
-import { useThemeClasses } from '../../store/hooks.ts'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
+import { useThemeClasses } from '../../hooks/useThemeClasses'
 
 const { Title } = Typography
 
@@ -68,7 +68,10 @@ export const Report: FC = () => {
 		try {
 			await addComment({ progressId: reportIdToUse!, text }).unwrap()
 		} catch (err) {
-			console.error('Ошибка добавления комментария:', err)
+			message.error('Не удалось добавить комментарий. Попробуйте позже.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка добавления комментария:', err)
+			}
 		}
 	}
 
@@ -95,7 +98,15 @@ export const Report: FC = () => {
 		return (
 			<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10'>
 				<ApiErrorState
-					error={{ status: 400, data: { error: { message: 'ID отчета не указан или указан неверно', statusCode: 400 } } }}
+					error={{
+						status: 400,
+						data: {
+							error: {
+								message: 'ID отчета не указан или указан неверно',
+								statusCode: 400,
+							},
+						},
+					}}
 					title='Ошибка загрузки'
 				/>
 			</div>
@@ -118,9 +129,13 @@ export const Report: FC = () => {
 		)
 	}
 
-	const showFront = !!report.photoFront && !failedPhotos.front
-	const showSide = !!report.photoSide && !failedPhotos.side
-	const showBack = !!report.photoBack && !failedPhotos.back
+	const frontSrc = getPhotoUrl(report.photoFront)
+	const sideSrc = getPhotoUrl(report.photoSide)
+	const backSrc = getPhotoUrl(report.photoBack)
+
+	const showFront = !!frontSrc && !failedPhotos.front
+	const showSide = !!sideSrc && !failedPhotos.side
+	const showBack = !!backSrc && !failedPhotos.back
 	const hasAnyPhoto = showFront || showSide || showBack
 
 	return (
@@ -155,9 +170,11 @@ export const Report: FC = () => {
 								{showFront && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Спереди</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Спереди
+											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoFront}`}
+												src={frontSrc}
 												alt='Фото спереди'
 												className='rounded-lg'
 												style={{
@@ -173,9 +190,11 @@ export const Report: FC = () => {
 								{showSide && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сбоку</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Сбоку
+											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoSide}`}
+												src={sideSrc}
 												alt='Фото сбоку'
 												className='rounded-lg'
 												style={{
@@ -191,9 +210,11 @@ export const Report: FC = () => {
 								{showBack && (
 									<Col xs={24} sm={8}>
 										<div className='text-center'>
-											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>Сзади</div>
+											<div className={`mb-2 font-semibold ${classes.textSecondary}`}>
+												Сзади
+											</div>
 											<Image
-												src={`${API_BASE_URL}${report.photoBack}`}
+												src={backSrc}
 												alt='Фото сзади'
 												className='rounded-lg'
 												style={{

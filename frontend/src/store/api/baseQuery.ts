@@ -17,7 +17,7 @@ const AUTH_ENDPOINTS = ['/login', '/signup', '/refresh']
  */
 function isAuthRequest(args: string | FetchArgs): boolean {
 	const url = typeof args === 'string' ? args : args.url
-	return AUTH_ENDPOINTS.some(endpoint => url?.includes(endpoint))
+	return AUTH_ENDPOINTS.some((endpoint) => url?.includes(endpoint))
 }
 
 export const createBaseQueryWithReauth = (baseUrl: string) => {
@@ -64,7 +64,9 @@ export const createBaseQueryWithReauth = (baseUrl: string) => {
 					// Повторяем оригинальный запрос с новым токеном
 					result = await rawBaseQuery(args, api, extraOptions)
 				} else {
-					console.error('В ответе обновления отсутствует токен доступа')
+					if (import.meta.env.DEV) {
+						console.error('В ответе обновления отсутствует токен доступа')
+					}
 				}
 			} else {
 				if (typeof window !== 'undefined') {

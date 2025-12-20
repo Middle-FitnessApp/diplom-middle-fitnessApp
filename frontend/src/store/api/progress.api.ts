@@ -5,61 +5,12 @@ import type {
 	CommentsResponse,
 	Comment,
 	ProgressAnalyticsResponse,
+	ProgressReport,
+	ProgressChartData,
+	ProgressReportsResponse,
+	ProgressReportResponse,
+	CreateProgressResponse,
 } from '../types/progress.types'
-
-export interface ProgressReport {
-	id: string
-	date: string
-	weight: number
-	height?: number
-	chest?: number
-	waist: number
-	hips: number
-	arm?: number
-	leg?: number
-	photoFront?: string
-	photoSide?: string
-	photoBack?: string
-	comments?: Comment[]
-	createdAt: string
-	updatedAt: string
-}
-
-export interface ProgressChartData {
-	date: string
-	weight: number
-	waist: number
-	hips: number
-	chest?: number
-	arm?: number
-	leg?: number
-	[key: string]: string | number | boolean | undefined
-}
-
-// Типы для пагинации (согласно документации API)
-export interface PaginationMeta {
-	page: number
-	limit: number
-	total: number
-	totalPages: number
-}
-
-// Ответ от API с пагинацией
-export interface ProgressReportsResponse {
-	data: ProgressReport[]
-	meta: PaginationMeta
-}
-
-// Ответ от API для одного отчёта
-export interface ProgressReportResponse {
-	progress: ProgressReport
-}
-
-// Ответ от API при создании отчёта
-export interface CreateProgressResponse {
-	message: string
-	progress: ProgressReport
-}
 
 export const progressApi = createApi({
 	reducerPath: 'progressApi',
@@ -85,9 +36,27 @@ export const progressApi = createApi({
 
 		// Получение всех отчетов с полной информацией
 		getProgressReports: builder.query<ProgressReport[], void>({
-			query: () => '/progress',
+			// Просим сервер вернуть все записи: limit=0 (backend поддерживает special-case)
+			query: () => '/progress?limit=0',
 			providesTags: ['Progress'],
 			transformResponse: (response: ProgressReportsResponse) => response.data,
+		}),
+
+		// Получение отчетов клиента с серверной пагинацией (для страницы клиента)
+		getClientReports: builder.query<
+			ProgressReportsResponse,
+			{ page?: number; limit?: number; startDate?: string; endDate?: string } | void
+		>({
+			query: (params) => {
+				if (!params) return '/progress?page=1&limit=5'
+				const p = new URLSearchParams()
+				if (params.page) p.append('page', String(params.page))
+				if (params.limit) p.append('limit', String(params.limit))
+				if (params.startDate) p.append('startDate', params.startDate)
+				if (params.endDate) p.append('endDate', params.endDate)
+				return `/progress?${p.toString()}`
+			},
+			providesTags: ['Progress'],
 		}),
 
 		// Получение всех отчетов для тренера по конкретному клиенту с пагинацией и фильтрацией по дате
@@ -195,6 +164,7 @@ export const progressApi = createApi({
 export const {
 	useGetProgressChartDataQuery,
 	useGetProgressReportsQuery,
+	useGetClientReportsQuery,
 	useGetTrainerClientReportsQuery,
 	useGetProgressReportQuery,
 	useGetTrainerProgressReportQuery,

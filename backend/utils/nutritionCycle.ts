@@ -14,12 +14,18 @@ export function getCurrentDayIndex(
 	totalDays: number,
 	targetDate: Date = new Date(),
 ): number {
-	// Нормализуем даты до начала дня (убираем время)
-	const start = new Date(startDate)
-	start.setHours(0, 0, 0, 0)
+	// Нормализуем даты до начала дня в UTC
+	const start = new Date(
+		Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()),
+	)
 
-	const target = new Date(targetDate)
-	target.setHours(0, 0, 0, 0)
+	const target = new Date(
+		Date.UTC(
+			targetDate.getUTCFullYear(),
+			targetDate.getUTCMonth(),
+			targetDate.getUTCDate(),
+		),
+	)
 
 	// Вычисляем количество дней между датами
 	const diffInMs = target.getTime() - start.getTime()
@@ -79,8 +85,13 @@ export function calculateCycleDays<
 	const currentIndex = getCurrentDayIndex(startDate, totalDays, targetDate)
 
 	// Нормализуем targetDate
-	const target = new Date(targetDate)
-	target.setHours(0, 0, 0, 0)
+	const target = new Date(
+		Date.UTC(
+			targetDate.getUTCFullYear(),
+			targetDate.getUTCMonth(),
+			targetDate.getUTCDate(),
+		),
+	)
 
 	const result: Array<T & { date: string; isToday: boolean }> = []
 
@@ -92,7 +103,7 @@ export function calculateCycleDays<
 
 		// Вычисляем дату для этого дня
 		const date = new Date(target)
-		date.setDate(target.getDate() + i)
+		date.setUTCDate(target.getUTCDate() + i)
 
 		result.push({
 			...day,

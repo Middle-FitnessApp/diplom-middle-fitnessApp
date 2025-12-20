@@ -6,9 +6,10 @@ const { Title, Text } = Typography
 
 interface NutritionPlanProps {
 	clientId: string
+	isDark?: boolean
 }
 
-export const NutritionPlan = ({ clientId }: NutritionPlanProps) => {
+export const NutritionPlan = ({ clientId, isDark = false }: NutritionPlanProps) => {
 	const { data, isLoading, isError } = useGetClientNutritionPlanQuery({
 		clientId,
 		period: 'day',
@@ -81,6 +82,7 @@ export const NutritionPlan = ({ clientId }: NutritionPlanProps) => {
 								variant='trainer'
 								date={day.date}
 								isToday={day.isToday}
+								isDark={isDark}
 							/>
 						))}
 					</div>

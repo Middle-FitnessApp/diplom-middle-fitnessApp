@@ -27,7 +27,7 @@ export const GetAllProgressQuerySchema = z.object({
 		.pipe(
 			z
 				.number()
-				.min(MIN_LIMIT, { message: `Количество элементов должно быть >= ${MIN_LIMIT}` })
+				.min(0, { message: `Количество элементов должно быть >= 0 (0 = все записи)` })
 				.max(MAX_LIMIT, { message: `Максимум ${MAX_LIMIT} элементов на странице` }),
 		),
 	// Фильтрация по дате

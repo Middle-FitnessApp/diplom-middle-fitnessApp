@@ -19,6 +19,9 @@ export const Nutrition: React.FC = () => {
 
 	const user = useAppSelector((state) => state.auth.user)
 
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
 	const { data, isLoading, isError } = useGetClientNutritionPlanQuery(
 		{
 			period: filter,
@@ -97,16 +100,6 @@ export const Nutrition: React.FC = () => {
 		)
 	}
 
-	// Форматирование даты больше не нужен - теперь в компоненте
-	// const formatDate = (dateStr: string) => {
-	// 	const date = new Date(dateStr)
-	// 	return date.toLocaleDateString('ru-RU', {
-	// 		weekday: 'short',
-	// 		day: 'numeric',
-	// 		month: 'short',
-	// 	})
-	// }
-
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
 			<div className='bg-light rounded-2xl p-10 shadow-xl border border-gray-200 w-full max-w-[1200px]'>
@@ -151,6 +144,7 @@ export const Nutrition: React.FC = () => {
 							variant='client'
 							date={day.date}
 							isToday={day.isToday}
+							isDark={isDark}
 						/>
 					))}
 				</div>

@@ -4,7 +4,8 @@ import type { RootState, AppDispatch } from './index'
 import { createSelector } from '@reduxjs/toolkit'
 import { performCancelTrainer } from './slices/auth.slice'
 import type { ApiError } from './types/auth.types'
-import { Modal } from 'antd'
+import { Modal, message } from 'antd'
+import { useCancelTrainerMutation, useInviteTrainerMutation } from './api/user.api'
 
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
@@ -82,45 +83,56 @@ export const useCancelTrainerModal = () => {
 	return { showCancelTrainerModal }
 }
 
-export const useThemeClasses = () => {
-	const isDark = useAppSelector((state) => state.ui.theme) === 'dark'
+interface SwitchTrainerModalOptions {
+	newTrainerId: string
+	newTrainerName: string
+	onSuccess?: () => void
+	onError?: (error: unknown) => void
+}
 
-	return {
-		// Общие классы
-		cardBg: isDark ? 'bg-slate-800' : 'bg-light',
-		bodyBg: isDark ? 'bg-[#121c26]' : 'bg-light',
-		border: isDark ? 'border-slate-700' : 'border-gray-200',
-		title: isDark ? 'text-slate-100' : 'text-gray-800',
-		textLight: isDark ? 'text-slate-200' : 'text-gray-700',
-		textSecondary: isDark ? 'text-slate-400' : 'text-gray-500',
-
-		// Для форм/инпутов
-		inputBg: isDark ? 'bg-slate-700' : 'bg-gray-50',
-		inputBorder: isDark ? 'border-slate-600' : 'border-gray-300',
-		inputText: isDark ? 'text-slate-100' : 'text-gray-900',
-		buttonFileBg: isDark
-			? 'bg-red-600 hover:bg-red-700'
-			: 'bg-gray-200 hover:bg-gray-300',
-		buttonFileText: isDark ? 'text-white' : 'text-gray-700',
-
-		// Для кнопок
-		buttonPrimary: isDark
-			? 'bg-blue-600 hover:bg-blue-700'
-			: 'bg-blue-500 hover:bg-blue-600',
-
-		// Для карточек/модалов
-		modalBg: isDark ? 'bg-slate-900' : 'bg-light',
-		shadow: isDark ? 'shadow-slate-900/50' : 'shadow-gray-200',
-
-		// Фон выделения при ховере
-		hoverBg: isDark ? 'hover:bg-slate-700' : 'hover:bg-blue-50',
-
-		// Сообщения чата, границы и фоны
-		chatBorder: isDark ? 'border-slate-600' : 'border-gray-300',
-		chatOwnMessageBg: isDark ? 'bg-blue-500' : 'bg-blue-500',
-		chatPartnerMessageBg: isDark ? 'bg-slate-700' : 'bg-white',
-
-		// Утилиты
-		isDark, // Для дополнительных условий в компоненте
+export interface ApiErrorData {
+	message?: string
+	error?: {
+		message?: string
 	}
+}
+
+export const useSwitchTrainerModal = () => {
+	const [cancelTrainer] = useCancelTrainerMutation()
+	const [inviteTrainer] = useInviteTrainerMutation()
+
+	const showSwitchTrainerModal = ({
+		newTrainerId,
+		newTrainerName,
+		onSuccess,
+		onError,
+	}: SwitchTrainerModalOptions) => {
+		Modal.confirm({
+			title: 'Заменить тренера?',
+			content: `У вас уже есть активный тренер.
+			Вы действительно хотите отвязаться от него и отправить приглашение ${newTrainerName}?`,
+			okText: 'Да, заменить',
+			okType: 'primary',
+			cancelText: 'Отмена',
+			async onOk() {
+				try {
+					await cancelTrainer().unwrap()
+					await inviteTrainer({ trainerId: newTrainerId }).unwrap()
+
+					message.success(`Приглашение отправлено тренеру ${newTrainerName}!`)
+					onSuccess?.()
+				} catch (err) {
+					let errorMessage = 'Не удалось заменить тренера'
+					if (typeof err === 'object' && err !== null && 'data' in err) {
+						const errorData = err.data as ApiErrorData | undefined
+						errorMessage = errorData?.message || errorData?.error?.message || errorMessage
+					}
+					message.error(errorMessage)
+					onError?.(err)
+				}
+			},
+		})
+	}
+
+	return { showSwitchTrainerModal }
 }

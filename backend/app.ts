@@ -1,9 +1,10 @@
-import Fastify from 'fastify'
+import Fastify, { FastifyInstance } from 'fastify'
 import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import path from 'path'
-import { Server as SocketIOServer } from 'socket.io'
+import sensible from '@fastify/sensible'
+import { prisma } from './prisma.js'
 
 import { errorHandler } from './middleware/globalErrorHandler.js'
 
@@ -13,57 +14,86 @@ import trainerRoutes from './routes/trainer.routes.js'
 import nutritionRoutes from './routes/nutrition.routes.js'
 import progressRoutes from './routes/progress.routes.js'
 import chatRoutes from './routes/chat.routes.js'
+import notificationRoutes from './routes/notification.routes.js'
 
-const app = Fastify()
+// 👇 Экспортируй функцию создания app
+export async function buildApp(): Promise<FastifyInstance> {
+	const app = Fastify()
 
-errorHandler(app)
+	errorHandler(app)
 
-// Разрешаем пустое тело для application/json
-app.addContentTypeParser(
-	'application/json',
-	{ parseAs: 'string' },
-	function (req, body, done) {
+	app.decorate('prisma', prisma)
+
+	await app.register(sensible)
+
+	// Разрешаем пустое тело для application/json
+	app.addContentTypeParser(
+		'application/json',
+		{ parseAs: 'string' },
+		function (req, body, done) {
+			try {
+				const json = body === '' ? {} : JSON.parse(body as string)
+				done(null, json)
+			} catch (err: any) {
+				err.statusCode = 400
+				done(err, undefined)
+			}
+		},
+	)
+
+	// Настройка CORS
+	app.register(fastifyCors, {
+		origin: ['http://localhost:5173', 'https://fitnessapp-result-university.ru'],
+		credentials: true,
+		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+		allowedHeaders: ['Content-Type', 'Authorization'],
+	})
+
+	app.register(fastifyCookie, {
+		secret: process.env.COOKIE_SECRET,
+		parseOptions: {
+			httpOnly: true,
+			sameSite: 'lax',
+		},
+	})
+
+	// Маршрут для проверки состояния сервера (для деплоя, не удалять)
+	app.get('/health', async () => {
 		try {
-			const json = body === '' ? {} : JSON.parse(body as string)
-			done(null, json)
-		} catch (err: any) {
-			err.statusCode = 400
-			done(err, undefined)
+			await app.prisma.$queryRaw`SELECT 1`
+
+			return {
+				status: 'ok',
+				db: 'ok',
+				uptime: process.uptime(),
+				timestamp: Date.now(),
+			}
+		} catch {
+			return app.httpErrors.serviceUnavailable('DB not ready')
 		}
-	},
-)
+	})
 
-app.register(fastifyCors, {
-	origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-	credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization'],
-})
+	app.register(
+		async (instance) => {
+			instance.register(authRoutes, { prefix: '/auth' })
+			instance.register(userRoutes, { prefix: '/user' })
+			instance.register(trainerRoutes, { prefix: '/trainer' })
+			instance.register(nutritionRoutes, { prefix: '/nutrition' })
+			instance.register(progressRoutes, { prefix: '/progress' })
+			instance.register(chatRoutes, { prefix: '/chat' })
+			instance.register(notificationRoutes, { prefix: '/notification' })
+		},
+		{ prefix: '/api' },
+	)
 
-app.register(fastifyCookie, {
-	secret: process.env.COOKIE_SECRET,
-	parseOptions: {
-		// secure: process.env.NODE_ENV === 'production',
-		httpOnly: true,
-		sameSite: 'lax',
-	},
-})
+	app.register(fastifyStatic, {
+		root: path.join(process.cwd(), 'uploads'),
+		prefix: '/uploads/',
+	})
 
-app.register(
-	async (instance) => {
-		instance.register(authRoutes, { prefix: '/auth' })
-		instance.register(userRoutes, { prefix: '/user' })
-		instance.register(trainerRoutes, { prefix: '/trainer' })
-		instance.register(nutritionRoutes, { prefix: '/nutrition' })
-		instance.register(progressRoutes, { prefix: '/progress' })
-		instance.register(chatRoutes, { prefix: '/chat' })
-	},
-	{ prefix: '/api' },
-)
+	return app
+}
 
-app.register(fastifyStatic, {
-	root: path.join(process.cwd(), 'uploads'),
-	prefix: '/uploads/',
-})
-
+// 👇 Экспортируй app для продакшн сервера
+const app = await buildApp()
 export default app

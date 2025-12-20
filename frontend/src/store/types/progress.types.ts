@@ -1,29 +1,30 @@
-import type { BodyMeasurement } from './user.types'
-
-export interface ProgressComment {
-	id: string
-	progressEntryId: string
-	trainerId: string
-	trainerName: string
-	comment: string
-	createdAt: string
-}
-
 export interface ProgressReport {
 	id: string
-	userId: string
 	date: string
-	measurements: BodyMeasurement
-	photos: string[]
-	notes?: string
-	comments: ProgressComment[]
+	weight: number
+	height?: number
+	chest?: number
+	waist: number
+	hips: number
+	arm?: number
+	leg?: number
+	photoFront?: string
+	photoSide?: string
+	photoBack?: string
+	comments?: Comment[]
+	createdAt: string
+	updatedAt: string
 }
 
 export interface ProgressChartData {
 	date: string
 	weight: number
-	waistCircumference?: number
-	chestCircumference?: number
+	waist: number
+	hips: number
+	chest?: number
+	arm?: number
+	leg?: number
+	[key: string]: string | number | boolean | undefined
 }
 
 export interface ProgressAnalyticsResponse {
@@ -64,4 +65,28 @@ export interface CommentsResponse {
 		total: number
 		totalPages: number
 	}
+}
+
+export interface PaginationMeta {
+	page: number
+	limit: number
+	total: number
+	totalPages: number
+}
+
+// Ответ от API с пагинацией
+export interface ProgressReportsResponse {
+	data: ProgressReport[]
+	meta: PaginationMeta
+}
+
+// Ответ от API для одного отчёта
+export interface ProgressReportResponse {
+	progress: ProgressReport
+}
+
+// Ответ от API при создании отчёта
+export interface CreateProgressResponse {
+	message: string
+	progress: ProgressReport
 }

@@ -6,6 +6,7 @@ import {
 	useGetProgressCommentsQuery,
 } from '../../store/api/progress.api'
 import { LoadingState } from '../Client'
+import { message } from 'antd'
 
 interface CommentsSectionProps {
 	progressId: string
@@ -35,8 +36,10 @@ export const CommentsSection = ({
 		try {
 			await addComment({ progressId, text }).unwrap()
 		} catch (error) {
-			console.error('Ошибка добавления комментария:', error)
-			throw error
+			message.error('Не удалось добавить комментарий. Попробуйте позже.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка добавления комментария:', error)
+			}
 		}
 	}
 

@@ -54,7 +54,9 @@ export const NutritionCategoryCard = ({
 			await deleteCategory(category.id).unwrap()
 			message.success('Категория удалена')
 		} catch (error) {
-			console.error('Ошибка при удалении категории:', error)
+			if (import.meta.env.DEV) {
+				console.error('Ошибка при удалении категории:', error)
+			}
 			const err = error as { data?: { message?: string } }
 			message.error(err?.data?.message || 'Ошибка при удалении категории')
 		}

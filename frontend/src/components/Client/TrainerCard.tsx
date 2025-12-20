@@ -8,9 +8,10 @@ import {
 	ClockCircleOutlined,
 	InstagramOutlined,
 } from '@ant-design/icons'
-import type { TrainerListItem } from '../../store/api/user.api'
 import type { TrainerInfo } from '../../store/types/auth.types'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
+import type { TrainerListItem } from '../../store/types/user.types'
 
 const { Text, Paragraph } = Typography
 
@@ -54,11 +55,7 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 	const theme = useAppSelector((state) => state.ui.theme)
 	const isDark = theme === 'dark'
 
-	const photoUrl = trainer.photo
-		? trainer.photo.startsWith('http')
-			? trainer.photo
-			: `http://localhost:3000${trainer.photo}`
-		: undefined
+	const photoUrl = getPhotoUrl(trainer.photo)
 
 	// Социальные ссылки
 	const socialLinks = []
@@ -287,7 +284,7 @@ export const TrainerCard: React.FC<TrainerCardProps> = ({
 			</div>
 
 			{/* Контент */}
-			<div style={{ padding: '20px', marginTop: -20 }}>
+			<div className='p-5 -mt-5 pb-0 pr-0 pl-0'>
 				<div style={contentBlockStyle}>
 					<Text strong style={nameStyle}>
 						{trainer.name}

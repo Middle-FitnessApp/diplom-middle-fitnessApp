@@ -6,13 +6,13 @@ import {
 	Tooltip,
 	Tag,
 	Typography,
-	Space,
 	Empty,
 	Input,
 	Pagination,
 	Row,
 	Col,
 	Spin,
+	message,
 } from 'antd'
 import {
 	UserOutlined,
@@ -24,6 +24,7 @@ import {
 	MailOutlined,
 	CalendarOutlined,
 	SearchOutlined,
+	AppleOutlined,
 	CheckCircleOutlined,
 	ClockCircleOutlined,
 	CloseCircleOutlined,
@@ -33,11 +34,12 @@ import {
 	useGetAllClientsQuery,
 	useToggleClientStarMutation,
 } from '../../store/api/trainer.api'
-import type { AllSystemClient } from '../../store/api/trainer.api'
+import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
+import { formatTelHref, formatPhoneDisplay } from '../../utils/phone'
+import type { AllSystemClient } from '../../store/types/trainer.types'
 
 const { Text, Title } = Typography
-
-const API_URL = 'http://localhost:3000'
 
 interface AllClientsGridProps {
 	isSidebarCollapsed?: boolean
@@ -60,10 +62,11 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 	const clients = data?.clients || []
 	const pagination = data?.pagination
 
-	const getPhotoUrl = (photo?: string | null) => {
-		if (!photo) return `${API_URL}/uploads/default/user.png`
-		return photo.startsWith('http') ? photo : `${API_URL}${photo}`
-	}
+	const theme = useAppSelector((state) => state.ui.theme)
+	const isDark = theme === 'dark'
+
+	const getPhoto = (photo?: string | null) =>
+		getPhotoUrl(photo) || getPhotoUrl('/uploads/default/user.png')
 
 	const handleViewProfile = (clientId: string) => {
 		navigate(`/admin/client/${clientId}`)
@@ -73,11 +76,18 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		navigate(`/admin/chat/${clientId}`)
 	}
 
+	const handleAddNutrition = (clientId: string) => {
+		navigate(`/admin/client/${clientId}/add-nutrition`)
+	}
+
 	const handleToggleStar = async (clientId: string) => {
 		try {
 			await toggleStarMutation({ clientId }).unwrap()
 		} catch (error) {
-			console.error('Ошибка переключения избранного:', error)
+			message.error('Не удалось обновить избранное. Попробуйте позже.')
+			if (import.meta.env.DEV) {
+				console.error('Ошибка переключения избранного:', error)
+			}
 		}
 	}
 
@@ -90,18 +100,24 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 		setCurrentPage(page)
 	}
 
-	const getStatusTag = (status: AllSystemClient['relationshipStatus']) => {
+	const getStatusTag = (
+		status: AllSystemClient['relationshipStatus'],
+		isDark: boolean,
+	) => {
+		const bgMuted = isDark ? '#2a2f39' : '#f5f5f5'
+		const textMuted = isDark ? '#b0b7c3' : '#8c8c8c'
+		const border = isDark ? '#424858' : '#d9d9d9'
+
 		switch (status) {
 			case 'ACCEPTED':
 				return (
-					<Tag 
-						icon={<CheckCircleOutlined />} 
-						style={{ 
-							marginLeft: 8,
+					<Tag
+						icon={<CheckCircleOutlined />}
+						style={{
 							background: 'var(--success)',
 							borderColor: 'var(--success)',
 							color: '#fff',
-							fontWeight: 600
+							fontWeight: 600,
 						}}
 					>
 						В работе
@@ -111,26 +127,52 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				return (
 					<Tag
 						icon={<ClockCircleOutlined />}
-						color='processing'
-						style={{ marginLeft: 8 }}
+						style={{
+							background: 'var(--primary)',
+							borderColor: 'var(--primary)',
+							color: '#fff',
+							fontWeight: 600,
+						}}
 					>
 						Ожидает
 					</Tag>
 				)
 			case 'REJECTED':
 				return (
-					<Tag icon={<CloseCircleOutlined />} color='error' style={{ marginLeft: 8 }}>
+					<Tag
+						icon={<CloseCircleOutlined />}
+						style={{
+							background: 'var(--error)',
+							borderColor: 'var(--error)',
+							color: '#fff',
+							fontWeight: 600,
+						}}
+					>
 						Отклонён
 					</Tag>
 				)
+			case null:
 			default:
-				return null
+				return (
+					<Tag
+						icon={<UserOutlined />}
+						style={{
+							background: bgMuted,
+							borderColor: border,
+							color: textMuted,
+							fontWeight: 500,
+						}}
+					>
+						Свободен
+					</Tag>
+				)
 		}
 	}
 
 	const renderClientCard = (client: AllSystemClient) => {
 		const isWorking = client.relationshipStatus === 'ACCEPTED'
-
+		const isFreeClient = client.relationshipStatus === null
+		const shouldUseWhiteName = !isDark && isFreeClient
 		return (
 			<Card
 				key={client.id}
@@ -138,10 +180,12 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				style={{
 					borderRadius: '16px',
 					overflow: 'hidden',
+					height: '100%',
+					width: '100%',
 					opacity: client.relationshipStatus === 'REJECTED' ? 0.7 : 1,
 				}}
 				styles={{
-					body: { padding: 0 },
+					body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
 				}}
 			>
 				{/* Header с градиентом */}
@@ -149,7 +193,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 					className='p-4 relative'
 					style={{
 						background: isWorking
-							? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+							? 'linear-gradient(135deg, #40ed7a76 0%, #38f9d7 100%)'
 							: client.relationshipStatus === 'PENDING'
 							? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
 							: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -157,7 +201,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				>
 					<div className='flex items-start gap-4'>
 						<Avatar
-							src={getPhotoUrl(client.photo)}
+							src={getPhoto(client.photo)}
 							icon={<UserOutlined />}
 							size={64}
 							style={{
@@ -165,32 +209,40 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 								boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
 							}}
 						/>
-						<div className='flex-1 min-w-0'>
-							<div className='flex items-center flex-wrap gap-1'>
-								<Text
-									strong
-									className='text-white text-base truncate'
-									style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
-								>
-									{client.name}
-								</Text>
-								{getStatusTag(client.relationshipStatus)}
+
+						<div className='flex flex-col' style={{ minWidth: 0 }}>
+							<Text
+								strong
+								className='text-white text-base truncate'
+								style={{
+									textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+									color: shouldUseWhiteName ? '#ffffff' : undefined,
+								}}
+							>
+								{client.name}
+							</Text>
+
+							<div className='mt-1'>
+								{getStatusTag(client.relationshipStatus, isDark)}
 							</div>
-							<div className='flex flex-wrap gap-2 mt-2'>
-								{client.age && (
+
+							{client.age && (
+								<div className='mt-2'>
 									<Tag
 										icon={<CalendarOutlined />}
 										style={{
 											background: 'rgba(255,255,255,0.2)',
 											border: 'none',
 											color: '#fff',
+											margin: 0,
 										}}
 									>
 										{client.age} лет
 									</Tag>
-								)}
-							</div>
+								</div>
+							)}
 						</div>
+
 						{isWorking && (
 							<Tooltip title={client.isFavorite ? 'Убрать из избранных' : 'В избранное'}>
 								<Button
@@ -215,59 +267,91 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				</div>
 
 				{/* Body */}
-				<div className='p-4'>
+				<div className='p-4 flex-1'>
 					{/* Контактная информация */}
 					<div className='space-y-2 mb-4'>
 						{client.email && (
 							<div className='flex items-center gap-2 text-sm'>
 								<MailOutlined style={{ color: 'var(--primary)' }} />
-								<Text type='secondary' className='truncate text-xs'>
+								<a
+									href={`mailto:${client.email}`}
+									className={
+										isDark
+											? 'text-xs text-slate-300 hover:text-white'
+											: 'text-xs text-blue-600 hover:text-blue-800 truncate'
+									}
+									style={{ textDecoration: 'underline', cursor: 'pointer' }}
+								>
 									{client.email}
-								</Text>
+								</a>
 							</div>
 						)}
 						{client.phone && (
 							<div className='flex items-center gap-2 text-sm'>
 								<PhoneOutlined style={{ color: 'var(--success)' }} />
-								<Text type='secondary' className='text-xs'>
-									{client.phone}
-								</Text>
+								<a
+									href={formatTelHref(client.phone)}
+									className={
+										isDark
+											? 'text-xs text-slate-300 hover:text-white'
+											: 'text-xs text-green-600 hover:text-green-800'
+									}
+									style={{ textDecoration: 'underline', cursor: 'pointer' }}
+								>
+									{formatPhoneDisplay(client.phone) || client.phone}
+								</a>
 							</div>
 						)}
 						{client.goal && (
-							<div className='text-xs text-gray-500 truncate'>Цель: {client.goal}</div>
+							<div
+								className={
+									isDark ? 'text-xs text-slate-300' : 'text-xs text-gray-500 truncate'
+								}
+							>
+								Цель: {client.goal}
+							</div>
 						)}
 					</div>
 
 					{/* Действия */}
 					{isWorking ? (
-						<Space wrap className='w-full'>
+						<div className='flex flex-wrap gap-3'>
 							<Button
 								type='primary'
 								icon={<EyeOutlined />}
 								onClick={() => handleViewProfile(client.id)}
-								style={{ borderRadius: '8px' }}
-								size='small'
+								className='rounded-md flex-1 basis-[220px] min-w-0'
 							>
 								Профиль
 							</Button>
 							<Button
 								icon={<MessageOutlined />}
 								onClick={() => handleOpenChat(client.id)}
-								style={{ borderRadius: '8px' }}
-								size='small'
+								className='rounded-md flex-1 basis-[220px] min-w-0'
 							>
 								Чат
 							</Button>
-						</Space>
+							<Tooltip title='Назначить план питания'>
+								<Button
+									icon={<AppleOutlined />}
+									onClick={() => handleAddNutrition(client.id)}
+									className='rounded-md flex-1 basis-[220px] min-w-0'
+									style={{ color: 'var(--success)' }}
+								>
+									Питание
+								</Button>
+							</Tooltip>
+						</div>
 					) : (
-						<Text type='secondary' className='text-xs'>
-							{client.relationshipStatus === 'PENDING'
-								? 'Заявка на рассмотрении'
-								: client.relationshipStatus === 'REJECTED'
-								? 'Заявка отклонена'
-								: 'Нет связи с клиентом'}
-						</Text>
+						<div className='h-full flex  justify-center'>
+							<Text type='secondary' className={isDark ? 'text-xs text-slate-300 text-center' : 'text-xs text-gray-500 text-center'}>
+								{client.relationshipStatus === 'PENDING'
+									? 'Заявка на рассмотрении'
+									: client.relationshipStatus === 'REJECTED'
+									? 'Заявка отклонена'
+									: 'Клиент свободен — можно с ним связаться!'}
+							</Text>
+						</div>
 					)}
 				</div>
 			</Card>
@@ -326,9 +410,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 
 					{/* Pagination */}
 					{pagination && pagination.totalPages > 1 && (
-						<div
-							className='flex justify-center pt-4 z-10'
-						>
+						<div className='flex justify-center pt-4 z-10'>
 							<Pagination
 								current={currentPage}
 								total={pagination.total}

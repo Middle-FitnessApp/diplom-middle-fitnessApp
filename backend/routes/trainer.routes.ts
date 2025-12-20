@@ -218,6 +218,18 @@ export default async function trainerRoutes(app: FastifyInstance) {
 				dayIds,
 			)
 
+			// Отправляем уведомление клиенту о назначении плана питания
+			const { createNotification } = await import('../services/notification.service.js')
+
+			if (app.io) {
+				await createNotification(
+					id, // clientId
+					'PLAN',
+					`Тренер назначил вам новый план питания`,
+					app.io,
+				)
+			}
+
 			return reply.status(201).send({
 				message: 'План питания успешно назначен клиенту',
 				plan: assignedPlan,
