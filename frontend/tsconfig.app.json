@@ -24,5 +24,6 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true
 	},
-	"include": ["src", "tests"]
+	"include": ["src"],
+	"exclude": ["node_modules", "dist", "build", "tests"]
 }

@@ -25,12 +25,12 @@ export const formatDateTime = (isoDate: string): string => {
 }
 
 // Типы для computeDiffs
-export type MetricKey = 'weight' | 'waist' | 'hips'
+export type MetricKey = 'weight' | 'waist' | 'hips' | 'chest' | 'arm' | 'leg'
 
 export interface MetricDiff {
 	key: MetricKey
 	label: string
-	value: number
+	value: number | undefined
 	diff: number | null
 }
 
@@ -45,6 +45,9 @@ export const computeDiffs = (
 		{ key: 'weight' as MetricKey, label: 'Вес' },
 		{ key: 'waist' as MetricKey, label: 'Талия' },
 		{ key: 'hips' as MetricKey, label: 'Бёдра' },
+		{ key: 'chest' as MetricKey, label: 'Грудь' },
+		{ key: 'arm' as MetricKey, label: 'Рука' },
+		{ key: 'leg' as MetricKey, label: 'Нога' },
 	]
 
 	return keys.map(({ key, label }) => {

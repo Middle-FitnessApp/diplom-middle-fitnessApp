@@ -1,9 +1,8 @@
-import { useState, useMemo, type FC } from 'react'
+import { useState, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pagination, Typography, Empty, Spin, Segmented } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
-import { useGetProgressReportsQuery } from '../../store/api/progress.api'
-import type { ProgressReport } from '../../store/types/progress.types'
+import { useGetClientReportsQuery } from '../../store/api/progress.api'
 import { PERIOD_OPTIONS, type PeriodValue } from '../../utils/progressFunctions.ts'
 import { ApiErrorState } from '../../components/errors'
 import { useAppSelector } from '../../store/hooks'
@@ -26,38 +25,49 @@ export const AllReports: FC = () => {
 	const periodOptions = PERIOD_OPTIONS
 	const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
 
-	const { data: reports = [], isLoading, isError, error } = useGetProgressReportsQuery()
-
-	const sortedReports = useMemo(
-		() =>
-			[...reports].sort(
-				(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-			),
-		[reports],
-	)
-
-	const getFilteredReports = (): ProgressReport[] => {
-		if (period === 'all') return sortedReports
-
-		const now = new Date()
-		const filterDate = new Date()
-
-		if (period === 'month') {
-			filterDate.setDate(now.getDate() - 30)
-		} else if (period === 'year') {
-			filterDate.setDate(now.getDate() - 365)
-		}
-
-		filterDate.setHours(0, 0, 0, 0)
-
-		return sortedReports.filter((report) => {
-			const reportDate = new Date(report.date)
-			reportDate.setHours(0, 0, 0, 0)
-			return reportDate >= filterDate
-		})
+	// Вычисляем параметры startDate/endDate для сервера в формате DD/MM/YYYY
+	const computeDateParam = (d: Date) => {
+		const day = String(d.getDate()).padStart(2, '0')
+		const month = String(d.getMonth() + 1).padStart(2, '0')
+		const year = d.getFullYear()
+		return `${day}/${month}/${year}`
 	}
 
-	const filteredReports = getFilteredReports()
+	let startDateParam: string | undefined = undefined
+	let endDateParam: string | undefined = undefined
+	if (period !== 'all') {
+		const now = new Date()
+		const from = new Date()
+
+		if (period === 'month') {
+			from.setMonth(now.getMonth() - 1)
+		} else if (period === 'year') {
+			from.setFullYear(now.getFullYear() - 1)
+		}
+
+		from.setHours(0, 0, 0, 0)
+		now.setHours(23, 59, 59, 999)
+		startDateParam = computeDateParam(from)
+		endDateParam = computeDateParam(now)
+	}
+
+	const {
+		data: serverData,
+		isLoading,
+		isError,
+		error,
+	} = useGetClientReportsQuery({
+		page,
+		limit: pageSize,
+		startDate: startDateParam,
+		endDate: endDateParam,
+	})
+
+	const reports = serverData?.data ?? []
+	const totalFromServer = serverData?.meta?.total ?? reports.length
+
+	// На странице клиента используем серверную пагинацию — данные уже отфильтрованы и отсортированы на сервере
+	const filteredReports = reports
 
 	const handlePeriodChange = (value: string): void => {
 		setPeriod(value)
@@ -125,7 +135,8 @@ export const AllReports: FC = () => {
 		)
 	}
 
-	const paginated = filteredReports.slice((page - 1) * pageSize, page * pageSize)
+	// Данные уже постраничные — отображаем как есть
+	const paginated = filteredReports
 
 	return (
 		<div className='gradient-bg min-h-[calc(100vh-4rem)] p-10 flex justify-center items-start'>
@@ -191,7 +202,7 @@ export const AllReports: FC = () => {
 							<Pagination
 								current={page}
 								pageSize={pageSize}
-								total={filteredReports.length}
+								total={totalFromServer}
 								onChange={handlePageChange}
 								showSizeChanger={false}
 								className='[&_.ant-pagination-item]:rounded-lg [&_.ant-pagination-item]:border-gray-300'

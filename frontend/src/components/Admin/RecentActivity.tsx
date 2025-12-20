@@ -83,8 +83,9 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 	return (
 		<Card
 			title={<span className='text-lg font-semibold'>📋 Недавняя активность</span>}
-			className='shadow-md'
-			styles={{ body: { padding: '16px' } }}
+			className='shadow-md h-full'
+			style={{ height: '100%' }}
+			bodyStyle={{ padding: '16px' }}
 		>
 			{allItems.length === 0 ? (
 				<Empty

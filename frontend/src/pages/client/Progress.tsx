@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
 	Typography,
 	Card,
@@ -29,10 +29,14 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { PROGRESS_METRICS } from '../../constants/progressMetrics'
 import { ProgressChart, ProgressTower3D } from '../../components'
-import { useGetProgressReportsQuery } from '../../store/api/progress.api'
+import {
+	useGetProgressReportsQuery,
+	useGetProgressChartDataQuery,
+	useGetClientReportsQuery,
+} from '../../store/api/progress.api'
 import type { ProgressReport } from '../../store/types/progress.types'
 import type { Comment } from '../../store/types/progress.types.ts'
-import { API_BASE_URL } from '../../config/api.config.ts'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 const { Title, Text } = Typography
 
@@ -43,12 +47,76 @@ interface ProgressReportWithComments extends ProgressReport {
 
 export const Progress = () => {
 	const navigate = useNavigate()
-	const { data: reports, isLoading, error, refetch } = useGetProgressReportsQuery()
+	const {
+		data: reports,
+		isLoading: reportsLoading,
+		error,
+		refetch,
+	} = useGetProgressReportsQuery()
+	const { data: chartDataFromApi, isLoading: chartLoading } =
+		useGetProgressChartDataQuery()
+	// fallback: get paginated client reports (if `getProgressReports` returns empty)
+	const { data: clientPageData, isLoading: clientPageLoading } = useGetClientReportsQuery(
+		{
+			page: 1,
+			limit: 100,
+		},
+	)
+	const isLoading = reportsLoading || chartLoading || clientPageLoading
 	const [activeTab, setActiveTab] = useState<string>('2d')
 	const [selectedReport, setSelectedReport] = useState<
 		(ProgressReport & { index: number }) | null
 	>(null)
 	const [isModalVisible, setIsModalVisible] = useState(false)
+
+	// effectiveReports — prefer full reports endpoint, otherwise paged client data
+	const effectiveReports = useMemo(
+		() => reports ?? clientPageData?.data ?? [],
+		[reports, clientPageData?.data],
+	)
+
+	// Последние 20 отчетов для блока "Все отчёты"
+	const recentReports = useMemo(() => {
+		const src = clientPageData?.data ?? reports ?? []
+		if (!src || src.length === 0) return []
+		return [...src]
+			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+			.slice(0, 20)
+	}, [clientPageData?.data, reports])
+
+	// Memoize chart data and aggregated comments early to keep hook order stable
+	const chartData = useMemo(
+		() =>
+			chartDataFromApi ??
+			(effectiveReports || []).map((item) => ({
+				date: item.date.split('T')[0],
+				weight: item.weight,
+				waist: item.waist,
+				hips: item.hips,
+				chest: item.chest || 0,
+				arm: item.arm || 0,
+				leg: item.leg || 0,
+			})),
+		[chartDataFromApi, effectiveReports],
+	)
+
+	const allComments = useMemo(() => {
+		const list: (Comment & { reportDate: string })[] = []
+		;((recentReports as ProgressReportWithComments[]) || []).forEach((report) => {
+			if (report.comments && report.comments.length > 0) {
+				report.comments.forEach((comment) => {
+					list.push({
+						...comment,
+						reportDate: report.date,
+					})
+				})
+			}
+		})
+
+		return list.sort(
+			(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+		)
+	}, [recentReports])
 
 	if (isLoading) {
 		return (
@@ -82,35 +150,6 @@ export const Progress = () => {
 		)
 	}
 
-	// Преобразуем данные для графика
-	const chartData = (reports || []).map((item) => ({
-		date: item.date.split('T')[0],
-		weight: item.weight,
-		waist: item.waist,
-		hips: item.hips,
-		chest: item.chest || 0,
-		arm: item.arm || 0,
-		leg: item.leg || 0,
-	}))
-
-	// Собираем все комментарии от тренера из всех отчётов
-	const allComments: (Comment & { reportDate: string })[] = []
-	;((reports as ProgressReportWithComments[]) || []).forEach((report) => {
-		if (report.comments && report.comments.length > 0) {
-			report.comments.forEach((comment) => {
-				allComments.push({
-					...comment,
-					reportDate: report.date,
-				})
-			})
-		}
-	})
-
-	// Сортируем комментарии по дате (новые первыми)
-	allComments.sort(
-		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-	)
-
 	const formatDate = (isoDate: string): string => {
 		const date = new Date(isoDate)
 		const day = String(date.getDate()).padStart(2, '0')
@@ -142,7 +181,9 @@ export const Progress = () => {
 		index: number,
 	) => {
 		// Находим полный отчет по дате
-		const fullReport = reports?.find((report) => report.date.split('T')[0] === data.date)
+		const fullReport = (effectiveReports as ProgressReport[])?.find(
+			(report) => report.date.split('T')[0] === data.date,
+		)
 		if (fullReport) {
 			setSelectedReport({ ...fullReport, index })
 			setIsModalVisible(true)
@@ -389,6 +430,7 @@ export const Progress = () => {
 								</Space>
 							)}
 						</Modal>
+
 						{/* Горизонтальный скролл карточек отчётов - показываем только в 2D режиме */}
 						{chartData.length > 0 && activeTab === '2d' && (
 							<Card
@@ -399,7 +441,7 @@ export const Progress = () => {
 									🗂️ Все отчёты
 								</Title>
 								<div className='flex overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
-									{reports?.map((report, index) => (
+									{recentReports.map((report, index) => (
 										<div
 											key={report.id}
 											onClick={() =>
@@ -416,7 +458,7 @@ export const Progress = () => {
 													index,
 												)
 											}
-											className='min-w-[280px] max-w-[280px] flex-shrink-0 cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
+											className='min-w-[280px] max-w-[280px] shrink-0 cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
 										>
 											{/* Заголовок */}
 											<div className='flex items-center gap-2 mb-3 pb-3 border-b border-gray-100'>
@@ -535,7 +577,7 @@ export const Progress = () => {
 												<List.Item.Meta
 													avatar={
 														<Avatar
-															src={`${API_BASE_URL}${comment.trainer.photo}`}
+															src={getPhotoUrl(comment.trainer.photo)}
 															icon={!comment.trainer.photo && <UserOutlined />}
 															size='large'
 														/>

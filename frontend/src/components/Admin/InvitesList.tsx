@@ -2,6 +2,7 @@ import React from 'react'
 import { Card, List, Avatar, Button, Typography, Tag, Empty, Space } from 'antd'
 import { UserOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import type { TrainerInvite } from '../../store/types/trainer.types'
 
 const { Text, Paragraph } = Typography
@@ -28,11 +29,6 @@ export const InvitesList: React.FC<InvitesListProps> = ({
 
 	// Hover класс в зависимости от темы
 	const hoverClass = isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-100'
-
-	const getPhotoUrl = (photo: string | null) => {
-		if (!photo) return undefined
-		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
-	}
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString)

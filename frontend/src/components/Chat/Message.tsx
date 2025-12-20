@@ -15,7 +15,9 @@ type MessageProps = {
 
 export const Message: React.FC<MessageProps> = ({ msg, onPreview, currentUserId }) => {
 	const classes = useThemeClasses()
-	const isOwnMessage = msg.sender.id === currentUserId
+	// Сравниваем через String(), чтобы безопасно сравнивать число/строку
+	const isOwnMessage =
+		String(msg.sender?.id ?? msg.senderId ?? '') === String(currentUserId ?? '')
 
 	// Классы для сообщений
 	const baseClasses =

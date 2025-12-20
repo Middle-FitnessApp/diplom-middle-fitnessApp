@@ -6,7 +6,6 @@ import {
 	Tooltip,
 	Tag,
 	Typography,
-	Space,
 	Empty,
 	Input,
 	Pagination,
@@ -25,6 +24,7 @@ import {
 	MailOutlined,
 	CalendarOutlined,
 	SearchOutlined,
+	AppleOutlined,
 	CheckCircleOutlined,
 	ClockCircleOutlined,
 	CloseCircleOutlined,
@@ -35,11 +35,11 @@ import {
 	useToggleClientStarMutation,
 } from '../../store/api/trainer.api'
 import { useAppSelector } from '../../store/hooks'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
+import { formatTelHref, formatPhoneDisplay } from '../../utils/phone'
 import type { AllSystemClient } from '../../store/types/trainer.types'
 
 const { Text, Title } = Typography
-
-const API_URL = 'http://localhost:3000'
 
 interface AllClientsGridProps {
 	isSidebarCollapsed?: boolean
@@ -65,10 +65,8 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 	const theme = useAppSelector((state) => state.ui.theme)
 	const isDark = theme === 'dark'
 
-	const getPhotoUrl = (photo?: string | null) => {
-		if (!photo) return `${API_URL}/uploads/default/user.png`
-		return photo.startsWith('http') ? photo : `${API_URL}${photo}`
-	}
+	const getPhoto = (photo?: string | null) =>
+		getPhotoUrl(photo) || getPhotoUrl('/uploads/default/user.png')
 
 	const handleViewProfile = (clientId: string) => {
 		navigate(`/admin/client/${clientId}`)
@@ -76,6 +74,10 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 
 	const handleOpenChat = (clientId: string) => {
 		navigate(`/admin/chat/${clientId}`)
+	}
+
+	const handleAddNutrition = (clientId: string) => {
+		navigate(`/admin/client/${clientId}/add-nutrition`)
 	}
 
 	const handleToggleStar = async (clientId: string) => {
@@ -178,10 +180,12 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				style={{
 					borderRadius: '16px',
 					overflow: 'hidden',
+					height: '100%',
+					width: '100%',
 					opacity: client.relationshipStatus === 'REJECTED' ? 0.7 : 1,
 				}}
 				styles={{
-					body: { padding: 0 },
+					body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
 				}}
 			>
 				{/* Header с градиентом */}
@@ -197,7 +201,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				>
 					<div className='flex items-start gap-4'>
 						<Avatar
-							src={getPhotoUrl(client.photo)}
+							src={getPhoto(client.photo)}
 							icon={<UserOutlined />}
 							size={64}
 							style={{
@@ -263,7 +267,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 				</div>
 
 				{/* Body */}
-				<div className='p-4'>
+				<div className='p-4 flex-1'>
 					{/* Контактная информация */}
 					<div className='space-y-2 mb-4'>
 						{client.email && (
@@ -286,7 +290,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 							<div className='flex items-center gap-2 text-sm'>
 								<PhoneOutlined style={{ color: 'var(--success)' }} />
 								<a
-									href={`tel:${client.phone.replace(/[^+\d]/g, '')}`}
+									href={formatTelHref(client.phone)}
 									className={
 										isDark
 											? 'text-xs text-slate-300 hover:text-white'
@@ -294,7 +298,7 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 									}
 									style={{ textDecoration: 'underline', cursor: 'pointer' }}
 								>
-									{client.phone}
+									{formatPhoneDisplay(client.phone) || client.phone}
 								</a>
 							</div>
 						)}
@@ -311,33 +315,43 @@ export const AllClientsGrid: React.FC<AllClientsGridProps> = () => {
 
 					{/* Действия */}
 					{isWorking ? (
-						<Space wrap className='w-full'>
+						<div className='flex flex-wrap gap-3'>
 							<Button
 								type='primary'
 								icon={<EyeOutlined />}
 								onClick={() => handleViewProfile(client.id)}
-								style={{ borderRadius: '8px' }}
-								size='small'
+								className='rounded-md flex-1 basis-[220px] min-w-0'
 							>
 								Профиль
 							</Button>
 							<Button
 								icon={<MessageOutlined />}
 								onClick={() => handleOpenChat(client.id)}
-								style={{ borderRadius: '8px' }}
-								size='small'
+								className='rounded-md flex-1 basis-[220px] min-w-0'
 							>
 								Чат
 							</Button>
-						</Space>
+							<Tooltip title='Назначить план питания'>
+								<Button
+									icon={<AppleOutlined />}
+									onClick={() => handleAddNutrition(client.id)}
+									className='rounded-md flex-1 basis-[220px] min-w-0'
+									style={{ color: 'var(--success)' }}
+								>
+									Питание
+								</Button>
+							</Tooltip>
+						</div>
 					) : (
-						<Text className={isDark ? 'text-xs text-slate-300' : 'text-xs'}>
-							{client.relationshipStatus === 'PENDING'
-								? 'Заявка на рассмотрении'
-								: client.relationshipStatus === 'REJECTED'
-								? 'Заявка отклонена'
-								: 'Клиент свободен — можно отправить приглашение'}
-						</Text>
+						<div className='h-full flex  justify-center'>
+							<Text type='secondary' className={isDark ? 'text-xs text-slate-300 text-center' : 'text-xs text-gray-500 text-center'}>
+								{client.relationshipStatus === 'PENDING'
+									? 'Заявка на рассмотрении'
+									: client.relationshipStatus === 'REJECTED'
+									? 'Заявка отклонена'
+									: 'Клиент свободен — можно с ним связаться!'}
+							</Text>
+						</div>
 					)}
 				</div>
 			</Card>

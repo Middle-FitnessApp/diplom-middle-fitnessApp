@@ -12,7 +12,6 @@ on:
       - master
       - 'release/**'
       - 'release-*'
-      - development
   pull_request:
     types: [closed]
     branches:

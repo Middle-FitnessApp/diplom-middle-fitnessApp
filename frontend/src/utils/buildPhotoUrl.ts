@@ -1,18 +1,33 @@
-const BACKEND_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3000'
+import { API_BASE_URL } from '../config/api.config'
 
-export const buildPhotoUrl = (p?: string | null) => {
+export const getPhotoUrl = (p?: string | null) => {
 	if (!p) return undefined
-	if (p.startsWith('http://') || p.startsWith('https://')) return p
+	// allow absolute http(s), data: and blob: URLs to pass through
+	if (
+		p.startsWith('http://') ||
+		p.startsWith('https://') ||
+		p.startsWith('data:') ||
+		p.startsWith('blob:')
+	)
+		return p
+
+	// if path begins with '/', try to encode filename portion
 	if (p.startsWith('/')) {
 		try {
 			const parts = p.split('/')
 			const filename = parts.pop() ?? ''
 			const encoded = encodeURIComponent(filename)
 			const basePath = parts.join('/')
-			return `${BACKEND_URL}${basePath}/${encoded}`
+			return `${API_BASE_URL}${basePath}/${encoded}`
 		} catch {
-			return `${BACKEND_URL}${p}`
+			return `${API_BASE_URL}${p}`
 		}
 	}
-	return `${BACKEND_URL}/${p}`
+
+	return `${API_BASE_URL}/${p}`
 }
+
+// backward compatibility
+export const buildPhotoUrl = getPhotoUrl
+
+export default getPhotoUrl

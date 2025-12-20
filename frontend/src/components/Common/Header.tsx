@@ -15,6 +15,7 @@ import { setUnreadCount } from '../../store/slices/notifications.slice'
 import { useGetMeQuery } from '../../store/api/user.api'
 import { useGetUnreadCountQuery } from '../../store/api/notifications.api'
 import { ThemeToggle } from './ThemeToggle'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 import { NotificationDropdown } from './NotificationDropdown'
 
 export function Header() {
@@ -43,7 +44,9 @@ export function Header() {
 		}
 	}, [unreadData?.unreadCount, dispatch])
 
-	const user = meData?.user
+	const storedUser = useAppSelector((state) => state.auth.user)
+	// prefer fresh data from server when available (meData) to ensure latest photo is used
+	const user = meData?.user ?? storedUser
 	const isAuthenticated = !!token && !!user
 
 	// Получаем количество непрочитанных сообщений из Redux
@@ -78,11 +81,6 @@ export function Header() {
 	const handleLogout = async () => {
 		await dispatch(performLogout())
 		navigate('/login')
-	}
-
-	const getPhotoUrl = (photo?: string | null) => {
-		if (!photo) return undefined
-		return photo.startsWith('http') ? photo : `http://localhost:3000${photo}`
 	}
 
 	// Меню профиля
@@ -301,7 +299,7 @@ export function Header() {
 							<div className='flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity'>
 								<Avatar
 									size={36}
-									src={getPhotoUrl(user.photo)}
+									src={getPhotoUrl(user?.photo) || undefined}
 									icon={<UserOutlined />}
 									style={{ border: '2px solid var(--primary)' }}
 								/>
