@@ -32,7 +32,7 @@ import { ProgressChart, ProgressTower3D } from '../../components'
 import { useGetProgressReportsQuery } from '../../store/api/progress.api'
 import type { ProgressReport } from '../../store/types/progress.types'
 import type { Comment } from '../../store/types/progress.types.ts'
-import { API_BASE_URL } from '../../config/api.config.ts'
+import { getPhotoUrl } from '../../utils/buildPhotoUrl'
 
 const { Title, Text } = Typography
 
@@ -416,7 +416,7 @@ export const Progress = () => {
 													index,
 												)
 											}
-											className='min-w-[280px] max-w-[280px] flex-shrink-0 cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
+											className='min-w-[280px] max-w-[280px] shrink-0 cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
 										>
 											{/* Заголовок */}
 											<div className='flex items-center gap-2 mb-3 pb-3 border-b border-gray-100'>
@@ -535,7 +535,7 @@ export const Progress = () => {
 												<List.Item.Meta
 													avatar={
 														<Avatar
-															src={`${API_BASE_URL}${comment.trainer.photo}`}
+															src={getPhotoUrl(comment.trainer.photo)}
 															icon={!comment.trainer.photo && <UserOutlined />}
 															size='large'
 														/>
