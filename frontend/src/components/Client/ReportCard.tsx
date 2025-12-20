@@ -31,8 +31,6 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 	const textClass = isDark ? 'text-slate-300' : 'text-gray-700'
 	const textMutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
 
-	console.log('Image src for report', report.id, ':', imageSrc)
-
 	return (
 		<Card
 			key={report.id}
