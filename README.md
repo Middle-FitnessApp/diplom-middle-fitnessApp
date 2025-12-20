@@ -285,13 +285,7 @@ docker-compose up -d
 <td align="center">35-40</td>
 <td>—</td>
 </tr>
-<tr>
-<td>💻 Разработчик</td>
-<td>Ибрагимова Анастасия</td>
-<td><a href="https://t.me/IbragimovaNast">@IbragimovaNast</a></td>
-<td align="center">5-10</td>
-<td>—</td>
-</tr>
+
 <tr>
 <td>💻 Разработчик</td>
 <td>Терентьев Виталий</td>
