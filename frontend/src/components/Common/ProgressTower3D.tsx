@@ -26,7 +26,7 @@ interface ProgressDataPoint {
 	chest?: number
 	arm?: number
 	leg?: number
-	[key: string]: string | number | undefined
+	[key: string]: string | number | boolean | undefined
 }
 
 interface ProgressTower3DProps {
